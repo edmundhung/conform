@@ -8,6 +8,8 @@ import {
 	number,
 	boolean,
 	extend,
+	array,
+	string,
 } from 'zod-v4/mini';
 import { getResult } from '../../../../tests/helpers/zod';
 
@@ -232,6 +234,64 @@ describe('coercion', () => {
 				success: false,
 				error: {
 					status: ['Invalid input'],
+				},
+			});
+		});
+
+		test('should materialize missing array and object fields in members', () => {
+			const schema = z.discriminatedUnion('type', [
+				z.object({
+					type: z.literal('a'),
+					items: z.array(z.string()),
+					nested: z.object({
+						value: z.string().optional(),
+					}),
+				}),
+				z.object({
+					type: z.literal('b'),
+					enabled: z.boolean(),
+				}),
+			]);
+			const schemaWithMini = discriminatedUnion('type', [
+				object({
+					type: literal('a'),
+					items: array(string()),
+					nested: object({
+						value: z.string().optional(),
+					}),
+				}),
+				object({
+					type: literal('b'),
+					enabled: boolean(),
+				}),
+			]);
+
+			expect(
+				getResult(
+					coerceFormValue(schema).safeParse({
+						type: 'a',
+					}),
+				),
+			).toEqual({
+				success: true,
+				data: {
+					type: 'a',
+					items: [],
+					nested: {},
+				},
+			});
+			expect(
+				getResult(
+					coerceFormValue(schemaWithMini).safeParse({
+						type: 'a',
+					}),
+				),
+			).toEqual({
+				success: true,
+				data: {
+					type: 'a',
+					items: [],
+					nested: {},
 				},
 			});
 		});

@@ -13,6 +13,23 @@ type CoercionFunction = (value: unknown) => unknown;
 
 type CoercionKey = 'string' | 'file' | 'number' | 'boolean' | 'date' | 'bigint';
 
+type CoerceTypeOptions = {
+	/** Map of original schema to its coerced version. Prevents re-processing and infinite recursion from z.lazy(). */
+	resolved: Map<$ZodType, $ZodType>;
+	/** Schemas currently being resolved. Detects re-entrant calls from getter-based recursive schemas. */
+	resolving: Set<$ZodType>;
+	/** Returns a coercion function for the given schema type, or null to skip. */
+	coerce: (type: $ZodType) => CoercionFunction | null;
+	/** Strip function for optional/nonoptional/array. `undefined` = no stripping. */
+	stripEmptyValue?: CoercionFunction;
+	/** Whether to replace the original schema with a type check for non-constrained leaves. */
+	skipValidation?: boolean;
+	/** Whether to skip default/prefault wrappers (recurse into inner). */
+	skipDefaults?: boolean;
+	/** Whether to skip transforms in pipe (only process `def.in`). */
+	skipTransforms?: boolean;
+};
+
 function coerceFile(file: unknown): unknown {
 	if (
 		typeof File !== 'undefined' &&
@@ -213,29 +230,24 @@ function materializesMissingValue(type: $ZodType): boolean {
 	return def.type === 'array' || def.type === 'object';
 }
 
+function coerceObjectShapeEntry(
+	type: $ZodType,
+	options: CoerceTypeOptions,
+): $ZodType {
+	const schema = coerceType(type, options);
+
+	if (type._zod.optin !== 'optional' && materializesMissingValue(type)) {
+		(schema as $ZodTypes)._zod.optin = 'optional';
+	}
+
+	return schema;
+}
+
 /**
  * Reconstruct the provided schema with additional preprocessing steps
  * that strip empty values and coerce strings to the correct type.
  */
-function coerceType(
-	type: $ZodType,
-	options: {
-		/** Map of original schema to its coerced version. Prevents re-processing and infinite recursion from z.lazy(). */
-		resolved: Map<$ZodType, $ZodType>;
-		/** Schemas currently being resolved. Detects re-entrant calls from getter-based recursive schemas. */
-		resolving: Set<$ZodType>;
-		/** Returns a coercion function for the given schema type, or null to skip. */
-		coerce: (type: $ZodType) => CoercionFunction | null;
-		/** Strip function for optional/nonoptional/array. `undefined` = no stripping. */
-		stripEmptyValue?: CoercionFunction;
-		/** Whether to replace the original schema with a type check for non-constrained leaves. */
-		skipValidation?: boolean;
-		/** Whether to skip default/prefault wrappers (recurse into inner). */
-		skipDefaults?: boolean;
-		/** Whether to skip transforms in pipe (only process `def.in`). */
-		skipTransforms?: boolean;
-	},
-): $ZodType {
+function coerceType(type: $ZodType, options: CoerceTypeOptions): $ZodType {
 	const result = options.resolved.get(type);
 
 	if (result) {
@@ -310,18 +322,10 @@ function coerceType(
 			new constr({
 				...objectDef,
 				shape: Object.fromEntries(
-					Object.entries(def.shape).map(([key, def]) => {
-						const schema = coerceType(def, options);
-
-						if (
-							def._zod.optin !== 'optional' &&
-							materializesMissingValue(def)
-						) {
-							(schema as $ZodTypes)._zod.optin = 'optional';
-						}
-
-						return [key, schema];
-					}),
+					Object.entries(def.shape).map(([key, def]) => [
+						key,
+						coerceObjectShapeEntry(def, options),
+					]),
 				),
 			}) as $ZodType<unknown, {}>,
 		);
@@ -397,9 +401,10 @@ function coerceType(
 					const object = new item._zod.constr({
 						...innerDef,
 						shape: Object.fromEntries(
-							Object.entries(objectDef.shape).map(([key, def]) => {
-								return [key, coerceType(def, options)];
-							}),
+							Object.entries(objectDef.shape).map(([key, def]) => [
+								key,
+								coerceObjectShapeEntry(def, options),
+							]),
 						),
 					}) as $ZodType<unknown, {}>;
 
