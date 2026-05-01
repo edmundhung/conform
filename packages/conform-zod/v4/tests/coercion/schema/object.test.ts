@@ -147,5 +147,40 @@ describe('coercion', () => {
 				},
 			});
 		});
+
+		test('should not leak missing-field optionality to reused schemas', () => {
+			const items = z.array(z.string());
+			const schema = z.object({
+				items,
+				union: z.union([z.literal('other'), items]),
+			});
+			const coerced = coerceFormValue(schema);
+			const shape = (
+				coerced as unknown as {
+					_zod: {
+						def: {
+							out: {
+								_zod: {
+									def: {
+										shape: Record<
+											string,
+											{
+												_zod: {
+													optin?: 'optional';
+													def: { options: { _zod: { optin?: 'optional' } }[] };
+												};
+											}
+										>;
+									};
+								};
+							};
+						};
+					};
+				}
+			)._zod.def.out._zod.def.shape;
+
+			expect(shape.items._zod.optin).toBe('optional');
+			expect(shape.union._zod.def.options[1]._zod.optin).toBeUndefined();
+		});
 	});
 });

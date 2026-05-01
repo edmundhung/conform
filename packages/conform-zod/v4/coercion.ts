@@ -230,6 +230,23 @@ function materializesMissingValue(type: $ZodType): boolean {
 	return def.type === 'array' || def.type === 'object';
 }
 
+function withOptionalInput(type: $ZodType): $ZodType {
+	const schema = Object.create(Object.getPrototypeOf(type)) as $ZodType;
+	const descriptors = Object.getOwnPropertyDescriptors(type);
+
+	delete descriptors._zod;
+	Object.defineProperties(schema, descriptors);
+	Object.defineProperty(schema, '_zod', {
+		value: Object.create(type._zod, {
+			optin: {
+				value: 'optional',
+			},
+		}),
+	});
+
+	return schema;
+}
+
 function coerceObjectShapeEntry(
 	type: $ZodType,
 	options: CoerceTypeOptions,
@@ -237,7 +254,7 @@ function coerceObjectShapeEntry(
 	const schema = coerceType(type, options);
 
 	if (type._zod.optin !== 'optional' && materializesMissingValue(type)) {
-		(schema as $ZodTypes)._zod.optin = 'optional';
+		return withOptionalInput(schema);
 	}
 
 	return schema;
