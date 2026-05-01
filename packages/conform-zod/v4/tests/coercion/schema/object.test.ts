@@ -162,15 +162,23 @@ describe('coercion', () => {
 							out: {
 								_zod: {
 									def: {
-										shape: Record<
-											string,
-											{
+										shape: {
+											items: {
 												_zod: {
 													optin?: 'optional';
-													def: { options: { _zod: { optin?: 'optional' } }[] };
 												};
-											}
-										>;
+											};
+											union: {
+												_zod: {
+													def: {
+														options: [
+															{ _zod: { optin?: 'optional' } },
+															{ _zod: { optin?: 'optional' } },
+														];
+													};
+												};
+											};
+										};
 									};
 								};
 							};
