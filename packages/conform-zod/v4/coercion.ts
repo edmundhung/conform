@@ -191,6 +191,28 @@ function typeCheckTransform(defType: string): $ZodType {
 	});
 }
 
+function pipeWithOptionality(
+	coercion: CoercionFunction,
+	target: $ZodType,
+): $ZodType {
+	const schema = pipe(transform(coercion), target) as $ZodType;
+
+	if (target._zod.optin) {
+		(schema as $ZodTypes)._zod.optin = target._zod.optin;
+	}
+
+	if (target._zod.optout) {
+		(schema as $ZodTypes)._zod.optout = target._zod.optout;
+	}
+
+	return schema;
+}
+
+function materializesMissingValue(type: $ZodType): boolean {
+	const def = type._zod.def;
+	return def.type === 'array' || def.type === 'object';
+}
+
 /**
  * Reconstruct the provided schema with additional preprocessing steps
  * that strip empty values and coerce strings to the correct type.
@@ -243,7 +265,7 @@ function coerceType(
 			: type;
 
 	if (coercion) {
-		schema = pipe(transform(coercion), target);
+		schema = pipeWithOptionality(coercion, target);
 	} else if (target !== type) {
 		schema = target;
 	} else if (def.type === 'array') {
@@ -251,8 +273,8 @@ function coerceType(
 			? { ...def, checks: undefined }
 			: def;
 
-		schema = pipe(
-			transform((value) => {
+		schema = pipeWithOptionality(
+			(value) => {
 				if (Array.isArray(value)) {
 					return value;
 				}
@@ -266,7 +288,7 @@ function coerceType(
 				}
 
 				return [value];
-			}),
+			},
 			new constr({
 				...arrayDef,
 				element: coerceType(def.element, options),
@@ -277,21 +299,29 @@ function coerceType(
 			? { ...def, catchall: undefined }
 			: def;
 
-		schema = pipe(
-			transform((value) => {
+		schema = pipeWithOptionality(
+			(value) => {
 				if (typeof value === 'undefined') {
 					return {};
 				}
 
 				return value;
-			}),
+			},
 			new constr({
 				...objectDef,
 				shape: Object.fromEntries(
-					Object.entries(def.shape).map(([key, def]) => [
-						key,
-						coerceType(def, options),
-					]),
+					Object.entries(def.shape).map(([key, def]) => {
+						const schema = coerceType(def, options);
+
+						if (
+							def._zod.optin !== 'optional' &&
+							materializesMissingValue(def)
+						) {
+							(schema as $ZodTypes)._zod.optin = 'optional';
+						}
+
+						return [key, schema];
+					}),
 				),
 			}) as $ZodType<unknown, {}>,
 		);
@@ -300,7 +330,7 @@ function coerceType(
 		const wrapped = new constr({ ...def, innerType });
 
 		schema = options.stripEmptyValue
-			? pipe(transform(options.stripEmptyValue), wrapped)
+			? pipeWithOptionality(options.stripEmptyValue, wrapped)
 			: wrapped;
 	} else if (def.type === 'default' || def.type === 'prefault') {
 		if (options.skipDefaults) {
@@ -314,7 +344,7 @@ function coerceType(
 			const wrapped = new constr({ ...def, innerType });
 
 			schema = options.stripEmptyValue
-				? pipe(transform(options.stripEmptyValue), wrapped)
+				? pipeWithOptionality(options.stripEmptyValue, wrapped)
 				: wrapped;
 		}
 	} else if (def.type === 'catch') {
