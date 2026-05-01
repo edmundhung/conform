@@ -152,6 +152,8 @@ describe('coercion', () => {
 			const items = z.array(z.string());
 			const schema = z.object({
 				items,
+				nonoptionalItems: items.nonoptional(),
+				caughtItems: items.catch([]),
 				union: z.union([z.literal('other'), items]),
 			});
 			const coerced = coerceFormValue(schema);
@@ -164,6 +166,16 @@ describe('coercion', () => {
 									def: {
 										shape: {
 											items: {
+												_zod: {
+													optin?: 'optional';
+												};
+											};
+											nonoptionalItems: {
+												_zod: {
+													optin?: 'optional';
+												};
+											};
+											caughtItems: {
 												_zod: {
 													optin?: 'optional';
 												};
@@ -188,6 +200,8 @@ describe('coercion', () => {
 			)._zod.def.out._zod.def.shape;
 
 			expect(shape.items._zod.optin).toBe('optional');
+			expect(shape.nonoptionalItems._zod.optin).toBe('optional');
+			expect(shape.caughtItems._zod.optin).toBe('optional');
 			expect(shape.union._zod.def.options[1]._zod.optin).toBeUndefined();
 		});
 	});

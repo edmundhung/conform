@@ -226,7 +226,19 @@ function pipeWithOptionality(
 }
 
 function materializesMissingValue(type: $ZodType): boolean {
-	const def = type._zod.def;
+	let def = type._zod.def;
+
+	while (
+		def.type === 'optional' ||
+		def.type === 'nonoptional' ||
+		def.type === 'default' ||
+		def.type === 'prefault' ||
+		def.type === 'catch' ||
+		def.type === 'nullable'
+	) {
+		def = (def as unknown as { innerType: $ZodType }).innerType._zod.def;
+	}
+
 	return def.type === 'array' || def.type === 'object';
 }
 
