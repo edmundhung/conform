@@ -232,9 +232,8 @@ function materializesMissingValue(type: $ZodType): boolean {
 
 function withOptionalInput(type: $ZodType): $ZodType {
 	const schema = Object.create(Object.getPrototypeOf(type)) as $ZodType;
-	const descriptors = Object.getOwnPropertyDescriptors(type);
+	const { _zod, ...descriptors } = Object.getOwnPropertyDescriptors(type);
 
-	delete descriptors._zod;
 	Object.defineProperties(schema, descriptors);
 	Object.defineProperty(schema, '_zod', {
 		value: Object.create(type._zod, {
