@@ -456,8 +456,8 @@ function updateValue<Error>(
 	meta.value = clone(meta.value);
 	meta.key = clone(meta.key);
 
-	setPathValue(meta.initialValue, name, () => value);
-	setPathValue(meta.value, name, () => value);
+	setPathValue(meta.initialValue, name, () => value, { mutate: true });
+	setPathValue(meta.value, name, () => value, { mutate: true });
 
 	if (isPlainObject(value) || Array.isArray(value)) {
 		setState(meta.key, name, () => undefined);

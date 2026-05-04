@@ -76,7 +76,7 @@ export function updatePathValue<Data>(
 		return value;
 	}
 
-	return setPathValue(data, parsePath(name), value, { clone: true });
+	return setPathValue(data, parsePath(name), value);
 }
 
 /**

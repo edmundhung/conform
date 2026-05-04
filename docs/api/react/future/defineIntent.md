@@ -35,8 +35,7 @@ resolve({ value, payload }) {
   return setPathValue(
     value,
     payload.to,
-    getPathValue(value, payload.from),
-    { clone: true }
+    getPathValue(value, payload.from)
   );
 }
 ```
@@ -60,6 +59,8 @@ If you omit `move`, Conform falls back to invalidating the affected state under 
 The same intent handler object, with the dispatcher arguments and payload wired into TypeScript.
 
 ## Example
+
+For example, this adds `intent.copyField(options)` that copies the value from one field to another.
 
 ```tsx
 import { getPathValue, setPathValue } from '@conform-to/dom/future';
@@ -87,7 +88,7 @@ const copyField = defineIntent<CopyField>({
   },
   resolve({ value, payload }) {
     const source = getPathValue(value, payload.from);
-    const result = setPathValue(value, payload.to, source, { clone: true });
+    const result = setPathValue(value, payload.to, source);
 
     return result;
   },
@@ -133,29 +134,5 @@ function Example() {
       </button>
     </form>
   );
-}
-```
-
-This adds `intent.copyField(...)` to the form, with the same typed arguments defined by `CopyField`.
-
-Because this intent changes the value that should be validated or saved, the server should resolve the submission with the same configured intent handler:
-
-```ts
-import { parseSubmission, report } from '@conform-to/react/future';
-
-export async function action({ request }) {
-  const submission = parseSubmission(await request.formData());
-  const { intent, value } = forms.resolveSubmission(submission);
-
-  if (!intent) {
-    return new Response('Unknown intent', { status: 400 });
-  }
-
-  if (intent.type !== 'submit') {
-    return report(submission, { value });
-  }
-
-  await save(value);
-  return report(submission, { reset: true });
 }
 ```

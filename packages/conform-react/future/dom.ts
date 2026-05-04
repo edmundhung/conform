@@ -169,7 +169,7 @@ export function resolveControlPayload(
 		}
 
 		for (const [name, value] of entries) {
-			setPathValue(result, name, value);
+			setPathValue(result, name, value, { mutate: true });
 		}
 
 		return getPathValue(result, input.name);
