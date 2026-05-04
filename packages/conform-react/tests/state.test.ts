@@ -241,10 +241,7 @@ describe('form state', () => {
 					['password', ''],
 					[
 						DEFAULT_INTENT_NAME,
-						serializeIntent({
-							type: 'validate',
-							payload: 'username',
-						}),
+						serializeIntent({ type: 'validate', args: ['username'] }),
 					],
 				],
 				error: {
@@ -330,10 +327,7 @@ describe('form state', () => {
 					['password', ''],
 					[
 						DEFAULT_INTENT_NAME,
-						serializeIntent({
-							type: 'validate',
-							payload: 'username',
-						}),
+						serializeIntent({ type: 'validate', args: ['username'] }),
 					],
 				],
 				error: {
@@ -366,10 +360,7 @@ describe('form state', () => {
 					['password', ''],
 					[
 						DEFAULT_INTENT_NAME,
-						serializeIntent({
-							type: 'validate',
-							payload: 'password',
-						}),
+						serializeIntent({ type: 'validate', args: ['password'] }),
 					],
 				],
 				error: {
@@ -402,12 +393,7 @@ describe('form state', () => {
 				entries: [
 					['username', 'edmund'],
 					['password', 'my-password'],
-					[
-						DEFAULT_INTENT_NAME,
-						serializeIntent({
-							type: 'reset',
-						}),
-					],
+					[DEFAULT_INTENT_NAME, serializeIntent({ type: 'reset', args: [] })],
 				],
 			}),
 		);
@@ -429,12 +415,7 @@ describe('form state', () => {
 				entries: [
 					['username', 'edmund'],
 					['password', 'my-password'],
-					[
-						DEFAULT_INTENT_NAME,
-						serializeIntent({
-							type: 'reset',
-						}),
-					],
+					[DEFAULT_INTENT_NAME, serializeIntent({ type: 'reset', args: [] })],
 				],
 			}),
 		);
@@ -458,10 +439,7 @@ describe('form state', () => {
 					['password', ''],
 					[
 						DEFAULT_INTENT_NAME,
-						serializeIntent({
-							type: 'validate',
-							payload: 'username',
-						}),
+						serializeIntent({ type: 'validate', args: ['username'] }),
 					],
 				],
 				error: {
@@ -494,9 +472,7 @@ describe('form state', () => {
 					['password', 'my-password'],
 					[
 						DEFAULT_INTENT_NAME,
-						serializeIntent({
-							type: 'validate',
-						}),
+						serializeIntent({ type: 'validate', args: [] }),
 					],
 				],
 			}),
@@ -525,9 +501,7 @@ describe('form state', () => {
 					['password', 'my-password'],
 					[
 						DEFAULT_INTENT_NAME,
-						serializeIntent({
-							type: 'validate',
-						}),
+						serializeIntent({ type: 'validate', args: [] }),
 					],
 				],
 				error: {
@@ -577,10 +551,12 @@ describe('form state', () => {
 						DEFAULT_INTENT_NAME,
 						serializeIntent({
 							type: 'update',
-							payload: {
-								name: 'password',
-								value: '',
-							},
+							args: [
+								{
+									name: 'password',
+									value: '',
+								},
+							],
 						}),
 					],
 				],
@@ -616,13 +592,15 @@ describe('form state', () => {
 						DEFAULT_INTENT_NAME,
 						serializeIntent({
 							type: 'update',
-							payload: {
-								name: '',
-								value: {
-									username: 'edmund',
-									password: '',
+							args: [
+								{
+									name: '',
+									value: {
+										username: 'edmund',
+										password: '',
+									},
 								},
-							},
+							],
 						}),
 					],
 				],
@@ -658,13 +636,15 @@ describe('form state', () => {
 						DEFAULT_INTENT_NAME,
 						serializeIntent({
 							type: 'update',
-							payload: {
-								name: '',
-								value: {
-									username: 'edmund',
-									password: '',
+							args: [
+								{
+									name: '',
+									value: {
+										username: 'edmund',
+										password: '',
+									},
 								},
-							},
+							],
 						}),
 					],
 				],
@@ -741,6 +721,50 @@ describe('form state', () => {
 		expect(isTouched(context.state, 'tasks[0]')).toBe(false);
 		expect(isTouched(context.state, 'tasks[1]')).toBe(false);
 
+		const previousState = context.state;
+
+		// Test a no-op reorder preserves fallback list key identity
+		context.state = updateState(
+			context.state,
+			createAction({
+				type: 'client',
+				entries: [
+					['title', 'My Tasks'],
+					['tasks[0]', 'Default task 1'],
+					['tasks[1]', 'Default task 2'],
+					[
+						DEFAULT_INTENT_NAME,
+						serializeIntent({
+							type: 'reorder',
+							args: [
+								{
+									name: 'tasks',
+									from: 1,
+									to: 1,
+								},
+							],
+						}),
+					],
+				],
+			}),
+		);
+
+		expect(context.state.listKeys).toBe(previousState.listKeys);
+		expect(getListKey(context, 'tasks')).toEqual(['0-tasks[0]', '0-tasks[1]']);
+		expect(getDefaultValue(context, 'title')).toBe('My Tasks');
+		expect(getDefaultValue(context, 'tasks')).toBe('');
+		expect(getDefaultOptions(context, 'tasks')).toEqual([
+			'Default task 1',
+			'Default task 2',
+		]);
+		expect(getDefaultValue(context, 'tasks[0]')).toBe('Default task 1');
+		expect(getDefaultValue(context, 'tasks[1]')).toBe('Default task 2');
+		expect(isTouched(context.state)).toBe(true);
+		expect(isTouched(context.state, 'title')).toBe(false);
+		expect(isTouched(context.state, 'tasks')).toBe(true);
+		expect(isTouched(context.state, 'tasks[0]')).toBe(false);
+		expect(isTouched(context.state, 'tasks[1]')).toBe(false);
+
 		// Test inserting an item
 		context.state = updateState(
 			context.state,
@@ -754,10 +778,12 @@ describe('form state', () => {
 						DEFAULT_INTENT_NAME,
 						serializeIntent({
 							type: 'insert',
-							payload: {
-								name: 'tasks',
-								defaultValue: 'New task',
-							},
+							args: [
+								{
+									name: 'tasks',
+									defaultValue: 'New task',
+								},
+							],
 						}),
 					],
 				],
@@ -798,10 +824,7 @@ describe('form state', () => {
 					['tasks[2]', 'New task'],
 					[
 						DEFAULT_INTENT_NAME,
-						serializeIntent({
-							type: 'validate',
-							payload: 'tasks[1]',
-						}),
+						serializeIntent({ type: 'validate', args: ['tasks[1]'] }),
 					],
 				],
 			}),
@@ -844,11 +867,13 @@ describe('form state', () => {
 						DEFAULT_INTENT_NAME,
 						serializeIntent({
 							type: 'insert',
-							payload: {
-								name: 'tasks',
-								defaultValue: 'Urgent task',
-								index: 0,
-							},
+							args: [
+								{
+									name: 'tasks',
+									defaultValue: 'Urgent task',
+									index: 0,
+								},
+							],
 						}),
 					],
 				],
@@ -881,6 +906,40 @@ describe('form state', () => {
 		expect(isTouched(context.state, 'tasks[2]')).toBe(true);
 		expect(isTouched(context.state, 'tasks[3]')).toBe(false);
 
+		const listKeys = context.state.listKeys;
+		const taskListKeys = listKeys.tasks;
+
+		// Test a no-op reorder preserves list key identity
+		context.state = updateState(
+			context.state,
+			createAction({
+				type: 'client',
+				entries: [
+					['title', 'My Tasks'],
+					['tasks[0]', 'Urgent task'],
+					['tasks[1]', 'Default task 1'],
+					['tasks[2]', 'Default task 2'],
+					['tasks[3]', 'New task'],
+					[
+						DEFAULT_INTENT_NAME,
+						serializeIntent({
+							type: 'reorder',
+							args: [
+								{
+									name: 'tasks',
+									from: 1,
+									to: 1,
+								},
+							],
+						}),
+					],
+				],
+			}),
+		);
+
+		expect(context.state.listKeys).toBe(listKeys);
+		expect(context.state.listKeys.tasks).toBe(taskListKeys);
+
 		// Test reordering items
 		context.state = updateState(
 			context.state,
@@ -896,11 +955,13 @@ describe('form state', () => {
 						DEFAULT_INTENT_NAME,
 						serializeIntent({
 							type: 'reorder',
-							payload: {
-								name: 'tasks',
-								from: 3,
-								to: 1,
-							},
+							args: [
+								{
+									name: 'tasks',
+									from: 3,
+									to: 1,
+								},
+							],
 						}),
 					],
 				],
@@ -948,11 +1009,13 @@ describe('form state', () => {
 						DEFAULT_INTENT_NAME,
 						serializeIntent({
 							type: 'reorder',
-							payload: {
-								name: 'tasks',
-								from: 3,
-								to: 1,
-							},
+							args: [
+								{
+									name: 'tasks',
+									from: 3,
+									to: 1,
+								},
+							],
 						}),
 					],
 				],
@@ -1012,10 +1075,12 @@ describe('form state', () => {
 						DEFAULT_INTENT_NAME,
 						serializeIntent({
 							type: 'remove',
-							payload: {
-								name: 'tasks',
-								index: 2,
-							},
+							args: [
+								{
+									name: 'tasks',
+									index: 2,
+								},
+							],
 						}),
 					],
 				],
@@ -1055,10 +1120,12 @@ describe('form state', () => {
 						DEFAULT_INTENT_NAME,
 						serializeIntent({
 							type: 'remove',
-							payload: {
-								name: 'tasks',
-								index: 2,
-							},
+							args: [
+								{
+									name: 'tasks',
+									index: 2,
+								},
+							],
 						}),
 					],
 				],
@@ -1105,12 +1172,7 @@ describe('form state', () => {
 					['tasks[0]', 'Urgent task'],
 					['tasks[1]', 'New task'],
 					['tasks[2]', 'Default task 2'],
-					[
-						DEFAULT_INTENT_NAME,
-						serializeIntent({
-							type: 'reset',
-						}),
-					],
+					[DEFAULT_INTENT_NAME, serializeIntent({ type: 'reset', args: [] })],
 				],
 				defaultValue: context.state.defaultValue,
 			}),
@@ -1156,10 +1218,12 @@ describe('form state', () => {
 						DEFAULT_INTENT_NAME,
 						serializeIntent({
 							type: 'insert',
-							payload: {
-								name: 'tasks',
-								defaultValue: 'Task 4',
-							},
+							args: [
+								{
+									name: 'tasks',
+									defaultValue: 'Task 4',
+								},
+							],
 						}),
 					],
 				],
@@ -1287,10 +1351,12 @@ describe('form state', () => {
 						DEFAULT_INTENT_NAME,
 						serializeIntent({
 							type: 'insert',
-							payload: {
-								name: 'tasks',
-								defaultValue: 'Task 4',
-							},
+							args: [
+								{
+									name: 'tasks',
+									defaultValue: 'Task 4',
+								},
+							],
 						}),
 					],
 				],

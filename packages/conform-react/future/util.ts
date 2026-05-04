@@ -80,43 +80,41 @@ export function updatePathValue<Data>(
 }
 
 /**
- * Creates a function that updates array indices in field paths.
- * Returns null to remove fields, or updated path with new index.
+ * Updates array indices in a field path.
+ * Returns null to remove fields, or the updated path with a new index.
  */
-export function createPathIndexUpdater(
+export function updatePathIndex(
+	name: string,
 	listName: string,
 	update: (index: number) => number | null,
-): (name: string) => string | null {
+): string | null {
 	const listPaths = parsePath(listName);
+	const paths = parsePath(name);
 
-	return (name: string) => {
-		const paths = parsePath(name);
+	if (
+		paths.length > listPaths.length &&
+		listPaths.every((path, index) => paths[index] === path)
+	) {
+		const currentIndex = paths[listPaths.length];
 
-		if (
-			paths.length > listPaths.length &&
-			listPaths.every((path, index) => paths[index] === path)
-		) {
-			const currentIndex = paths[listPaths.length];
+		if (typeof currentIndex === 'number') {
+			const newIndex = update(currentIndex);
 
-			if (typeof currentIndex === 'number') {
-				const newIndex = update(currentIndex);
+			if (newIndex === null) {
+				// To remove the item instead of updating it
+				return null;
+			}
 
-				if (newIndex === null) {
-					// To remove the item instead of updating it
-					return null;
-				}
+			if (newIndex !== currentIndex) {
+				// Replace the index
+				paths.splice(listPaths.length, 1, newIndex);
 
-				if (newIndex !== currentIndex) {
-					// Replace the index
-					paths.splice(listPaths.length, 1, newIndex);
-
-					return formatPath(paths);
-				}
+				return formatPath(paths);
 			}
 		}
+	}
 
-		return name;
-	};
+	return name;
 }
 
 export function resolveSerialize(
@@ -251,26 +249,6 @@ export function appendUniqueItem<Item>(list: Array<Item>, item: Item) {
 	}
 
 	return list.concat(item);
-}
-
-/**
- * Maps over array and filters out null results.
- */
-export function compactMap<Item>(
-	list: Array<NonNullable<Item>>,
-	fn: (value: Item) => Item | null,
-): Array<Item> {
-	const result: Array<Item> = [];
-
-	for (const item of list) {
-		const value = fn(item);
-
-		if (value !== null) {
-			result.push(value);
-		}
-	}
-
-	return result;
 }
 
 export function generateUniqueKey() {

@@ -6,6 +6,7 @@ import type {
 	FieldMetadata,
 	FieldName,
 	Fieldset,
+	FormValue,
 	FormMetadata,
 	FormOptions,
 	InferBaseErrorShape,
@@ -221,13 +222,17 @@ test('useForm', () => {
 	>();
 
 	const goToStep = defineIntent<{ step: number }>({
-		validate(payload) {
-			return (
-				typeof payload === 'object' &&
-				payload !== null &&
-				'step' in payload &&
-				typeof payload?.step === 'number'
-			);
+		parse(payload) {
+			if (
+				typeof payload !== 'object' ||
+				payload === null ||
+				!('step' in payload) ||
+				typeof payload.step !== 'number'
+			) {
+				throw new Error('Invalid goToStep payload');
+			}
+
+			return payload;
 		},
 	});
 	const intentInferred = useForm({
@@ -235,7 +240,7 @@ test('useForm', () => {
 			goToStep,
 		},
 		onValidate({ intent, error }) {
-			if (intent.type === 'goToStep') {
+			if (intent?.type === 'goToStep') {
 				assertType<number>(intent.payload.step);
 			}
 
@@ -554,13 +559,17 @@ describe('configureForms', () => {
 
 	test('custom intents', () => {
 		const goToStep = defineIntent<{ step: number }>({
-			validate(payload) {
-				return (
-					typeof payload === 'object' &&
-					payload !== null &&
-					'step' in payload &&
-					typeof payload?.step === 'number'
-				);
+			parse(payload) {
+				if (
+					typeof payload !== 'object' ||
+					payload === null ||
+					!('step' in payload) ||
+					typeof payload.step !== 'number'
+				) {
+					throw new Error('Invalid goToStep payload');
+				}
+
+				return payload;
 			},
 		});
 		const custom = configureForms({
@@ -571,7 +580,7 @@ describe('configureForms', () => {
 
 		const globalIntentSetup = custom.useForm({
 			onValidate({ intent, error }) {
-				if (intent.type === 'goToStep') {
+				if (intent?.type === 'goToStep') {
 					assertType<number>(intent.payload.step);
 				}
 
@@ -590,8 +599,12 @@ describe('configureForms', () => {
 		>();
 
 		const confirm = defineIntent<string>({
-			validate(payload) {
-				return typeof payload === 'string';
+			parse(payload) {
+				if (typeof payload !== 'string') {
+					throw new Error('Invalid confirm payload');
+				}
+
+				return payload;
 			},
 		});
 
@@ -600,9 +613,9 @@ describe('configureForms', () => {
 				confirm,
 			},
 			onValidate({ intent, error }) {
-				if (intent.type === 'confirm') {
+				if (intent?.type === 'confirm') {
 					assertType<string>(intent.payload);
-				} else if (intent.type === 'goToStep') {
+				} else if (intent?.type === 'goToStep') {
 					assertType<number>(intent.payload.step);
 				}
 
@@ -623,6 +636,56 @@ describe('configureForms', () => {
 			IntentDispatcher<Record<string, any>, { goToStep: typeof goToStep }>
 		>();
 	});
+});
+
+test('defineIntent', () => {
+	const updateField = defineIntent<
+		(name: string, value: string) => void,
+		{
+			name: string;
+			value: string;
+		}
+	>({
+		parse(name, value) {
+			assertType<string>(name);
+			assertType<string>(value);
+
+			return { name, value };
+		},
+		resolve(context) {
+			assertType<Record<string, FormValue>>(context.value);
+			assertType<string>(context.payload.name);
+			assertType<string>(context.payload.value);
+
+			return {
+				[context.payload.name]: context.payload.value,
+			};
+		},
+		touch(context) {
+			assertType<string>(context.name);
+			assertType<string>(context.payload.name);
+
+			return context.name === context.payload.name;
+		},
+		move(context) {
+			assertType<string>(context.name);
+			assertType<'applied' | 'reverted' | 'modified'>(context.status);
+			assertType<Record<string, FormValue> | undefined>(context.targetValue);
+			assertType<string>(context.payload.name);
+
+			return context.name;
+		},
+	});
+
+	const configured = configureForms({
+		intents: {
+			updateField,
+		},
+	});
+
+	expectTypeOf(configured.useIntent('form-id').updateField).toEqualTypeOf<
+		(name: string, value: string) => void
+	>();
 });
 
 test('IntentDispatcher', () => {

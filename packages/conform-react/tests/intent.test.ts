@@ -1,8 +1,9 @@
 import { test, expect, vi } from 'vitest';
 import {
+	applyIntent,
 	serializeIntent,
 	deserializeIntent,
-	normalizeIntent,
+	parseIntent,
 	resolveIntent,
 	insertItem,
 	removeItem,
@@ -15,117 +16,153 @@ import { IntentHandler } from '../future/types';
 
 test('serializeIntent', () => {
 	// Test intent without payload
-	expect(serializeIntent({ type: 'reset' })).toBe('reset');
+	expect(serializeIntent({ type: 'reset', args: [] })).toBe('reset');
 
 	// Test intent with payload
-	expect(serializeIntent({ type: 'validate', payload: 'email' })).toBe(
+	expect(serializeIntent({ type: 'validate', args: ['email'] })).toBe(
 		'validate("email")',
 	);
 
 	// Test intent with object payload
 	const updateIntent = {
 		type: 'update',
-		payload: { name: 'email', value: 'test@example.com' },
+		args: [{ name: 'email', value: 'test@example.com' }],
 	};
 	expect(serializeIntent(updateIntent)).toBe(
 		'update({"name":"email","value":"test@example.com"})',
 	);
 
 	// Test intent with falsy payloads
-	expect(serializeIntent({ type: 'custom', payload: 0 })).toBe('custom(0)');
-	expect(serializeIntent({ type: 'custom', payload: false })).toBe(
+	expect(serializeIntent({ type: 'custom', args: [0] })).toBe('custom(0)');
+	expect(serializeIntent({ type: 'custom', args: [false] })).toBe(
 		'custom(false)',
 	);
-	expect(serializeIntent({ type: 'custom', payload: '' })).toBe('custom("")');
-	expect(serializeIntent({ type: 'custom', payload: null })).toBe(
+	expect(serializeIntent({ type: 'custom', args: [''] })).toBe('custom("")');
+	expect(serializeIntent({ type: 'custom', args: [null] })).toBe(
 		'custom(null)',
+	);
+	expect(serializeIntent({ type: 'custom', args: [undefined, 1] })).toBe(
+		'custom(null,1)',
 	);
 
 	// Test intent with undefined payload
-	expect(serializeIntent({ type: 'reset', payload: undefined })).toBe('reset');
+	expect(serializeIntent({ type: 'reset', args: [] })).toBe('reset');
 });
 
 test('deserializeIntent', () => {
 	// Test simple intent
 	expect(deserializeIntent('reset')).toEqual({
 		type: 'reset',
-		payload: undefined,
+		args: [],
 	});
 
 	// Test intent with string payload
 	expect(deserializeIntent('validate("email")')).toEqual({
 		type: 'validate',
-		payload: 'email',
+		args: ['email'],
 	});
 
 	// Test intent with object payload
 	expect(deserializeIntent('update({"name":"email","value":"test"})')).toEqual({
 		type: 'update',
-		payload: { name: 'email', value: 'test' },
+		args: [{ name: 'email', value: 'test' }],
 	});
 
 	// Test malformed JSON (should ignore error)
 	expect(deserializeIntent('update({invalid)')).toEqual({
 		type: 'update',
-		payload: undefined,
+		args: [],
 	});
 
 	// Test without closing parenthesis
 	expect(deserializeIntent('validate("email"')).toEqual({
 		type: 'validate("email"',
-		payload: undefined,
+		args: [],
 	});
 
 	// Test empty parentheses
 	expect(deserializeIntent('reset()')).toEqual({
 		type: 'reset',
-		payload: undefined,
+		args: [],
+	});
+
+	// Test serialized undefined argument
+	expect(deserializeIntent('custom(null,1)')).toEqual({
+		type: 'custom',
+		args: [null, 1],
 	});
 });
 
-test('normalizeIntent', () => {
-	expect(normalizeIntent(null)).toEqual({
+test('parseIntent', () => {
+	expect(parseIntent(null, { handlers: defaultIntentHandlers })).toEqual({
 		type: 'submit',
 		payload: undefined,
 	});
 
-	expect(normalizeIntent('submit')).toEqual({
+	expect(parseIntent('submit', { handlers: defaultIntentHandlers })).toEqual({
 		type: 'submit',
 		payload: undefined,
 	});
-});
 
-test('normalizeIntent preserves invalid custom payloads', () => {
+	expect(parseIntent('custom', { handlers: defaultIntentHandlers })).toEqual({
+		type: 'custom',
+		payload: undefined,
+	});
+
+	const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 	const handlers = {
 		custom: {
-			validate(payload) {
-				return typeof payload === 'string';
+			parse() {
+				throw new Error('Invalid custom intent args');
 			},
 		},
 	} satisfies Record<string, IntentHandler>;
 
-	expect(normalizeIntent('custom(123)', { handlers })).toEqual({
-		type: 'custom',
-		payload: 123,
-	});
+	expect(
+		parseIntent(
+			serializeIntent({
+				type: 'custom',
+				args: ['field', 1],
+			}),
+			{ handlers },
+		),
+	).toBeUndefined();
+	expect(warn).toHaveBeenCalledWith(
+		'Failed to parse "custom" intent arguments. Falling back to undefined intent.',
+	);
+
+	expect(
+		parseIntent(
+			serializeIntent({
+				type: 'custom',
+				args: ['field', 1],
+			}),
+			{ handlers: defaultIntentHandlers },
+		),
+	).toBeUndefined();
+	expect(warn).toHaveBeenCalledWith(
+		'Failed to parse "custom" intent arguments. Falling back to undefined intent.',
+	);
+	warn.mockRestore();
 });
 
-test('normalizeIntent preserves unknown custom intent', () => {
-	expect(normalizeIntent('custom')).toEqual({
-		type: 'custom',
-		payload: undefined,
-	});
-});
-
-test('applyIntent', () => {
+test('resolveIntent', () => {
 	const submission: Submission = {
 		intent: 'reset',
 		payload: { email: 'test@example.com', name: 'John' },
 		fields: ['email', 'name'],
 	};
+	const submissionIntent = parseIntent(submission.intent, {
+		handlers: defaultIntentHandlers,
+	});
 
 	// Test reset intent
-	expect(resolveIntent(submission)).toBeUndefined();
+	expect(
+		resolveIntent(submission, {
+			handlers: defaultIntentHandlers,
+			intent: submissionIntent,
+		}),
+	).toBeUndefined();
 
 	// Test submission without intent
 	const noIntentSubmission: Submission = {
@@ -133,13 +170,22 @@ test('applyIntent', () => {
 		payload: { email: 'test' },
 		fields: ['email'],
 	};
-	expect(resolveIntent(noIntentSubmission)).toEqual({ email: 'test' });
+	expect(
+		resolveIntent(noIntentSubmission, {
+			handlers: defaultIntentHandlers,
+			intent: parseIntent(noIntentSubmission.intent, {
+				handlers: defaultIntentHandlers,
+			}),
+		}),
+	).toEqual({
+		email: 'test',
+	});
 
 	// Test with custom handlers
 	const customHandlers = {
 		custom: {
-			validate: vi.fn(() => true),
-			resolve: vi.fn((payload) => ({ ...payload, custom: true })),
+			parse: vi.fn((payload) => payload),
+			resolve: vi.fn(({ value }) => ({ ...value, custom: true })),
 		},
 	} satisfies Record<string, IntentHandler>;
 
@@ -149,17 +195,22 @@ test('applyIntent', () => {
 		fields: ['email'],
 	};
 
-	const result = resolveIntent(customSubmission, { handlers: customHandlers });
-	expect(customHandlers.custom.resolve).toHaveBeenCalledWith(
-		{ email: 'test' },
-		undefined,
-	);
+	const result = resolveIntent(customSubmission, {
+		handlers: customHandlers,
+		intent: parseIntent(customSubmission.intent, { handlers: customHandlers }),
+	});
+	expect(customHandlers.custom.resolve).toHaveBeenCalledWith({
+		value: { email: 'test' },
+		payload: undefined,
+	});
 	expect(result).toEqual({ email: 'test', custom: true });
 
 	// Test with validation failure
 	const failingHandler = {
 		failing: {
-			validate: vi.fn(() => false),
+			parse: vi.fn(() => {
+				throw new Error('Invalid payload');
+			}),
 			resolve: vi.fn(),
 		},
 	} satisfies Record<string, IntentHandler>;
@@ -172,33 +223,14 @@ test('applyIntent', () => {
 
 	const failResult = resolveIntent(failingSubmission, {
 		handlers: failingHandler,
+		intent: parseIntent(failingSubmission.intent, { handlers: failingHandler }),
 	});
 	expect(failingHandler.failing.resolve).not.toHaveBeenCalled();
 	expect(failResult).toEqual({ test: true });
 
-	const ambiguousHandlers = {
-		ambiguous: {
-			validate: vi.fn(() => true),
-			resolve: vi.fn(() => ({ name: 'Alice', value: 'Engineer' })),
-		},
-	} satisfies Record<string, IntentHandler>;
-
-	const ambiguousResult = resolveIntent(
-		{
-			intent: 'ambiguous',
-			payload: { email: 'test@example.com' },
-			fields: ['email'],
-		},
-		{ handlers: ambiguousHandlers },
-	);
-	expect(ambiguousResult).toEqual({
-		name: 'Alice',
-		value: 'Engineer',
-	});
-
 	const targetedHandlers = {
 		targeted: {
-			validate: vi.fn(() => true),
+			parse: vi.fn((payload) => payload),
 			resolve: vi.fn(() => ({
 				email: 'next@example.com',
 				name: 'John',
@@ -212,7 +244,10 @@ test('applyIntent', () => {
 			payload: { email: 'test@example.com', name: 'John' },
 			fields: ['email', 'name'],
 		},
-		{ handlers: targetedHandlers },
+		{
+			handlers: targetedHandlers,
+			intent: parseIntent('targeted', { handlers: targetedHandlers }),
+		},
 	);
 	expect(targetedResult).toEqual({
 		email: 'next@example.com',
@@ -221,7 +256,7 @@ test('applyIntent', () => {
 
 	const wrappedHandlers = {
 		wrapped: {
-			validate: vi.fn(() => true),
+			parse: vi.fn((payload) => payload),
 			resolve: vi.fn(() => ({ email: 'wrapped@example.com' })),
 		},
 	} satisfies Record<string, IntentHandler>;
@@ -232,9 +267,74 @@ test('applyIntent', () => {
 			payload: { email: 'test@example.com' },
 			fields: ['email'],
 		},
-		{ handlers: wrappedHandlers },
+		{
+			handlers: wrappedHandlers,
+			intent: parseIntent('wrapped', { handlers: wrappedHandlers }),
+		},
 	);
 	expect(wrappedResult).toEqual({ email: 'wrapped@example.com' });
+});
+
+test('applyIntent', () => {
+	const resetResult: SubmissionResult = {
+		submission: {
+			intent: 'reset',
+			payload: { email: 'test@example.com' },
+			fields: ['email'],
+		},
+		error: null,
+	};
+
+	expect(
+		applyIntent(
+			resetResult,
+			parseIntent(resetResult.submission.intent, {
+				handlers: defaultIntentHandlers,
+			}),
+			{ handlers: defaultIntentHandlers },
+		),
+	).toEqual({
+		...resetResult,
+		reset: true,
+	});
+
+	const customHandlers = {
+		custom: {
+			apply: vi.fn(({ result, payload }) => ({
+				...result,
+				targetValue: {
+					...(result.submission.payload as Record<string, unknown>),
+					custom: payload,
+				},
+			})),
+		},
+	} satisfies Record<string, IntentHandler>;
+	const customResult: SubmissionResult = {
+		submission: {
+			intent: 'custom',
+			payload: { email: 'test@example.com' },
+			fields: ['email'],
+		},
+		error: null,
+	};
+
+	expect(
+		applyIntent(
+			customResult,
+			parseIntent(customResult.submission.intent, { handlers: customHandlers }),
+			{ handlers: customHandlers },
+		),
+	).toEqual({
+		...customResult,
+		targetValue: {
+			email: 'test@example.com',
+			custom: undefined,
+		},
+	});
+	expect(customHandlers.custom.apply).toHaveBeenCalledWith({
+		result: customResult,
+		payload: undefined,
+	});
 });
 
 test('insertItem', () => {
@@ -325,72 +425,79 @@ test('updateListKeys', () => {
 });
 
 test('actionHandlers.reset', () => {
-	// Test validate payload
-	expect(defaultIntentHandlers.reset.validate?.(undefined)).toBe(true);
-	expect(defaultIntentHandlers.reset.validate?.({})).toBe(true);
-	expect(defaultIntentHandlers.reset.validate?.({ defaultValue: null })).toBe(
-		true,
-	);
+	// Test parse payload
+	expect(defaultIntentHandlers.reset.parse?.(undefined)).toBe(undefined);
+	expect(defaultIntentHandlers.reset.parse?.({})).toEqual({});
+	expect(defaultIntentHandlers.reset.parse?.({ defaultValue: null })).toEqual({
+		defaultValue: null,
+	});
 	expect(
-		defaultIntentHandlers.reset.validate?.({ defaultValue: { email: 'test' } }),
-	).toBe(true);
-	expect(defaultIntentHandlers.reset.validate?.('string')).toBe(false);
+		defaultIntentHandlers.reset.parse?.({ defaultValue: { email: 'test' } }),
+	).toEqual({ defaultValue: { email: 'test' } });
+	expect(() => defaultIntentHandlers.reset.parse?.('string' as any)).toThrow();
 
-	// Test onApply with no options
-	expect(defaultIntentHandlers.reset.resolve?.({}, undefined)).toBeUndefined();
-
-	// Test onApply with null defaultValue
+	// Test resolve with no options
 	expect(
-		defaultIntentHandlers.reset.resolve?.({}, { defaultValue: null }),
+		defaultIntentHandlers.reset.resolve?.({ value: {}, payload: undefined }),
+	).toBeUndefined();
+
+	// Test resolve with null defaultValue
+	expect(
+		defaultIntentHandlers.reset.resolve?.({
+			value: {},
+			payload: { defaultValue: null },
+		}),
 	).toEqual({});
 
-	// Test onApply with custom defaultValue
+	// Test resolve with custom defaultValue
 	expect(
-		defaultIntentHandlers.reset.resolve?.(
-			{},
-			{ defaultValue: { email: 'test@example.com' } },
-		),
+		defaultIntentHandlers.reset.resolve?.({
+			value: {},
+			payload: { defaultValue: { email: 'test@example.com' } },
+		}),
 	).toEqual({ email: 'test@example.com' });
 });
 
 test('actionHandlers.validate', () => {
-	// Test validate payload
-	expect(defaultIntentHandlers.validate.validate?.('email')).toBe(true);
-	expect(defaultIntentHandlers.validate.validate?.(undefined)).toBe(true);
-	expect(defaultIntentHandlers.validate.validate?.(123)).toBe(false);
+	// Test parse payload
+	expect(defaultIntentHandlers.validate.parse?.('email')).toBe('email');
+	expect(defaultIntentHandlers.validate.parse?.(undefined)).toBe(undefined);
+	expect(() => defaultIntentHandlers.validate.parse?.(123 as any)).toThrow();
 });
 
 test('actionHandlers.update', () => {
-	// Test validate payload
+	// Test parse payload
 	expect(
-		defaultIntentHandlers.update.validate?.({ name: 'email', value: 'test' }),
-	).toBe(true);
+		defaultIntentHandlers.update.parse?.({ name: 'email', value: 'test' }),
+	).toEqual({ name: 'email', value: 'test' });
 	expect(
-		defaultIntentHandlers.update.validate?.({
+		defaultIntentHandlers.update.parse?.({
 			name: 'email',
 			index: 0,
 			value: 'test',
 		}),
-	).toBe(true);
-	expect(defaultIntentHandlers.update.validate?.({ name: 123 })).toBe(false);
-	expect(defaultIntentHandlers.update.validate?.('string')).toBe(false);
+	).toEqual({ name: 'email', index: 0, value: 'test' });
+	expect(() =>
+		defaultIntentHandlers.update.parse?.({ name: 123 } as any),
+	).toThrow();
+	expect(() => defaultIntentHandlers.update.parse?.('string' as any)).toThrow();
 
-	// Test onApply with explicit value
+	// Test resolve with explicit value
 	expect(
-		defaultIntentHandlers.update.resolve?.(
-			{ email: 'old@example.com' },
-			{ name: 'email', value: 'new@example.com' },
-		),
+		defaultIntentHandlers.update.resolve?.({
+			value: { email: 'old@example.com' },
+			payload: { name: 'email', value: 'new@example.com' },
+		}),
 	).toEqual({
 		email: 'new@example.com',
 	});
 
 	// Test update field value to null
 	expect(
-		defaultIntentHandlers.update.resolve?.(
-			{ username: 'John', email: 'test@example.com' },
-			{ name: 'email', value: null },
-		),
+		defaultIntentHandlers.update.resolve?.({
+			value: { username: 'John', email: 'test@example.com' },
+			payload: { name: 'email', value: null },
+		}),
 	).toEqual({
 		username: 'John',
 		email: null,
@@ -398,35 +505,47 @@ test('actionHandlers.update', () => {
 
 	// Test update form value to null (clear all fields)
 	expect(
-		defaultIntentHandlers.update.resolve?.(
-			{ email: 'test@example.com', name: 'John' },
-			{ value: null },
-		),
+		defaultIntentHandlers.update.resolve?.({
+			value: { email: 'test@example.com', name: 'John' },
+			payload: { value: null },
+		}),
 	).toEqual({});
 
 	// Test with array index
 	const arrayPayload = { items: ['a', 'b', 'c'] };
 	const arrayOptions = { name: 'items', index: 1, value: 'updated' };
 	expect(
-		defaultIntentHandlers.update.resolve?.(arrayPayload, arrayOptions),
+		defaultIntentHandlers.update.resolve?.({
+			value: arrayPayload,
+			payload: arrayOptions,
+		}),
 	).toEqual({
 		items: ['a', 'updated', 'c'],
 	});
 });
 
 test('actionHandlers.insert', () => {
-	// Test validate payload
-	expect(defaultIntentHandlers.insert.validate?.({ name: 'items' })).toBe(true);
+	// Test parse payload
+	expect(defaultIntentHandlers.insert.parse?.({ name: 'items' })).toEqual({
+		name: 'items',
+	});
 	expect(
-		defaultIntentHandlers.insert.validate?.({ name: 'items', index: 0 }),
-	).toBe(true);
-	expect(defaultIntentHandlers.insert.validate?.({ name: 123 })).toBe(false);
-	expect(defaultIntentHandlers.insert.validate?.('string')).toBe(false);
+		defaultIntentHandlers.insert.parse?.({ name: 'items', index: 0 }),
+	).toEqual({ name: 'items', index: 0 });
+	expect(() =>
+		defaultIntentHandlers.insert.parse?.({ name: 123 } as any),
+	).toThrow();
+	expect(() => defaultIntentHandlers.insert.parse?.('string' as any)).toThrow();
 
-	// Test onApply
+	// Test resolve
 	const payload = { items: ['a', 'b'] };
 	const options = { name: 'items', defaultValue: 'new' };
-	expect(defaultIntentHandlers.insert.resolve?.(payload, options)).toEqual({
+	expect(
+		defaultIntentHandlers.insert.resolve?.({
+			value: payload,
+			payload: options,
+		}),
+	).toEqual({
 		items: ['a', 'b', 'new'],
 	});
 
@@ -440,9 +559,12 @@ test('actionHandlers.insert', () => {
 		error: null,
 	};
 	expect(
-		defaultIntentHandlers.insert.apply?.(validResult, {
-			name: 'items',
-			from: 'newItem',
+		defaultIntentHandlers.insert.apply?.({
+			result: validResult,
+			payload: {
+				name: 'items',
+				from: 'newItem',
+			},
 		}),
 	).toBe(validResult);
 
@@ -456,9 +578,12 @@ test('actionHandlers.insert', () => {
 		error: { formErrors: [], fieldErrors: { 'items[0]': ['Invalid'] } },
 	};
 	expect(
-		defaultIntentHandlers.insert.apply?.(invalidResult, {
-			name: 'items',
-			from: 'newItem',
+		defaultIntentHandlers.insert.apply?.({
+			result: invalidResult,
+			payload: {
+				name: 'items',
+				from: 'newItem',
+			},
 		}),
 	).toEqual({
 		...invalidResult,
@@ -488,9 +613,12 @@ test('actionHandlers.insert', () => {
 		},
 	};
 	expect(
-		defaultIntentHandlers.insert.apply?.(resultWithFromError, {
-			name: 'items',
-			from: 'newItem',
+		defaultIntentHandlers.insert.apply?.({
+			result: resultWithFromError,
+			payload: {
+				name: 'items',
+				from: 'newItem',
+			},
 		}),
 	).toEqual({
 		...resultWithFromError,
@@ -510,9 +638,12 @@ test('actionHandlers.insert', () => {
 		error: { formErrors: [], fieldErrors: { items: ['Max 2 items'] } },
 	};
 	expect(
-		defaultIntentHandlers.insert.apply?.(maxResult, {
-			name: 'items',
-			onInvalid: 'revert',
+		defaultIntentHandlers.insert.apply?.({
+			result: maxResult,
+			payload: {
+				name: 'items',
+				onInvalid: 'revert',
+			},
 		}),
 	).toEqual({
 		...maxResult,
@@ -526,28 +657,36 @@ test('actionHandlers.insert', () => {
 		error: null,
 	};
 	expect(
-		defaultIntentHandlers.insert.apply?.(normalResult, {
-			name: 'items',
+		defaultIntentHandlers.insert.apply?.({
+			result: normalResult,
+			payload: {
+				name: 'items',
+			},
 		}),
 	).toBe(normalResult);
 });
 
 test('actionHandlers.remove', () => {
-	// Test validate payload
+	// Test parse payload
 	expect(
-		defaultIntentHandlers.remove.validate?.({ name: 'items', index: 0 }),
-	).toBe(true);
-	expect(defaultIntentHandlers.remove.validate?.({ name: 'items' })).toBe(
-		false,
-	);
-	expect(defaultIntentHandlers.remove.validate?.({ name: 123, index: 0 })).toBe(
-		false,
-	);
+		defaultIntentHandlers.remove.parse?.({ name: 'items', index: 0 }),
+	).toEqual({ name: 'items', index: 0 });
+	expect(() =>
+		defaultIntentHandlers.remove.parse?.({ name: 'items' } as any),
+	).toThrow();
+	expect(() =>
+		defaultIntentHandlers.remove.parse?.({ name: 123, index: 0 } as any),
+	).toThrow();
 
-	// Test onApply
+	// Test resolve
 	const payload = { items: ['a', 'b', 'c'] };
 	const options = { name: 'items', index: 1 };
-	expect(defaultIntentHandlers.remove.resolve?.(payload, options)).toEqual({
+	expect(
+		defaultIntentHandlers.remove.resolve?.({
+			value: payload,
+			payload: options,
+		}),
+	).toEqual({
 		items: ['a', 'c'],
 	});
 
@@ -557,10 +696,13 @@ test('actionHandlers.remove', () => {
 		error: { formErrors: [], fieldErrors: { items: ['Min 1 item'] } },
 	};
 	expect(
-		defaultIntentHandlers.remove.apply?.(minResult, {
-			name: 'items',
-			index: 0,
-			onInvalid: 'revert',
+		defaultIntentHandlers.remove.apply?.({
+			result: minResult,
+			payload: {
+				name: 'items',
+				index: 0,
+				onInvalid: 'revert',
+			},
 		}),
 	).toEqual({
 		...minResult,
@@ -574,11 +716,14 @@ test('actionHandlers.remove', () => {
 		error: { formErrors: [], fieldErrors: { items: ['Min 1 item'] } },
 	};
 	expect(
-		defaultIntentHandlers.remove.apply?.(insertResult, {
-			name: 'items',
-			index: 0,
-			onInvalid: 'insert',
-			defaultValue: '',
+		defaultIntentHandlers.remove.apply?.({
+			result: insertResult,
+			payload: {
+				name: 'items',
+				index: 0,
+				onInvalid: 'insert',
+				defaultValue: '',
+			},
 		}),
 	).toEqual({
 		...insertResult,
@@ -591,9 +736,12 @@ test('actionHandlers.remove', () => {
 		error: { formErrors: [], fieldErrors: { items: ['Min 1 item'] } },
 	};
 	expect(
-		defaultIntentHandlers.remove.apply?.(noRevertResult, {
-			name: 'items',
-			index: 0,
+		defaultIntentHandlers.remove.apply?.({
+			result: noRevertResult,
+			payload: {
+				name: 'items',
+				index: 0,
+			},
 		}),
 	).toBe(noRevertResult);
 
@@ -603,29 +751,37 @@ test('actionHandlers.remove', () => {
 		error: null,
 	};
 	expect(
-		defaultIntentHandlers.remove.apply?.(normalResult, {
-			name: 'items',
-			index: 1,
+		defaultIntentHandlers.remove.apply?.({
+			result: normalResult,
+			payload: {
+				name: 'items',
+				index: 1,
+			},
 		}),
 	).toBe(normalResult);
 });
 
 test('actionHandlers.reorder', () => {
-	// Test validate payload
+	// Test parse payload
 	expect(
-		defaultIntentHandlers.reorder.validate?.({ name: 'items', from: 0, to: 2 }),
-	).toBe(true);
-	expect(
-		defaultIntentHandlers.reorder.validate?.({ name: 'items', from: 0 }),
-	).toBe(false);
-	expect(
-		defaultIntentHandlers.reorder.validate?.({ name: 123, from: 0, to: 2 }),
-	).toBe(false);
+		defaultIntentHandlers.reorder.parse?.({ name: 'items', from: 0, to: 2 }),
+	).toEqual({ name: 'items', from: 0, to: 2 });
+	expect(() =>
+		defaultIntentHandlers.reorder.parse?.({ name: 'items', from: 0 } as any),
+	).toThrow();
+	expect(() =>
+		defaultIntentHandlers.reorder.parse?.({ name: 123, from: 0, to: 2 } as any),
+	).toThrow();
 
-	// Test onApply
+	// Test resolve
 	const payload = { items: ['a', 'b', 'c', 'd'] };
 	const options = { name: 'items', from: 1, to: 3 };
-	expect(defaultIntentHandlers.reorder.resolve?.(payload, options)).toEqual({
+	expect(
+		defaultIntentHandlers.reorder.resolve?.({
+			value: payload,
+			payload: options,
+		}),
+	).toEqual({
 		items: ['a', 'c', 'd', 'b'],
 	});
 });

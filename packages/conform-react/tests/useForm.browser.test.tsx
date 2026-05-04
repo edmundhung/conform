@@ -6,6 +6,7 @@ import {
 	type FormValue,
 	type FormError,
 	type FormOptions,
+	defineIntent,
 	useForm as useFormDefault,
 	report,
 	parseSubmission,
@@ -14,6 +15,7 @@ import {
 } from '../future';
 import { expectErrorMessage, expectNoErrorMessages } from './helpers';
 import { isGlobalInstance } from '@conform-to/dom';
+import { getPathArray, updatePathIndex, updatePathValue } from '../future/util';
 
 type MockSchema<Shape = any> = {
 	__brand: 'mockSchema';
@@ -970,25 +972,116 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 		await expectNoErrorMessages(task2.content);
 	});
 
-	test.todo('custom intent', async () => {
-		// const test = defineIntent({
-		// 	validate() {
-		// 		return true;
-		// 	}
-		// });
-		// const screen = render(
-		// 	<Form
-		// 		intents={{ test }}
-		// 		defaultValue={{
-		// 			title: 'example',
-		// 			description: 'hello world',
-		// 			tasks: [{ content: 'Default Task', completed: false }],
-		// 		}}
-		// 	/>,
-		// );
-		// const form = getForm(screen);
-		// const task1 = getTaskFieldset(screen, 1);
-		// const task2 = getTaskFieldset(screen, 2);
+	test('custom intent', async () => {
+		const duplicateTask = defineIntent<
+			(name: string, index: number) => void,
+			{
+				name: string;
+				index: number;
+			}
+		>({
+			parse(name, index) {
+				if (typeof name !== 'string' || typeof index !== 'number') {
+					throw new Error('Invalid duplicateTask arguments');
+				}
+
+				return { name, index };
+			},
+			resolve({ value, payload }) {
+				const list = Array.from(getPathArray(value, payload.name));
+				const item = list[payload.index];
+
+				if (typeof item === 'undefined') {
+					return value;
+				}
+
+				list.splice(payload.index + 1, 0, item);
+
+				return updatePathValue(value, payload.name, list);
+			},
+			touch({ name, payload }) {
+				return name === payload.name;
+			},
+			move({ name, payload }) {
+				return updatePathIndex(name, payload.name, (currentIndex) =>
+					currentIndex > payload.index ? currentIndex + 1 : currentIndex,
+				);
+			},
+		});
+
+		function CustomIntentForm() {
+			const { form, fields, intent } = useForm({
+				defaultValue: {
+					tasks: [{ content: 'Task A' }, { content: 'Task B' }],
+				},
+				intents: {
+					duplicateTask,
+				},
+				onValidate({ payload, error }) {
+					if (Array.isArray(payload.tasks) && payload.tasks.length > 2) {
+						error.fieldErrors.tasks = ['Too many tasks'];
+					}
+
+					return error;
+				},
+				onSubmit(event) {
+					event.preventDefault();
+				},
+			});
+			const taskFields = fields.tasks.getFieldList();
+
+			return (
+				<form {...form.props}>
+					<div data-testid="tasks-error">
+						{fields.tasks.errors?.join(', ') ?? 'n/a'}
+					</div>
+					{taskFields.map((task, index) => {
+						const taskField = task.getFieldset();
+
+						return (
+							<div key={task.key}>
+								<input
+									name={taskField.content.name}
+									defaultValue={taskField.content.defaultValue}
+									aria-label={`Task #${index + 1} Content`}
+								/>
+								<input
+									defaultValue={`Local ${index + 1}`}
+									aria-label={`Task #${index + 1} Local`}
+								/>
+								<button
+									type="button"
+									onClick={() => intent.duplicateTask(fields.tasks.name, index)}
+								>
+									Duplicate Task #{index + 1}
+								</button>
+							</div>
+						);
+					})}
+				</form>
+			);
+		}
+
+		const screen = render(<CustomIntentForm />);
+		const localTask2 = screen.getByLabelText('Task #2 Local');
+
+		await userEvent.type(localTask2, ' preserved');
+		await userEvent.click(
+			screen.getByRole('button', { name: 'Duplicate Task #1' }),
+		);
+
+		await expect
+			.element(screen.getByTestId('tasks-error'))
+			.toHaveTextContent('Too many tasks');
+		await expect
+			.element(screen.getByLabelText('Task #2 Content'))
+			.toHaveValue('Task A');
+		await expect
+			.element(screen.getByLabelText('Task #3 Content'))
+			.toHaveValue('Task B');
+		await expect
+			.element(screen.getByLabelText('Task #3 Local'))
+			.toHaveValue('Local 2 preserved');
 	});
 
 	test('server report', async () => {

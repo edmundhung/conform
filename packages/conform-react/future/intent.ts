@@ -11,24 +11,18 @@ import {
 	getRelativePath,
 } from '@conform-to/dom/future';
 import {
-	createPathIndexUpdater,
 	getPathArray,
-	generateUniqueKey,
 	isUndefined,
 	isOptional,
 	isNumber,
 	isString,
-	appendUniqueItem,
-	compactMap,
-	merge,
 	updatePathValue,
 	transformKeys,
 	isNullable,
+	updatePathIndex,
 } from './util';
 import type {
 	EmptyIntent,
-	FormAction,
-	FormState,
 	IntentHandler,
 	NormalizeIntentType,
 	TypedIntentDefinition,
@@ -42,7 +36,11 @@ import type {
 	ReorderIntent,
 	DefaultIntentHandlers,
 } from './types';
-import { getDefaultListKey } from './state';
+
+type TransportIntent = {
+	type: string;
+	args: unknown[];
+};
 
 export function defineIntent<
 	Definition extends TypedIntentDefinition = EmptyIntent,
@@ -50,167 +48,158 @@ export function defineIntent<
 export function defineIntent<Payload>(
 	definition: IntentHandler<(payload: Payload) => void>,
 ): IntentHandler<(payload: Payload) => void>;
-export function defineIntent<Definition = EmptyIntent>(
-	definition: IntentHandler<NormalizeIntentType<Definition>> = {},
-): IntentHandler<NormalizeIntentType<Definition>> {
+export function defineIntent<
+	Dispatch extends TypedIntentDefinition | ((...args: any[]) => void),
+	Payload,
+>(
+	definition: IntentHandler<NormalizeIntentType<Dispatch>, Payload>,
+): IntentHandler<NormalizeIntentType<Dispatch>, Payload>;
+export function defineIntent<Definition = EmptyIntent, Payload = never>(
+	definition: IntentHandler<NormalizeIntentType<Definition>, Payload> = {},
+): IntentHandler<NormalizeIntentType<Definition>, Payload> {
 	return definition;
 }
 
-/**
- * Serializes intent to string format: "type" or "type(payload)".
- */
-export function serializeIntent<Intent extends UnknownIntent = UnknownIntent>(
-	intent: Intent,
-): string {
-	if (typeof intent.payload === 'undefined') {
-		return intent.type;
-	}
-
-	return `${intent.type}(${JSON.stringify(intent.payload)})`;
+export function mergeIntentHandlers<
+	DefaultHandlers extends Record<string, IntentHandler<any, any>>,
+	CustomHandlers extends Record<string, IntentHandler<any, any>> | undefined,
+>(
+	defaultHandlers: DefaultHandlers,
+	customHandlers: CustomHandlers,
+): DefaultHandlers & CustomHandlers {
+	return {
+		...defaultHandlers,
+		...customHandlers,
+	};
 }
 
 /**
- * Parses serialized intent string back to intent object.
+ * Serializes a transport intent to string format.
  */
-export function deserializeIntent(value: string): UnknownIntent {
-	let type = value;
-	let payload: unknown;
-	let serializedPayload: string | undefined;
-
-	const openParenIndex = value.indexOf('(');
-
-	if (openParenIndex > 0 && value[value.length - 1] === ')') {
-		type = value.slice(0, openParenIndex);
-		serializedPayload = value.slice(openParenIndex + 1, -1);
+export function serializeIntent(intent: TransportIntent): string {
+	if (intent.args.length === 0) {
+		return intent.type;
 	}
 
-	if (serializedPayload) {
-		try {
-			payload = JSON.parse(serializedPayload);
-		} catch {
-			// Ignore the error
+	return `${intent.type}(${JSON.stringify(intent.args).slice(1, -1)})`;
+}
+
+/**
+ * Parses the serialized intent string into a transport intent.
+ */
+export function deserializeIntent(serializedIntent: string): TransportIntent {
+	let type = serializedIntent;
+	let args: Array<unknown> = [];
+
+	const openParenIndex = serializedIntent.indexOf('(');
+
+	if (
+		openParenIndex > 0 &&
+		serializedIntent[serializedIntent.length - 1] === ')'
+	) {
+		type = serializedIntent.slice(0, openParenIndex);
+
+		const serializedArgs = serializedIntent.slice(openParenIndex + 1, -1);
+
+		if (serializedArgs !== '') {
+			try {
+				args = JSON.parse(`[${serializedArgs}]`);
+			} catch {
+				// Ignore error and leave args as empty array
+			}
 		}
 	}
 
 	return {
 		type,
-		payload,
+		args,
 	};
 }
 
-export function normalizeIntent(
-	value: string | null,
+export function parseIntent(
+	intentValue: string | null,
 	options?: {
-		handlers?: Record<string, IntentHandler>;
+		handlers?: Record<string, IntentHandler<any, any>>;
 	},
-): UnknownIntent {
-	if (!value) {
+): UnknownIntent | undefined {
+	if (!intentValue) {
 		return { type: 'submit' };
 	}
 
-	const intent = deserializeIntent(value);
-	const handlers: Record<string, IntentHandler> =
-		options?.handlers ?? defaultIntentHandlers;
-	const handler = handlers[intent.type];
+	const transportIntent = deserializeIntent(intentValue);
+	const handlers: Record<string, IntentHandler<any, any>> = options?.handlers ??
+	defaultIntentHandlers;
+	const handler = handlers[transportIntent.type];
 
-	if (
-		handler &&
-		!Object.keys(handlers).includes(intent.type) &&
-		!(handler.validate?.(intent.payload) ?? true)
-	) {
-		return { type: 'submit' };
+	if (typeof handler?.parse === 'function') {
+		try {
+			return {
+				type: transportIntent.type,
+				payload: handler.parse(...transportIntent.args),
+			};
+		} catch {
+			// eslint-disable-next-line no-console
+			console.warn(
+				`Failed to parse "${transportIntent.type}" intent arguments. Falling back to undefined intent.`,
+			);
+			return undefined;
+		}
 	}
 
-	return intent;
+	if (transportIntent.args.length > 1) {
+		// eslint-disable-next-line no-console
+		console.warn(
+			`Failed to parse "${transportIntent.type}" intent arguments. Falling back to undefined intent.`,
+		);
+		return undefined;
+	}
+
+	return {
+		type: transportIntent.type,
+		payload: transportIntent.args[0],
+	};
 }
 
-/**
- * Applies intent transformation to submission payload.
- * Returns modified payload or null for reset intent.
- */
 export function resolveIntent(
 	submission: Submission,
-	options?: {
-		handlers?: Record<string, IntentHandler>;
-		intent?: UnknownIntent | null;
+	options: {
+		handlers: Record<string, IntentHandler<any, any>>;
+		intent: UnknownIntent | undefined;
 	},
 ): Record<string, FormValue> | undefined {
-	const intent =
-		options?.intent ??
-		(submission.intent ? deserializeIntent(submission.intent) : null);
+	const handlers = options.handlers;
+	const intent = options.intent;
+	const handler = intent ? handlers[intent.type] : null;
 
-	if (!intent) {
+	if (!intent || !handler?.resolve) {
 		return submission.payload;
 	}
 
-	const handlers: Record<string, IntentHandler> =
-		options?.handlers ?? defaultIntentHandlers;
-	const handler = handlers[intent.type];
-
-	if (handler?.resolve && (handler.validate?.(intent.payload) ?? true)) {
-		return handler.resolve(submission.payload, intent.payload);
-	}
-
-	return submission.payload;
+	return handler.resolve({
+		value: submission.payload,
+		payload: intent.payload,
+	});
 }
 
-/**
- * Resolves an intent after validation by calling the handler's onResolve.
- * Mutates the result with updated value/error and returns whether the intent was cancelled.
- */
 export function applyIntent<ErrorShape>(
 	result: SubmissionResult<ErrorShape>,
-	intent: UnknownIntent | null,
-	options?: {
-		handlers?: Record<string, IntentHandler>;
+	intent: UnknownIntent | undefined,
+	options: {
+		handlers: Record<string, IntentHandler<any, any>>;
 	},
 ): SubmissionResult<ErrorShape> {
 	if (intent) {
-		const handlers: Record<string, IntentHandler> =
-			options?.handlers ?? defaultIntentHandlers;
-		const handler = handlers[intent.type];
+		const handler = options.handlers[intent.type];
 
-		if (handler?.apply && (handler.validate?.(intent.payload) ?? true)) {
-			return handler.apply(result, intent.payload);
+		if (handler?.apply) {
+			return handler.apply({
+				result,
+				payload: intent.payload,
+			});
 		}
 	}
 
 	return result;
-}
-
-function touchValidatedFields<ErrorShape>(
-	state: FormState<ErrorShape>,
-	action: FormAction<
-		ErrorShape,
-		{
-			type: string;
-			payload: unknown;
-		},
-		{
-			reset: (
-				defaultValue?: Record<string, unknown> | null,
-			) => FormState<ErrorShape>;
-			cancelled?: boolean;
-		}
-	>,
-	name = '',
-) {
-	const basePath = parsePath(name);
-	const allFields = action.error
-		? action.submission.fields.concat(Object.keys(action.error.fieldErrors))
-		: action.submission.fields;
-
-	let touchedFields = appendUniqueItem(state.touchedFields, name);
-
-	for (const field of allFields) {
-		if (getRelativePath(field, basePath) !== null) {
-			touchedFields = appendUniqueItem(touchedFields, field);
-		}
-	}
-
-	return merge(state, {
-		touchedFields,
-	});
 }
 
 export function insertItem<Item>(
@@ -250,27 +239,31 @@ export function updateListKeys(
 }
 
 export const submit = defineIntent<SubmitIntent>({
-	update(state, action) {
-		return touchValidatedFields(state, action);
+	touch() {
+		return true;
 	},
 });
 
 export const reset = defineIntent<ResetIntent>({
-	validate(options) {
-		return (
-			isOptional(options, isPlainObject) &&
-			(isUndefined(options?.defaultValue) ||
-				isNullable(options?.defaultValue, isPlainObject))
-		);
+	parse(options) {
+		if (
+			!isOptional(options, isPlainObject) ||
+			(!isUndefined(options?.defaultValue) &&
+				!isNullable(options?.defaultValue, isPlainObject))
+		) {
+			throw new Error('Invalid reset intent arguments');
+		}
+
+		return options;
 	},
-	resolve(_, options) {
-		if (options?.defaultValue === null) {
+	resolve({ payload }) {
+		if (payload?.defaultValue === null) {
 			return {};
 		}
 
-		return options?.defaultValue;
+		return payload?.defaultValue;
 	},
-	apply(result) {
+	apply({ result }) {
 		return {
 			...result,
 			reset: true,
@@ -279,91 +272,77 @@ export const reset = defineIntent<ResetIntent>({
 });
 
 export const validate = defineIntent<ValidateIntent>({
-	validate(name) {
-		return isOptional(name, isString);
+	parse(name) {
+		if (!isOptional(name, isString)) {
+			throw new Error('Invalid validate intent arguments');
+		}
+
+		return name;
 	},
-	update(state, action) {
-		return touchValidatedFields(state, action, action.intent.payload ?? '');
+	touch({ name, payload }) {
+		return getRelativePath(name, payload ?? '') !== null;
 	},
 });
 
 export const update = defineIntent<UpdateIntent>({
-	validate(options) {
-		return (
-			isPlainObject(options) &&
-			isOptional(options.name, isString) &&
-			isOptional(options.index, isNumber) &&
-			!isUndefined(options.value)
-		);
+	parse(options) {
+		if (
+			!isPlainObject(options) ||
+			!isOptional(options.name, isString) ||
+			!isOptional(options.index, isNumber) ||
+			isUndefined(options.value)
+		) {
+			throw new Error('Invalid update intent arguments');
+		}
+
+		return options;
 	},
-	resolve(value, options) {
-		const name = appendPath(options.name, options.index);
+	resolve({ value, payload }) {
+		const fieldName = appendPath(payload.name, payload.index);
 		return updatePathValue(
 			value,
-			name,
-			options.value ?? (name === '' ? {} : null),
-		) as Record<string, FormValue>;
+			fieldName,
+			payload.value ?? (fieldName === '' ? {} : null),
+		);
 	},
-	update(state, { type, submission, intent }) {
-		if (type === 'server') {
-			return state;
-		}
-
-		let listKeys = state.listKeys;
-
-		// Update the keys only for client updates to avoid double updates if there is no client validation
-		if (type === 'client') {
-			// TODO: Do we really need to update the keys here?
-			const name = appendPath(intent.payload.name, intent.payload.index);
-			// Remove all child keys
-			listKeys = name === '' ? {} : updateListKeys(state.listKeys, name);
-		}
-
-		const basePath = parsePath(intent.payload.name);
-		let touchedFields = state.touchedFields;
-
-		for (const field of submission.fields) {
-			if (basePath.length === 0 || getRelativePath(field, basePath) !== null) {
-				touchedFields = appendUniqueItem(touchedFields, field);
-			}
-		}
-
-		return {
-			...state,
-			listKeys,
-			touchedFields,
-		};
+	touch({ name, payload }) {
+		const fieldName = appendPath(payload.name, payload.index);
+		return getRelativePath(name, fieldName) !== null;
 	},
 });
 
 export const insert = defineIntent<InsertIntent>({
-	validate(options) {
-		return (
-			isPlainObject(options) &&
-			isString(options.name) &&
-			isOptional(options.index, isNumber) &&
-			isOptional(options.from, isString) &&
-			isOptional(options.onInvalid, (mode) => mode === 'revert')
-		);
-	},
-	resolve(value, options) {
-		let result = value;
-		let itemValue = options.defaultValue;
-
-		if (options.from !== undefined) {
-			itemValue = getPathValue(result, options.from);
-			result = updatePathValue(result, options.from, '');
+	parse(options) {
+		if (
+			!isPlainObject(options) ||
+			!isString(options.name) ||
+			!isOptional(options.index, isNumber) ||
+			!isOptional(options.from, isString) ||
+			!isOptional(options.onInvalid, (mode) => mode === 'revert')
+		) {
+			throw new Error('Invalid insert intent arguments');
 		}
 
-		const list = Array.from(getPathArray(result, options.name));
-		insertItem(list, itemValue, options.index ?? list.length);
-		return updatePathValue(result, options.name, list);
+		return options;
 	},
-	apply(result, options) {
+	resolve({ value, payload }) {
+		let result = value;
+		let itemValue = payload.defaultValue;
+
+		if (payload.from !== undefined) {
+			itemValue = getPathValue(result, payload.from);
+			result = updatePathValue(result, payload.from, '');
+		}
+
+		const list = Array.from(getPathArray(result, payload.name));
+		insertItem(list, itemValue, payload.index ?? list.length);
+		return updatePathValue(result, payload.name, list);
+	},
+	apply({ result, payload }) {
 		// Warn if validation result is not yet available
 		if (
 			typeof result.error === 'undefined' &&
-			(options.onInvalid || options.from)
+			(payload.onInvalid || payload.from)
 		) {
 			// eslint-disable-next-line no-console
 			console.warn(
@@ -373,22 +352,22 @@ export const insert = defineIntent<InsertIntent>({
 			return result;
 		}
 
-		const listError = result.error?.fieldErrors[options.name];
+		const listError = result.error?.fieldErrors[payload.name];
 
-		if (options.onInvalid === 'revert' && listError != null) {
+		if (payload.onInvalid === 'revert' && listError != null) {
 			return {
 				...result,
 				targetValue: undefined,
 			};
 		}
 
-		if (options.from !== undefined) {
+		if (payload.from !== undefined) {
 			const index =
-				options.index ??
-				getPathArray(result.submission.payload, options.name).length;
-			const insertedItemPath = appendPath(options.name, index);
+				payload.index ??
+				getPathArray(result.submission.payload, payload.name).length;
+			const insertedItemPath = appendPath(payload.name, index);
 			const insertedItemError = result.error?.fieldErrors[insertedItemPath];
-			const fromFieldError = result.error?.fieldErrors[options.from];
+			const fromFieldError = result.error?.fieldErrors[payload.from];
 
 			if (fromFieldError != null) {
 				return {
@@ -412,7 +391,7 @@ export const insert = defineIntent<InsertIntent>({
 						formErrors: result.error?.formErrors ?? null,
 						fieldErrors: {
 							...result.error?.fieldErrors,
-							[options.from]: insertedItemError,
+							[payload.from]: insertedItemError,
 							[insertedItemPath]: null,
 						},
 					},
@@ -422,84 +401,43 @@ export const insert = defineIntent<InsertIntent>({
 
 		return result;
 	},
-	update(state, { type, submission, intent, ctx }) {
-		if (type === 'server') {
-			return state;
+	touch({ name, payload }) {
+		return name === payload.name || name === payload.from;
+	},
+	move({ name, payload, status }) {
+		if (status !== 'applied' || typeof payload.index === 'undefined') {
+			return name;
 		}
 
-		const from = intent.payload.from;
-		const index =
-			intent.payload.index ??
-			getPathArray(submission.payload, intent.payload.name).length;
-		const updateListIndex = createPathIndexUpdater(
-			intent.payload.name,
-			(currentIndex) =>
-				index <= currentIndex ? currentIndex + 1 : currentIndex,
+		return updatePathIndex(name, payload.name, (currentIndex) =>
+			payload.index !== undefined && payload.index <= currentIndex
+				? currentIndex + 1
+				: currentIndex,
 		);
-
-		let touchedFields = state.touchedFields;
-		let listKeys = state.listKeys;
-
-		if (!ctx.cancelled) {
-			touchedFields = compactMap(state.touchedFields, updateListIndex);
-
-			// Update the keys only for client updates to avoid double updates if there is no client validation
-			if (type === 'client') {
-				const selectedListKeys = Array.from(
-					state.listKeys[intent.payload.name] ??
-						getDefaultListKey(
-							state.resetKey,
-							submission.payload,
-							intent.payload.name,
-						),
-				);
-
-				insertItem(selectedListKeys, generateUniqueKey(), index);
-
-				listKeys = {
-					// Remove all child keys
-					...updateListKeys(
-						state.listKeys,
-						appendPath(intent.payload.name, index),
-						updateListIndex,
-					),
-					// Update existing list keys
-					[intent.payload.name]: selectedListKeys,
-				};
-			}
-		}
-
-		touchedFields = appendUniqueItem(touchedFields, intent.payload.name);
-
-		if (from !== undefined) {
-			touchedFields = appendUniqueItem(touchedFields, from);
-		}
-
-		return {
-			...state,
-			listKeys,
-			touchedFields,
-		};
 	},
 });
 
 export const remove = defineIntent<RemoveIntent>({
-	validate(options) {
-		return (
-			isPlainObject(options) &&
-			isString(options.name) &&
-			isNumber(options.index) &&
-			isOptional(options.onInvalid, (v) => v === 'revert' || v === 'insert')
-		);
+	parse(options) {
+		if (
+			!isPlainObject(options) ||
+			!isString(options.name) ||
+			!isNumber(options.index) ||
+			!isOptional(options.onInvalid, (v) => v === 'revert' || v === 'insert')
+		) {
+			throw new Error('Invalid remove intent arguments');
+		}
+
+		return options;
 	},
-	resolve(value, options) {
-		const list = Array.from(getPathArray(value, options.name));
-		removeItem(list, options.index);
-		return updatePathValue(value, options.name, list);
+	resolve({ value, payload }) {
+		const list = Array.from(getPathArray(value, payload.name));
+		removeItem(list, payload.index);
+		return updatePathValue(value, payload.name, list);
 	},
-	apply(result, options) {
+	apply({ result, payload }) {
 		// Warn if validation result is not yet available
-		if (typeof result.error === 'undefined' && options.onInvalid) {
+		if (typeof result.error === 'undefined' && payload.onInvalid) {
 			// eslint-disable-next-line no-console
 			console.warn(
 				'intent.remove() with `onInvalid` requires the validation result to be available synchronously. ' +
@@ -508,8 +446,8 @@ export const remove = defineIntent<RemoveIntent>({
 			return result;
 		}
 
-		if (result.targetValue && result.error?.fieldErrors[options.name]) {
-			switch (options.onInvalid) {
+		if (result.targetValue && result.error?.fieldErrors[payload.name]) {
+			switch (payload.onInvalid) {
 				case 'revert':
 					return {
 						...result,
@@ -517,14 +455,14 @@ export const remove = defineIntent<RemoveIntent>({
 					};
 				case 'insert': {
 					const list = Array.from(
-						getPathArray(result.targetValue, options.name),
+						getPathArray(result.targetValue, payload.name),
 					);
-					insertItem(list, options.defaultValue, list.length);
+					insertItem(list, payload.defaultValue, list.length);
 					return {
 						...result,
 						targetValue: updatePathValue(
 							result.targetValue,
-							options.name,
+							payload.name,
 							list,
 						),
 					};
@@ -534,167 +472,70 @@ export const remove = defineIntent<RemoveIntent>({
 
 		return result;
 	},
-	update(state, { type, submission, intent, ctx }) {
-		if (type === 'server') {
-			return state;
+	touch({ name, payload }) {
+		return name === payload.name;
+	},
+	move({ name, payload, status }) {
+		if (status === 'reverted') {
+			return name;
 		}
 
-		const currentValue = submission.payload;
-		const updateListIndex = createPathIndexUpdater(
-			intent.payload.name,
-			(currentIndex) => {
-				if (intent.payload.index === currentIndex) {
-					return null;
-				}
-
-				return intent.payload.index < currentIndex
-					? currentIndex - 1
-					: currentIndex;
-			},
-		);
-
-		let touchedFields = state.touchedFields;
-		let listKeys = state.listKeys;
-
-		// If onInvalid is 'insert', we still remove the item and then insert a new item at the end
-		if (!ctx.cancelled || intent.payload.onInvalid === 'insert') {
-			touchedFields = compactMap(touchedFields, updateListIndex);
-
-			// Update the keys only for client updates to avoid double updates if there is no client validation
-			if (type === 'client') {
-				const selectedListKeys = Array.from(
-					state.listKeys[intent.payload.name] ??
-						getDefaultListKey(
-							state.resetKey,
-							currentValue,
-							intent.payload.name,
-						),
-				);
-
-				removeItem(selectedListKeys, intent.payload.index);
-
-				listKeys = {
-					// Remove all child keys
-					...updateListKeys(
-						state.listKeys,
-						appendPath(intent.payload.name, intent.payload.index),
-						updateListIndex,
-					),
-					// Update existing list keys
-					[intent.payload.name]: selectedListKeys,
-				};
-
-				if (ctx.cancelled) {
-					const index = selectedListKeys.length;
-
-					insertItem(selectedListKeys, generateUniqueKey(), index);
-
-					listKeys = {
-						// Remove all child keys
-						...updateListKeys(
-							state.listKeys,
-							appendPath(intent.payload.name, index),
-							updateListIndex,
-						),
-						// Update existing list keys
-						[intent.payload.name]: selectedListKeys,
-					};
-				}
+		return updatePathIndex(name, payload.name, (currentIndex) => {
+			if (payload.index === currentIndex) {
+				return null;
 			}
-		}
 
-		touchedFields = appendUniqueItem(touchedFields, intent.payload.name);
-
-		return {
-			...state,
-			listKeys: listKeys,
-			touchedFields,
-		};
+			return payload.index < currentIndex ? currentIndex - 1 : currentIndex;
+		});
 	},
 });
 
 export const reorder = defineIntent<ReorderIntent>({
-	validate(options) {
-		return (
-			isPlainObject(options) &&
-			isString(options.name) &&
-			isNumber(options.from) &&
-			isNumber(options.to)
-		);
-	},
-	resolve(value, options) {
-		const list = Array.from(getPathArray(value, options.name));
-		reorderItems(list, options.from, options.to);
-		return updatePathValue(value, options.name, list);
-	},
-	update(state, { type, submission, intent }) {
-		if (type === 'server') {
-			return state;
+	parse(options) {
+		if (
+			!isPlainObject(options) ||
+			!isString(options.name) ||
+			!isNumber(options.from) ||
+			!isNumber(options.to)
+		) {
+			throw new Error('Invalid reorder intent arguments');
 		}
 
-		const currentValue = submission.payload;
-		const updateListIndex = createPathIndexUpdater(
-			intent.payload.name,
-			(currentIndex) => {
-				if (intent.payload.from === intent.payload.to) {
-					return currentIndex;
-				}
+		return options;
+	},
+	resolve({ value, payload }) {
+		const list = Array.from(getPathArray(value, payload.name));
+		reorderItems(list, payload.from, payload.to);
+		return updatePathValue(value, payload.name, list);
+	},
+	touch({ name, payload }) {
+		return name === payload.name;
+	},
+	move({ name, payload }) {
+		return updatePathIndex(name, payload.name, (currentIndex) => {
+			if (payload.from === payload.to) {
+				return currentIndex;
+			}
 
-				if (currentIndex === intent.payload.from) {
-					return intent.payload.to;
-				}
+			if (currentIndex === payload.from) {
+				return payload.to;
+			}
 
-				if (intent.payload.from < intent.payload.to) {
-					return currentIndex > intent.payload.from &&
-						currentIndex <= intent.payload.to
-						? currentIndex - 1
-						: currentIndex;
-				}
-
-				return currentIndex >= intent.payload.to &&
-					currentIndex < intent.payload.from
-					? currentIndex + 1
+			if (payload.from < payload.to) {
+				return currentIndex > payload.from && currentIndex <= payload.to
+					? currentIndex - 1
 					: currentIndex;
-			},
-		);
-		const touchedFields = appendUniqueItem(
-			compactMap(state.touchedFields, updateListIndex),
-			intent.payload.name,
-		);
+			}
 
-		let keys = state.listKeys;
-
-		// Update the keys only for client updates to avoid double updates if there is no client validation
-		if (type === 'client') {
-			const listKeys = Array.from(
-				state.listKeys[intent.payload.name] ??
-					getDefaultListKey(state.resetKey, currentValue, intent.payload.name),
-			);
-
-			reorderItems(listKeys, intent.payload.from, intent.payload.to);
-
-			keys = {
-				// Remove all child keys
-				...updateListKeys(
-					state.listKeys,
-					appendPath(intent.payload.name, intent.payload.from),
-					updateListIndex,
-				),
-				// Update existing list keys
-				[intent.payload.name]: listKeys,
-			};
-		}
-
-		return {
-			...state,
-			listKeys: keys,
-			touchedFields,
-		};
+			return currentIndex >= payload.to && currentIndex < payload.from
+				? currentIndex + 1
+				: currentIndex;
+		});
 	},
 });
 
 /**
- * Built-in action handlers for form intents:
+ * Default Intent handlers
  * - reset: clears form data
  * - validate: marks fields as touched for validation display
  * - update: updates specific field values

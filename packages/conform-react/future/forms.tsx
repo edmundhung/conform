@@ -1,5 +1,9 @@
 import { isFieldElement, FieldName } from '@conform-to/dom';
-import { DEFAULT_INTENT_NAME, defaultSerialize } from '@conform-to/dom/future';
+import {
+	type Submission,
+	DEFAULT_INTENT_NAME,
+	defaultSerialize,
+} from '@conform-to/dom/future';
 import { useContext, useMemo, useId, createContext } from 'react';
 import {
 	focusFirstInvalidField,
@@ -30,20 +34,12 @@ import {
 	resolveSerialize,
 	validateStandardSchemaV1,
 } from './util';
-import { defaultIntentHandlers } from './intent';
-
-function mergeIntentHandlers<
-	DefaultHandlers extends Record<string, IntentHandler>,
-	CustomHandlers extends Record<string, IntentHandler> | undefined,
->(
-	defaultHandlers: DefaultHandlers,
-	customHandlers: CustomHandlers,
-): DefaultHandlers & CustomHandlers {
-	return {
-		...defaultHandlers,
-		...customHandlers,
-	};
-}
+import {
+	defaultIntentHandlers,
+	mergeIntentHandlers,
+	parseIntent as parseFormIntent,
+	resolveIntent as resolveFormIntent,
+} from './intent';
 
 export function configureForms<
 	BaseErrorShape = any,
@@ -51,7 +47,7 @@ export function configureForms<
 	SchemaErrorShape = string[],
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
-	CustomIntentHandlers extends Record<string, IntentHandler> = {},
+	CustomIntentHandlers extends Record<string, IntentHandler<any, any>> = {},
 >(
 	config: Partial<
 		FormsConfig<
@@ -198,7 +194,7 @@ export function configureForms<
 		Schema extends BaseSchema,
 		ErrorShape extends BaseErrorShape,
 		Value = InferOutput<Schema>,
-		IntentHandlers extends Record<string, IntentHandler> = {},
+		IntentHandlers extends Record<string, IntentHandler<any, any>> = {},
 	>(
 		schema: Schema,
 		options: RequireKey<
@@ -226,7 +222,7 @@ export function configureForms<
 			? SchemaErrorShape
 			: BaseErrorShape,
 		Value = InferOutput<Schema>,
-		IntentHandlers extends Record<string, IntentHandler> = {},
+		IntentHandlers extends Record<string, IntentHandler<any, any>> = {},
 	>(
 		schema: Schema,
 		options: RequireKey<
@@ -252,7 +248,7 @@ export function configureForms<
 		FormShape extends Record<string, any> = Record<string, any>,
 		ErrorShape extends BaseErrorShape = BaseErrorShape,
 		Value = undefined,
-		IntentHandlers extends Record<string, IntentHandler> = {},
+		IntentHandlers extends Record<string, IntentHandler<any, any>> = {},
 	>(
 		options: RequireKey<
 			FormOptions<
@@ -620,12 +616,46 @@ export function configureForms<
 		);
 	}
 
+	/**
+	 * Parses a serialized intent value using the configured default and global intent handlers.
+	 * Pass `handlers` to extend or override them for a specific call.
+	 */
+	function parseIntent(
+		intentValue: string | null,
+		options?: {
+			handlers?: Record<string, IntentHandler<any, any>>;
+		},
+	) {
+		return parseFormIntent(intentValue, {
+			handlers: mergeIntentHandlers(globalIntentHandlers, options?.handlers),
+		});
+	}
+
+	/**
+	 * Resolves a submission payload using the configured default and global intent handlers.
+	 * Pass `handlers` to extend or override them for a specific call.
+	 */
+	function resolveIntent(
+		submission: Submission,
+		options: {
+			intent: ReturnType<typeof parseFormIntent>;
+			handlers?: Record<string, IntentHandler<any, any>>;
+		},
+	) {
+		return resolveFormIntent(submission, {
+			...options,
+			handlers: mergeIntentHandlers(globalIntentHandlers, options?.handlers),
+		});
+	}
+
 	return {
 		FormProvider,
 		useForm,
 		useFormMetadata,
 		useField,
 		useIntent,
+		parseIntent,
+		resolveIntent,
 		config: globalConfig,
 	};
 }
@@ -752,3 +782,17 @@ export const useField = defaultForms.useField;
  * ```
  */
 export const useIntent = defaultForms.useIntent;
+
+/**
+ * Parses a serialized intent value using the default configured form intent handlers.
+ *
+ * See https://conform.guide/api/react/future/parseIntent
+ */
+export const parseIntent = defaultForms.parseIntent;
+
+/**
+ * Resolves a submission payload using the default configured form intent handlers.
+ *
+ * See https://conform.guide/api/react/future/resolveIntent
+ */
+export const resolveIntent = defaultForms.resolveIntent;

@@ -283,7 +283,7 @@ export function resetFormValue(
  */
 export function createIntentDispatcher<
 	FormShape extends Record<string, any>,
-	IntentHandlers extends Record<string, IntentHandler>,
+	IntentHandlers extends Record<string, IntentHandler<any, any>>,
 >(
 	formElement: HTMLFormElement | (() => HTMLFormElement | null),
 	intentName: string,
@@ -292,7 +292,7 @@ export function createIntentDispatcher<
 		get(target, type, receiver) {
 			if (typeof type === 'string') {
 				// @ts-expect-error
-				target[type] ??= (payload?: unknown) => {
+				target[type] ??= (...args: unknown[]) => {
 					const form =
 						typeof formElement === 'function' ? formElement() : formElement;
 
@@ -307,7 +307,7 @@ export function createIntentDispatcher<
 						intentName,
 						serializeIntent({
 							type,
-							payload,
+							args,
 						}),
 					);
 				};

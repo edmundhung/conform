@@ -8,6 +8,7 @@ import {
 	normalize,
 	deepEqual,
 	FormError,
+	isPlainObject,
 } from '@conform-to/dom/future';
 import type {
 	FieldMetadata,
@@ -21,8 +22,15 @@ import type {
 	BaseFieldMetadata,
 	BaseFormMetadata,
 	DefineConditionalField,
+	ApplyStatus,
 } from './types';
-import { generateUniqueKey, getPathArray, merge, when } from './util';
+import {
+	appendUniqueItem,
+	generateUniqueKey,
+	getPathArray,
+	merge,
+	when,
+} from './util';
 
 export function initializeState<ErrorShape>(options?: {
 	defaultValue?: Record<string, unknown> | null | undefined;
@@ -50,10 +58,10 @@ export function updateState<ErrorShape>(
 	state: FormState<ErrorShape>,
 	action: FormAction<
 		ErrorShape,
-		UnknownIntent | null,
+		UnknownIntent | undefined,
 		{
-			handlers: Record<string, IntentHandler>;
-			cancelled: boolean;
+			handlers: Record<string, IntentHandler<any, any>>;
+			status: ApplyStatus;
 			reset: (
 				defaultValue?: Record<string, unknown> | null | undefined,
 			) => FormState<ErrorShape>;
@@ -111,23 +119,312 @@ export function updateState<ErrorShape>(
 	const intent = action.intent ?? { type: 'validate' };
 	const handler = action.ctx.handlers?.[intent.type];
 
-	if (typeof handler?.update === 'function') {
-		if (handler.validate?.(intent.payload) ?? true) {
-			return handler.update(state, {
-				...action,
-				ctx: {
-					reset: action.ctx.reset,
-					cancelled: action.ctx.cancelled,
-				},
-				intent: {
-					type: intent.type,
+	if (!handler || action.type === 'server') {
+		return state;
+	}
+
+	if (action.type === 'client') {
+		if (typeof handler.move === 'function') {
+			const handleMove = handler.move;
+			state = moveState(state, action.submission.payload, value, (name) =>
+				handleMove({
+					name,
 					payload: intent.payload,
-				},
+					status: action.ctx.status,
+					targetValue: action.targetValue,
+				}),
+			);
+		} else if (typeof handler.resolve === 'function') {
+			state = merge(state, {
+				listKeys: invalidateListKeys(
+					state.listKeys,
+					action.submission.payload,
+					action.targetValue ?? action.submission.payload,
+				),
 			});
 		}
 	}
 
+	if (typeof handler.touch === 'function') {
+		let touchedFields = state.touchedFields;
+
+		for (const name of getFields(action)) {
+			if (handler.touch({ name, payload: intent.payload })) {
+				touchedFields = appendUniqueItem(touchedFields, name);
+			}
+		}
+
+		state = merge(state, {
+			touchedFields,
+		});
+	}
+
 	return state;
+}
+
+export function getFields<ErrorShape>(
+	action: FormAction<ErrorShape, UnknownIntent | null | undefined>,
+): string[] {
+	let fields = action.submission.fields;
+
+	if (action.error) {
+		fields = fields.concat(Object.keys(action.error.fieldErrors));
+	}
+
+	const result = new Set(['']);
+
+	for (const field of fields) {
+		const paths = parsePath(field);
+
+		for (let index = 1; index <= paths.length; index++) {
+			result.add(formatPath(paths.slice(0, index)));
+		}
+	}
+
+	return Array.from(result);
+}
+
+export function getApplyStatus(
+	baseTargetValue: Record<string, unknown> | undefined,
+	finalTargetValue: Record<string, unknown> | undefined,
+): ApplyStatus {
+	if (baseTargetValue === finalTargetValue) {
+		return 'applied';
+	}
+
+	return typeof finalTargetValue === 'undefined' ? 'reverted' : 'modified';
+}
+
+export function invalidateListKeys<Value>(
+	listKeys: Record<string, string[]>,
+	previousValue: Value,
+	nextValue: Value,
+): Record<string, string[]> {
+	if (nextValue === previousValue) {
+		return listKeys;
+	}
+
+	function appendChangedName(list: string[], name: string): string[] {
+		const basePath = parsePath(name);
+
+		if (
+			list.some(
+				(existingName) =>
+					getRelativePath(name, parsePath(existingName)) !== null,
+			)
+		) {
+			return list;
+		}
+
+		return list
+			.filter(
+				(existingName) => getRelativePath(existingName, basePath) === null,
+			)
+			.concat(name);
+	}
+
+	function collectChangedNames(
+		previousValue: unknown,
+		nextValue: unknown,
+		name = '',
+	): string[] {
+		if (Object.is(previousValue, nextValue)) {
+			return [];
+		}
+
+		if (Array.isArray(previousValue) && Array.isArray(nextValue)) {
+			return [name];
+		}
+
+		if (isPlainObject(previousValue) && isPlainObject(nextValue)) {
+			let result: string[] = [];
+
+			for (const key of new Set([
+				...Object.keys(previousValue),
+				...Object.keys(nextValue),
+			])) {
+				for (const changedName of collectChangedNames(
+					previousValue[key],
+					nextValue[key],
+					appendPath(name, key),
+				)) {
+					result = appendChangedName(result, changedName);
+				}
+			}
+
+			return result;
+		}
+
+		return [name];
+	}
+
+	const names = collectChangedNames(previousValue, nextValue);
+
+	if (names.length === 0) {
+		return listKeys;
+	}
+
+	let changed = false;
+
+	const basePaths = names.map(parsePath);
+	const entries = Object.entries(listKeys).filter(([name]) => {
+		const keep = !basePaths.some(
+			(basePath) => getRelativePath(name, basePath) !== null,
+		);
+
+		changed ||= !keep;
+
+		return keep;
+	});
+
+	return changed ? Object.fromEntries(entries) : listKeys;
+}
+
+export function moveState<ErrorShape>(
+	state: FormState<ErrorShape>,
+	previousValue: Record<string, unknown>,
+	nextValue: Record<string, unknown>,
+	move: (name: string) => string | null,
+): FormState<ErrorShape> {
+	if (previousValue === nextValue) {
+		return state;
+	}
+
+	function collectListEntries(
+		value: unknown,
+		name = '',
+		entries: string[] = [],
+	): string[] {
+		if (Array.isArray(value)) {
+			entries.push(name);
+
+			for (let index = 0; index < value.length; index++) {
+				collectListEntries(value[index], appendPath(name, index), entries);
+			}
+		} else if (isPlainObject(value)) {
+			for (const [key, childValue] of Object.entries(value)) {
+				collectListEntries(childValue, appendPath(name, key), entries);
+			}
+		}
+
+		return entries;
+	}
+
+	function getListEntry(name: string | null): {
+		name: string;
+		index: number;
+	} | null {
+		if (name === null) {
+			return null;
+		}
+
+		const paths = parsePath(name);
+		const index = paths[paths.length - 1];
+
+		if (typeof index !== 'number') {
+			return null;
+		}
+
+		return {
+			name: formatPath(paths.slice(0, -1)),
+			index,
+		};
+	}
+
+	const targetSlots: Record<string, Array<string | undefined>> = {};
+
+	const getTargetSlots = (listName: string): Array<string | undefined> =>
+		(targetSlots[listName] ??= Array.from<unknown, string | undefined>(
+			{ length: getPathArray(nextValue, listName).length },
+			() => undefined,
+		));
+
+	for (const listName of collectListEntries(previousValue)) {
+		const sourceKeys =
+			state.listKeys[listName] ??
+			getDefaultListKey(state.resetKey, previousValue, listName);
+
+		for (let index = 0; index < sourceKeys.length; index++) {
+			const entry = getListEntry(move(appendPath(listName, index)));
+
+			if (!entry) {
+				continue;
+			}
+
+			const target = getTargetSlots(entry.name);
+
+			if (entry.index >= target.length) {
+				continue;
+			}
+
+			target[entry.index] ??= sourceKeys[index];
+		}
+	}
+
+	let touchedFields = state.touchedFields;
+
+	for (const [index, currentName] of state.touchedFields.entries()) {
+		const movedName = move(currentName);
+
+		if (movedName === currentName) {
+			continue;
+		}
+
+		touchedFields = state.touchedFields.slice(0, index);
+
+		if (movedName !== null) {
+			touchedFields.push(movedName);
+		}
+
+		for (const nextName of state.touchedFields.slice(index + 1)) {
+			const movedName = move(nextName);
+
+			if (movedName !== null) {
+				touchedFields.push(movedName);
+			}
+		}
+
+		break;
+	}
+
+	let changed = false;
+
+	const result: Record<string, string[]> = {};
+	const listNames = new Set([
+		...Object.keys(state.listKeys),
+		...Object.keys(targetSlots),
+	]);
+
+	for (const listName of listNames) {
+		const keys = targetSlots[listName];
+		const currentKeys = state.listKeys[listName];
+
+		if (!keys) {
+			changed = true;
+			continue;
+		}
+
+		const nextKeys = keys.map((key) => key ?? generateUniqueKey());
+		const defaultKeys = getDefaultListKey(state.resetKey, nextValue, listName);
+
+		if (deepEqual(nextKeys, defaultKeys)) {
+			changed ||= typeof currentKeys !== 'undefined';
+			continue;
+		}
+
+		if (currentKeys && deepEqual(currentKeys, nextKeys)) {
+			result[listName] = currentKeys;
+			continue;
+		}
+
+		result[listName] = nextKeys;
+		changed = true;
+	}
+
+	return merge(state, {
+		listKeys: changed ? result : state.listKeys,
+		touchedFields,
+	});
 }
 
 /**

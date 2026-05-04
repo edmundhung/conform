@@ -338,7 +338,7 @@ export type FormsConfig<
 	SchemaErrorShape,
 	CustomFormMetadata extends Record<string, unknown>,
 	CustomFieldMetadata extends Record<string, unknown>,
-	CustomIntentHandlers extends Record<string, IntentHandler>,
+	CustomIntentHandlers extends Record<string, IntentHandler<any, any>>,
 > = {
 	/**
 	 * The name of the submit button field that indicates the submission intent.
@@ -469,8 +469,8 @@ export type FormOptions<
 	Value = undefined,
 	Schema = unknown,
 	SchemaErrorShape = ErrorShape,
-	CustomIntentHandlers extends Record<string, IntentHandler> = {},
-	GlobalIntentHandlers extends Record<string, IntentHandler> = {},
+	CustomIntentHandlers extends Record<string, IntentHandler<any, any>> = {},
+	GlobalIntentHandlers extends Record<string, IntentHandler<any, any>> = {},
 > = {
 	/** Optional form identifier. If not provided, a unique ID is automatically generated. */
 	id?: string | undefined;
@@ -527,10 +527,11 @@ export type FormOptions<
 				Value,
 				InferOutput<Schema>,
 				SchemaErrorShape,
-				FormIntent<
-					FormShape,
-					DefaultIntentHandlers & GlobalIntentHandlers & CustomIntentHandlers
-				>
+				| FormIntent<
+						FormShape,
+						DefaultIntentHandlers & GlobalIntentHandlers & CustomIntentHandlers
+				  >
+				| undefined
 		  >
 		| undefined;
 };
@@ -544,7 +545,7 @@ export type FormHandle<
 	ErrorShape,
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
-	CustomIntentHandlers extends Record<string, IntentHandler> = {},
+	CustomIntentHandlers extends Record<string, IntentHandler<any, any>> = {},
 > = {
 	/** Form-level metadata and helpers. */
 	form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
@@ -602,15 +603,28 @@ export type IntentPayload<
 	Intent extends IntentDefinition,
 	FormShape extends Record<string, any> = Record<string, any>,
 > =
-	Parameters<ExtractDispatchSignature<Intent, FormShape>> extends [
-		infer Payload,
-	]
-		? Payload
-		: undefined;
+	Parameters<ExtractDispatchSignature<Intent, FormShape>> extends []
+		? undefined
+		: Parameters<ExtractDispatchSignature<Intent, FormShape>>[0];
 
 export type NormalizeIntentType<T> = T extends IntentDefinition
 	? T
 	: (payload: T) => void;
+
+export type ApplyStatus = 'applied' | 'reverted' | 'modified';
+
+export type IntentDispatch<
+	Intent extends IntentDefinition,
+	FormShape extends Record<string, any> = Record<string, any>,
+> = ExtractDispatchSignature<NormalizeIntentType<Intent>, FormShape>;
+
+export type IntentHandlerPayload<
+	Dispatch extends IntentDefinition,
+	Payload,
+	FormShape extends Record<string, any>,
+> = [Payload] extends [never]
+	? IntentPayload<NormalizeIntentType<Dispatch>, FormShape>
+	: Payload;
 
 export interface EmptyIntent extends TypedIntentDefinition {
 	dispatch(): void;
@@ -700,7 +714,7 @@ export type DefaultIntentHandlers = {
 
 export type IntentDispatcher<
 	FormShape extends Record<string, any>,
-	CustomIntentHandlers extends Record<string, IntentHandler> = {},
+	CustomIntentHandlers extends Record<string, IntentHandler<any, any>> = {},
 > = {
 	[Type in keyof (DefaultIntentHandlers &
 		([CustomIntentHandlers] extends [never]
@@ -708,63 +722,52 @@ export type IntentDispatcher<
 			: CustomIntentHandlers))]: (DefaultIntentHandlers &
 		([CustomIntentHandlers] extends [never]
 			? {}
-			: CustomIntentHandlers))[Type] extends IntentHandler<infer Definition>
-		? ExtractDispatchSignature<NormalizeIntentType<Definition>, FormShape>
+			: CustomIntentHandlers))[Type] extends IntentHandler<infer Dispatch, any>
+		? IntentDispatch<Dispatch, FormShape>
 		: never;
 };
 
 export type FormIntent<
 	FormShape extends Record<string, any>,
-	Handlers extends Record<string, IntentHandler>,
+	Handlers extends Record<string, IntentHandler<any, any>>,
 > = {
 	[K in keyof ([Handlers] extends [never] ? {} : Handlers)]: ([
 		Handlers,
 	] extends [never]
 		? {}
-		: Handlers)[K] extends IntentHandler<infer Definition>
+		: Handlers)[K] extends IntentHandler<infer Dispatch, infer Payload>
 		? {
 				type: K & string;
-				payload: IntentPayload<NormalizeIntentType<Definition>, FormShape>;
+				payload: IntentHandlerPayload<Dispatch, Payload, FormShape>;
 			}
 		: never;
 }[keyof ([Handlers] extends [never] ? {} : Handlers)];
 
-export type IntentHandler<TIntent = (payload: unknown) => void> = {
-	validate?<FormShape extends Record<string, any>>(
-		...args: UnknownArgs<
-			Parameters<
-				ExtractDispatchSignature<NormalizeIntentType<TIntent>, FormShape>
-			>
-		>
-	): boolean;
-	resolve?<FormShape extends Record<string, any>>(
-		value: Record<string, FormValue>,
-		...args: Parameters<
-			ExtractDispatchSignature<NormalizeIntentType<TIntent>, FormShape>
-		>
-	): Record<string, FormValue> | undefined;
-	apply?<FormShape extends Record<string, any>, ErrorShape>(
-		result: SubmissionResult<ErrorShape>,
-		...args: Parameters<
-			ExtractDispatchSignature<NormalizeIntentType<TIntent>, FormShape>
-		>
-	): SubmissionResult<ErrorShape>;
-	update?<FormShape extends Record<string, any>, ErrorShape>(
-		state: FormState<ErrorShape>,
-		action: FormAction<
-			ErrorShape,
-			{
-				type: string;
-				payload: IntentPayload<NormalizeIntentType<TIntent>, FormShape>;
-			},
-			{
-				reset: (
-					defaultValue?: Record<string, unknown> | null,
-				) => FormState<ErrorShape>;
-				cancelled?: boolean;
-			}
-		>,
-	): FormState<ErrorShape>;
+export type IntentHandler<
+	Dispatch extends IntentDefinition = (payload: any) => void,
+	Payload = never,
+> = {
+	parse?<FormShape extends Record<string, any>>(
+		...args: Parameters<IntentDispatch<Dispatch, FormShape>>
+	): IntentHandlerPayload<Dispatch, Payload, FormShape>;
+	resolve?<FormShape extends Record<string, any>>(ctx: {
+		value: Record<string, FormValue>;
+		payload: IntentHandlerPayload<Dispatch, Payload, FormShape>;
+	}): Record<string, FormValue> | undefined;
+	apply?<FormShape extends Record<string, any>, ErrorShape>(ctx: {
+		result: SubmissionResult<ErrorShape>;
+		payload: IntentHandlerPayload<Dispatch, Payload, FormShape>;
+	}): SubmissionResult<ErrorShape>;
+	touch?<FormShape extends Record<string, any>>(ctx: {
+		name: string;
+		payload: IntentHandlerPayload<Dispatch, Payload, FormShape>;
+	}): boolean;
+	move?<FormShape extends Record<string, any>>(ctx: {
+		name: string;
+		status: ApplyStatus;
+		targetValue: Record<string, FormValue> | undefined;
+		payload: IntentHandlerPayload<Dispatch, Payload, FormShape>;
+	}): string | null;
 };
 
 type BaseCombine<
@@ -971,7 +974,7 @@ export type ValidateResult<ErrorShape, Value> =
 export type ValidateContext<
 	SchemaValue,
 	SchemaErrorShape,
-	Intent extends UnknownIntent = UnknownIntent,
+	Intent extends UnknownIntent | undefined = UnknownIntent | undefined,
 > = {
 	/**
 	 * The submitted values mapped by field name.
@@ -1011,7 +1014,7 @@ export type ValidateHandler<
 	Value,
 	SchemaValue = undefined,
 	SchemaErrorShape = ErrorShape,
-	Intent extends UnknownIntent = UnknownIntent,
+	Intent extends UnknownIntent | undefined = UnknownIntent | undefined,
 > = (
 	ctx: ValidateContext<SchemaValue, SchemaErrorShape, Intent>,
 ) =>
@@ -1049,7 +1052,7 @@ export interface FormFocusEvent extends React.FormEvent<HTMLFormElement> {
 export type ErrorContext<ErrorShape> = {
 	formElement: HTMLFormElement;
 	error: FormError<ErrorShape>;
-	intent: UnknownIntent;
+	intent: UnknownIntent | undefined;
 };
 
 export type ErrorHandler<ErrorShape> = (ctx: ErrorContext<ErrorShape>) => void;

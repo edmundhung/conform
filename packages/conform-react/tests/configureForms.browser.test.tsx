@@ -4,6 +4,8 @@ import { render } from 'vitest-browser-react';
 import { userEvent } from 'vitest/browser';
 import { configureForms, defineIntent } from '../future';
 import { expectErrorMessage, expectNoErrorMessages } from './helpers';
+import { useRef } from 'react';
+import { getPathArray, updatePathIndex, updatePathValue } from '../future/util';
 
 type MockSchema<Shape = any> = {
 	__brand: 'mockSchema';
@@ -448,38 +450,126 @@ describe('configureForms', () => {
 		await expectErrorMessage(title, 'TITLE IS REQUIRED');
 	});
 
-	test.todo('custom intents handlers', async () => {
-		const customized = configureForms({
-			intents: {
-				dismiss: defineIntent(),
+	test('custom intents handlers', async () => {
+		const duplicateTask = defineIntent<
+			(name: string, index: number) => void,
+			{ name: string; index: number }
+		>({
+			parse(name, index) {
+				if (typeof name !== 'string' || typeof index !== 'number') {
+					throw new Error('Invalid duplicateTask arguments');
+				}
+
+				return { name, index };
+			},
+			resolve({ value, payload }) {
+				const list = Array.from(getPathArray(value, payload.name));
+				const item = list[payload.index];
+
+				if (typeof item === 'undefined') {
+					return value;
+				}
+
+				list.splice(payload.index + 1, 0, item);
+
+				return updatePathValue(value, payload.name, list);
+			},
+			touch({ name, payload }) {
+				return name === payload.name;
+			},
+			move({ name, payload }) {
+				return updatePathIndex(name, payload.name, (currentIndex) =>
+					currentIndex > payload.index ? currentIndex + 1 : currentIndex,
+				);
 			},
 		});
 
+		const customized = configureForms({
+			intents: {
+				duplicateTask,
+			},
+		});
+
+		function DuplicateButton() {
+			const buttonRef = useRef<HTMLButtonElement>(null);
+			const intent = customized.useIntent(buttonRef);
+
+			return (
+				<button
+					type="button"
+					ref={buttonRef}
+					onClick={() => intent.duplicateTask('tasks', 0)}
+				>
+					Duplicate First Task
+				</button>
+			);
+		}
+
 		function Form() {
-			const { form, intent } = customized.useForm({
-				defaultValue: {
-					title: '',
+			const { form, fields } = customized.useForm<
+				{
+					tasks: Array<{ content: string }>;
 				},
-				onValidate({ intent, error }) {
-					if (intent.type === 'dismiss') {
-						return null;
+				string[]
+			>({
+				defaultValue: {
+					tasks: [{ content: 'Task A' }, { content: 'Task B' }],
+				},
+				onValidate({ payload, error }) {
+					if (Array.isArray(payload.tasks) && payload.tasks.length > 2) {
+						error.fieldErrors.tasks = ['Too many tasks'];
 					}
 
 					return error;
 				},
+				onSubmit(event) {
+					event.preventDefault();
+				},
 			});
+			const taskFields = fields.tasks.getFieldList();
 
 			return (
 				<form {...form.props}>
-					<button type="button" onClick={() => intent.dismiss()}>
-						Dismiss
-					</button>
+					<div data-testid="tasks-error">
+						{fields.tasks.errors?.join(', ') ?? 'n/a'}
+					</div>
+					{taskFields.map((task, index) => {
+						const taskField = task.getFieldset();
+
+						return (
+							<div key={task.key}>
+								<input
+									name={taskField.content.name}
+									defaultValue={taskField.content.defaultValue}
+									aria-label={`Task #${index + 1} Content`}
+								/>
+								<input
+									defaultValue={`Local ${index + 1}`}
+									aria-label={`Task #${index + 1} Local`}
+								/>
+							</div>
+						);
+					})}
+					<DuplicateButton />
 				</form>
 			);
 		}
 
 		const screen = render(<Form />);
 
-		await userEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+		await userEvent.type(screen.getByLabelText('Task #2 Local'), ' preserved');
+		await userEvent.click(
+			screen.getByRole('button', { name: 'Duplicate First Task' }),
+		);
+
+		await expect
+			.element(screen.getByTestId('tasks-error'))
+			.toHaveTextContent('Too many tasks');
+		await expect
+			.element(screen.getByLabelText('Task #3 Content'))
+			.toHaveValue('Task B');
+		await expect
+			.element(screen.getByLabelText('Task #3 Local'))
+			.toHaveValue('Local 2 preserved');
 	});
 });

@@ -31,7 +31,7 @@ import {
 	forwardRef,
 } from 'react';
 import { appendUniqueItem, resolveValidateResult } from './util';
-import { initializeState, updateState } from './state';
+import { getApplyStatus, initializeState, updateState } from './state';
 import type {
 	FormContext,
 	Control,
@@ -50,12 +50,7 @@ import type {
 	ControlOptions,
 	IntentHandler,
 } from './types';
-import {
-	defaultIntentHandlers,
-	normalizeIntent,
-	resolveIntent,
-	applyIntent,
-} from './intent';
+import { parseIntent, resolveIntent, applyIntent } from './intent';
 import {
 	deriveDefaultPayload,
 	getFormElement,
@@ -180,7 +175,7 @@ export function useConform<
 		defaultValue?: Record<string, FormValue> | null | undefined;
 		serialize: Serialize;
 		intentName: string;
-		intentHandlers?: Record<string, IntentHandler> | undefined;
+		intentHandlers: Record<string, IntentHandler<any, any>>;
 		lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null | undefined;
 		onValidate?:
 			| ValidateHandler<ErrorShape, Value, SchemaValue, SchemaErrorShape>
@@ -199,12 +194,11 @@ export function useConform<
 		});
 
 		if (lastResult) {
-			const handlers = options.intentHandlers ?? defaultIntentHandlers;
-			const intent = normalizeIntent(lastResult.submission.intent, {
-				handlers,
+			const intent = parseIntent(lastResult.submission.intent, {
+				handlers: options.intentHandlers,
 			});
 			const result = applyIntent(lastResult, intent, {
-				handlers,
+				handlers: options.intentHandlers,
 			});
 
 			state = updateState(state, {
@@ -212,8 +206,8 @@ export function useConform<
 				type: 'initialize',
 				intent,
 				ctx: {
-					handlers,
-					cancelled: result !== lastResult,
+					handlers: options.intentHandlers,
+					status: getApplyStatus(lastResult.targetValue, result.targetValue),
 					reset: (defaultValue) =>
 						initializeState<ErrorShape>({
 							defaultValue: defaultValue ?? options.defaultValue,
@@ -247,12 +241,11 @@ export function useConform<
 						...result,
 						error: normalizeFormError(result.error),
 					};
-			const handlers = options.intentHandlers ?? defaultIntentHandlers;
-			const intent = normalizeIntent(result.submission.intent, {
-				handlers,
+			const intent = parseIntent(result.submission.intent, {
+				handlers: options.intentHandlers,
 			});
 			const finalResult = applyIntent(normalizedResult, intent, {
-				handlers,
+				handlers: options.intentHandlers,
 			});
 			const formElement = getFormElement(formRef);
 
@@ -267,10 +260,13 @@ export function useConform<
 				updateState(state, {
 					...finalResult,
 					type,
-					intent,
+					intent: intent,
 					ctx: {
-						handlers,
-						cancelled: finalResult !== normalizedResult,
+						handlers: options.intentHandlers,
+						status: getApplyStatus(
+							normalizedResult.targetValue,
+							finalResult.targetValue,
+						),
 						reset(defaultValue) {
 							return initializeState<ErrorShape>({
 								defaultValue: defaultValue ?? options.defaultValue,
@@ -285,7 +281,7 @@ export function useConform<
 				optionsRef.current.onError?.({
 					formElement,
 					error: finalResult.error,
-					intent,
+					intent: intent,
 				});
 			}
 
@@ -371,10 +367,8 @@ export function useConform<
 			const submission = parseSubmission(formData, {
 				intentName: optionsRef.current.intentName,
 			});
-			const handlers =
-				optionsRef.current.intentHandlers ?? defaultIntentHandlers;
-			const intent = normalizeIntent(submission.intent, {
-				handlers,
+			const intent = parseIntent(submission.intent, {
+				handlers: optionsRef.current.intentHandlers,
 			});
 
 			// Patch missing fields in the submission object
@@ -397,7 +391,7 @@ export function useConform<
 			if (
 				lastAsyncResult &&
 				// Only default submission will be re-submitted after async validation
-				intent.type === 'submit' &&
+				intent?.type === 'submit' &&
 				// Ensure the submission payload is the same as the one being validated
 				deepEqual(submission.payload, lastAsyncResult.result.submission.payload)
 			) {
@@ -405,7 +399,7 @@ export function useConform<
 				resolvedValue = lastAsyncResult.resolvedValue;
 			} else {
 				const value = resolveIntent(submission, {
-					handlers,
+					handlers: optionsRef.current.intentHandlers,
 					intent,
 				});
 				const submissionResult = report<ErrorShape>(submission, {
@@ -449,7 +443,10 @@ export function useConform<
 							handleSubmission('server', submissionResult);
 
 							// If the form is meant to be submitted and there is no error
-							if (submissionResult.error === null && intent.type === 'submit') {
+							if (
+								submissionResult.error === null &&
+								intent?.type === 'submit'
+							) {
 								// Keep track of the validated payload and resume submission on the next task.
 								// Calling requestSubmit() directly from the async callback, or from a
 								// microtask, can still be ignored before the native submission lifecycle
@@ -482,7 +479,7 @@ export function useConform<
 					(typeof syncResult !== 'undefined' ||
 						typeof asyncResult !== 'undefined') &&
 					// Either the form is not meant to be submitted (i.e. intent is present) or there is an error / pending validation
-					(intent.type !== 'submit' || clientResult.error !== null)
+					(intent?.type !== 'submit' || clientResult.error !== null)
 				) {
 					event.preventDefault();
 				}
@@ -492,7 +489,7 @@ export function useConform<
 
 			// We might not prevent form submission if server validation is required
 			// But the `onSubmit` handler should be triggered only if there is no intent
-			if (!event.isDefaultPrevented() && intent.type === 'submit') {
+			if (!event.isDefaultPrevented() && intent?.type === 'submit') {
 				optionsRef.current.onSubmit?.(event, {
 					formData,
 					get value() {

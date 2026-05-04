@@ -91,10 +91,7 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 						['description', 'Hello World'],
 						[
 							DEFAULT_INTENT_NAME,
-							serializeIntent({
-								type: 'validate',
-								payload: 'title',
-							}),
+							serializeIntent({ type: 'validate', args: ['title'] }),
 						],
 					],
 					{
@@ -129,10 +126,12 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 							DEFAULT_INTENT_NAME,
 							serializeIntent({
 								type: 'update',
-								payload: {
-									name: 'description',
-									value: 'Updated description',
-								},
+								args: [
+									{
+										name: 'description',
+										value: 'Updated description',
+									},
+								],
 							}),
 						],
 					],
@@ -164,12 +163,7 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 					[
 						['title', 'Example'],
 						['description', 'Hello World'],
-						[
-							DEFAULT_INTENT_NAME,
-							serializeIntent({
-								type: 'reset',
-							}),
-						],
+						[DEFAULT_INTENT_NAME, serializeIntent({ type: 'reset', args: [] })],
 					],
 					{
 						error: {
@@ -204,9 +198,7 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 						['description', 'Hello World'],
 						[
 							DEFAULT_INTENT_NAME,
-							serializeIntent({
-								type: 'submit',
-							}),
+							serializeIntent({ type: 'submit', args: [] }),
 						],
 					],
 					{
@@ -240,10 +232,12 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 							DEFAULT_INTENT_NAME,
 							serializeIntent({
 								type: 'insert',
-								payload: {
-									name: 'notes',
-									defaultValue: 'Foo',
-								},
+								args: [
+									{
+										name: 'notes',
+										defaultValue: 'Foo',
+									},
+								],
 							}),
 						],
 					],
@@ -289,11 +283,13 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 							DEFAULT_INTENT_NAME,
 							serializeIntent({
 								type: 'reorder',
-								payload: {
-									name: 'notes',
-									from: 1,
-									to: 0,
-								},
+								args: [
+									{
+										name: 'notes',
+										from: 1,
+										to: 0,
+									},
+								],
 							}),
 						],
 					],
@@ -346,10 +342,12 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 							DEFAULT_INTENT_NAME,
 							serializeIntent({
 								type: 'remove',
-								payload: {
-									name: 'notes',
-									index: 1,
-								},
+								args: [
+									{
+										name: 'notes',
+										index: 1,
+									},
+								],
 							}),
 						],
 					],
