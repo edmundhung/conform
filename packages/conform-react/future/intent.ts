@@ -22,10 +22,9 @@ import {
 	updatePathIndex,
 } from './util';
 import type {
-	EmptyIntent,
+	FormIntent,
 	IntentHandler,
 	NormalizeIntentType,
-	TypedIntentDefinition,
 	UnknownIntent,
 	ResetIntent,
 	SubmitIntent,
@@ -42,22 +41,10 @@ type TransportIntent = {
 	args: unknown[];
 };
 
-export function defineIntent<
-	Definition extends TypedIntentDefinition = EmptyIntent,
->(definition?: IntentHandler<Definition>): IntentHandler<Definition>;
-export function defineIntent<Payload>(
-	definition: IntentHandler<(payload: Payload) => void>,
-): IntentHandler<(payload: Payload) => void>;
-export function defineIntent<
-	Dispatch extends TypedIntentDefinition | ((...args: any[]) => void),
-	Payload,
->(
-	definition: IntentHandler<NormalizeIntentType<Dispatch>, Payload>,
-): IntentHandler<NormalizeIntentType<Dispatch>, Payload>;
-export function defineIntent<Definition = EmptyIntent, Payload = never>(
-	definition: IntentHandler<NormalizeIntentType<Definition>, Payload> = {},
+export function defineIntent<Definition = () => void, Payload = never>(
+	definition?: IntentHandler<NormalizeIntentType<Definition>, Payload>,
 ): IntentHandler<NormalizeIntentType<Definition>, Payload> {
-	return definition;
+	return definition ?? {};
 }
 
 export function mergeIntentHandlers<
@@ -116,27 +103,34 @@ export function deserializeIntent(serializedIntent: string): TransportIntent {
 	};
 }
 
-export function parseIntent(
+export function parseIntent<
+	Handlers extends Record<string, IntentHandler<any, any>>,
+>(
 	intentValue: string | null,
-	options?: {
-		handlers?: Record<string, IntentHandler<any, any>>;
+	options: {
+		handlers: Handlers;
 	},
-): UnknownIntent | undefined {
+):
+	| FormIntent<Record<string, any>, Handlers>
+	| { type: 'submit'; payload: undefined }
+	| undefined {
 	if (!intentValue) {
-		return { type: 'submit' };
+		return { type: 'submit', payload: undefined };
 	}
 
 	const transportIntent = deserializeIntent(intentValue);
-	const handlers: Record<string, IntentHandler<any, any>> = options?.handlers ??
-	defaultIntentHandlers;
-	const handler = handlers[transportIntent.type];
+	const handler = options.handlers[transportIntent.type];
+
+	if (!handler) {
+		return undefined;
+	}
 
 	if (typeof handler?.parse === 'function') {
 		try {
 			return {
 				type: transportIntent.type,
 				payload: handler.parse(...transportIntent.args),
-			};
+			} as any;
 		} catch {
 			// eslint-disable-next-line no-console
 			console.warn(
@@ -157,7 +151,7 @@ export function parseIntent(
 	return {
 		type: transportIntent.type,
 		payload: transportIntent.args[0],
-	};
+	} as any;
 }
 
 export function resolveIntent(

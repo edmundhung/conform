@@ -1,6 +1,7 @@
 import { isFieldElement, FieldName } from '@conform-to/dom';
 import {
 	type Submission,
+	type FormValue,
 	DEFAULT_INTENT_NAME,
 	defaultSerialize,
 } from '@conform-to/dom/future';
@@ -21,8 +22,10 @@ import {
 	FormOptions,
 	FieldMetadata,
 	FormHandle,
+	FormIntent,
 	InferOutput,
 	InferFormShape,
+	DefaultIntentHandlers,
 	IntentHandler,
 	IntentDispatcher,
 	RequireKey,
@@ -37,8 +40,8 @@ import {
 import {
 	defaultIntentHandlers,
 	mergeIntentHandlers,
-	parseIntent as parseFormIntent,
-	resolveIntent as resolveFormIntent,
+	parseIntent as baseParseIntent,
+	resolveIntent as baseResolveIntent,
 } from './intent';
 
 export function configureForms<
@@ -600,12 +603,33 @@ export function configureForms<
 	 * }
 	 * ```
 	 */
+	function useIntent(
+		formRef: FormRef,
+	): IntentDispatcher<
+		Record<string, any>,
+		DefaultIntentHandlers & CustomIntentHandlers
+	>;
 	function useIntent<
-		FormShape extends Record<string, any>,
-		IntentHandlers extends Record<string, IntentHandler> = {},
+		IntentHandlers extends Record<string, IntentHandler<any, any>>,
 	>(
 		formRef: FormRef,
-	): IntentDispatcher<FormShape, CustomIntentHandlers & IntentHandlers> {
+	): IntentDispatcher<
+		Record<string, any>,
+		DefaultIntentHandlers & CustomIntentHandlers & IntentHandlers
+	>;
+	function useIntent<FormShape extends Record<string, any>>(
+		formRef: FormRef,
+	): IntentDispatcher<FormShape, DefaultIntentHandlers & CustomIntentHandlers>;
+	function useIntent<
+		FormShape extends Record<string, any>,
+		IntentHandlers extends Record<string, IntentHandler<any, any>>,
+	>(
+		formRef: FormRef,
+	): IntentDispatcher<
+		FormShape,
+		DefaultIntentHandlers & CustomIntentHandlers & IntentHandlers
+	>;
+	function useIntent(formRef: FormRef) {
 		return useMemo(
 			() =>
 				createIntentDispatcher(
@@ -620,29 +644,48 @@ export function configureForms<
 	 * Parses a serialized intent value using the configured default and global intent handlers.
 	 * Pass `handlers` to extend or override them for a specific call.
 	 */
-	function parseIntent(
+	function parseIntent<
+		IntentHandlers extends Record<string, IntentHandler<any, any>> = {},
+	>(
 		intentValue: string | null,
 		options?: {
-			handlers?: Record<string, IntentHandler<any, any>>;
+			handlers?: IntentHandlers;
 		},
-	) {
-		return parseFormIntent(intentValue, {
+	):
+		| FormIntent<
+				Record<string, any>,
+				DefaultIntentHandlers & CustomIntentHandlers & IntentHandlers
+		  >
+		| undefined {
+		return baseParseIntent(intentValue, {
 			handlers: mergeIntentHandlers(globalIntentHandlers, options?.handlers),
-		});
+		}) as
+			| FormIntent<
+					Record<string, any>,
+					DefaultIntentHandlers & CustomIntentHandlers & IntentHandlers
+			  >
+			| undefined;
 	}
 
 	/**
 	 * Resolves a submission payload using the configured default and global intent handlers.
 	 * Pass `handlers` to extend or override them for a specific call.
 	 */
-	function resolveIntent(
+	function resolveIntent<
+		IntentHandlers extends Record<string, IntentHandler<any, any>>,
+	>(
 		submission: Submission,
 		options: {
-			intent: ReturnType<typeof parseFormIntent>;
-			handlers?: Record<string, IntentHandler<any, any>>;
+			handlers?: IntentHandlers;
+			intent:
+				| FormIntent<
+						Record<string, any>,
+						DefaultIntentHandlers & CustomIntentHandlers & IntentHandlers
+				  >
+				| undefined;
 		},
-	) {
-		return resolveFormIntent(submission, {
+	): Record<string, FormValue> | undefined {
+		return baseResolveIntent(submission, {
 			...options,
 			handlers: mergeIntentHandlers(globalIntentHandlers, options?.handlers),
 		});

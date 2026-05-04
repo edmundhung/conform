@@ -135,13 +135,7 @@ export function updateState<ErrorShape>(
 				}),
 			);
 		} else if (typeof handler.resolve === 'function') {
-			state = merge(state, {
-				listKeys: invalidateListKeys(
-					state.listKeys,
-					action.submission.payload,
-					action.targetValue ?? action.submission.payload,
-				),
-			});
+			state = invalidateState(state, action.submission.payload, value);
 		}
 	}
 
@@ -195,91 +189,137 @@ export function getApplyStatus(
 	return typeof finalTargetValue === 'undefined' ? 'reverted' : 'modified';
 }
 
-export function invalidateListKeys<Value>(
-	listKeys: Record<string, string[]>,
-	previousValue: Value,
-	nextValue: Value,
-): Record<string, string[]> {
-	if (nextValue === previousValue) {
-		return listKeys;
+/**
+ * Fallback state transition for intents that change the payload shape without
+ * providing a `move()` mapping. It drops list keys and touched fields under
+ * changed paths so stale client state does not point at the wrong fields.
+ */
+export function invalidateState<ErrorShape>(
+	state: FormState<ErrorShape>,
+	previousValue: Record<string, unknown>,
+	nextValue: Record<string, unknown>,
+): FormState<ErrorShape> {
+	if (previousValue === nextValue) {
+		return state;
 	}
 
-	function appendChangedName(list: string[], name: string): string[] {
-		const basePath = parsePath(name);
+	let changedNames: string[] = [];
+	const stack: Array<{
+		previousValue: unknown;
+		nextValue: unknown;
+		name: string;
+	}> = [{ previousValue, nextValue, name: '' }];
 
-		if (
-			list.some(
-				(existingName) =>
-					getRelativePath(name, parsePath(existingName)) !== null,
-			)
-		) {
-			return list;
+	while (stack.length > 0) {
+		const current = stack.pop();
+
+		if (!current) {
+			break;
 		}
 
-		return list
+		if (Object.is(current.previousValue, current.nextValue)) {
+			continue;
+		}
+
+		if (
+			Array.isArray(current.previousValue) &&
+			Array.isArray(current.nextValue)
+		) {
+			changedNames = changedNames.concat(current.name);
+			continue;
+		}
+
+		if (
+			isPlainObject(current.previousValue) &&
+			isPlainObject(current.nextValue)
+		) {
+			for (const key of new Set([
+				...Object.keys(current.previousValue),
+				...Object.keys(current.nextValue),
+			])) {
+				stack.push({
+					previousValue: current.previousValue[key],
+					nextValue: current.nextValue[key],
+					name: appendPath(current.name, key),
+				});
+			}
+
+			continue;
+		}
+
+		const basePath = parsePath(current.name);
+
+		if (
+			changedNames.some(
+				(existingName) =>
+					getRelativePath(current.name, parsePath(existingName)) !== null,
+			)
+		) {
+			continue;
+		}
+
+		changedNames = changedNames
 			.filter(
 				(existingName) => getRelativePath(existingName, basePath) === null,
 			)
-			.concat(name);
+			.concat(current.name);
 	}
 
-	function collectChangedNames(
-		previousValue: unknown,
-		nextValue: unknown,
-		name = '',
-	): string[] {
-		if (Object.is(previousValue, nextValue)) {
-			return [];
-		}
+	const basePaths = changedNames.map(parsePath);
 
-		if (Array.isArray(previousValue) && Array.isArray(nextValue)) {
-			return [name];
-		}
-
-		if (isPlainObject(previousValue) && isPlainObject(nextValue)) {
-			let result: string[] = [];
-
-			for (const key of new Set([
-				...Object.keys(previousValue),
-				...Object.keys(nextValue),
-			])) {
-				for (const changedName of collectChangedNames(
-					previousValue[key],
-					nextValue[key],
-					appendPath(name, key),
-				)) {
-					result = appendChangedName(result, changedName);
-				}
-			}
-
-			return result;
-		}
-
-		return [name];
+	if (basePaths.length === 0) {
+		return state;
 	}
 
-	const names = collectChangedNames(previousValue, nextValue);
+	let listKeys = state.listKeys;
+	let touchedFields = state.touchedFields;
 
-	if (names.length === 0) {
-		return listKeys;
+	if (Object.keys(state.listKeys).length > 0) {
+		let changed = false;
+
+		const entries = Object.entries(state.listKeys).filter(([name]) => {
+			const keep = !basePaths.some(
+				(basePath) => getRelativePath(name, basePath) !== null,
+			);
+
+			changed ||= !keep;
+
+			return keep;
+		});
+
+		if (changed) {
+			listKeys = Object.fromEntries(entries);
+		}
 	}
 
-	let changed = false;
+	if (state.touchedFields.length > 0) {
+		let changed = false;
 
-	const basePaths = names.map(parsePath);
-	const entries = Object.entries(listKeys).filter(([name]) => {
-		const keep = !basePaths.some(
-			(basePath) => getRelativePath(name, basePath) !== null,
-		);
+		const nextTouchedFields = state.touchedFields.filter((name) => {
+			const keep = !basePaths.some(
+				(basePath) => getRelativePath(name, basePath) !== null,
+			);
 
-		changed ||= !keep;
+			changed ||= !keep;
 
-		return keep;
+			return keep;
+		});
+
+		if (changed) {
+			touchedFields = nextTouchedFields;
+		}
+	}
+
+	return merge(state, {
+		listKeys,
+		touchedFields,
 	});
-
-	return changed ? Object.fromEntries(entries) : listKeys;
 }
 
+/**
+ * Preserves list keys and touched fields for intents that can map old field
+ * paths to new ones, such as insert, remove, and reorder.
+ */
 export function moveState<ErrorShape>(
 	state: FormState<ErrorShape>,
 	previousValue: Record<string, unknown>,

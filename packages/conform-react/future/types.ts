@@ -626,13 +626,7 @@ export type IntentHandlerPayload<
 	? IntentPayload<NormalizeIntentType<Dispatch>, FormShape>
 	: Payload;
 
-export interface EmptyIntent extends TypedIntentDefinition {
-	dispatch(): void;
-}
-
-export interface SubmitIntent extends TypedIntentDefinition {
-	dispatch(): void;
-}
+export type SubmitIntent = () => void;
 
 export interface ResetIntent extends TypedIntentDefinition {
 	dispatch<
@@ -647,9 +641,7 @@ export interface ResetIntent extends TypedIntentDefinition {
 	}): void;
 }
 
-export interface ValidateIntent extends TypedIntentDefinition {
-	dispatch(name?: string): void;
-}
+export type ValidateIntent = (name?: string) => void;
 
 export interface UpdateIntent extends TypedIntentDefinition {
 	dispatch<FieldShape = this['FormShape']>(
@@ -694,13 +686,11 @@ export interface RemoveIntent extends TypedIntentDefinition {
 	}): void;
 }
 
-export interface ReorderIntent extends TypedIntentDefinition {
-	dispatch(options: {
-		name: FieldName<Array<any>>;
-		from: number;
-		to: number;
-	}): void;
-}
+export type ReorderIntent = (options: {
+	name: FieldName<Array<any>>;
+	from: number;
+	to: number;
+}) => void;
 
 export type DefaultIntentHandlers = {
 	submit: IntentHandler<SubmitIntent>;

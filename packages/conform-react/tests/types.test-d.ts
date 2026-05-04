@@ -13,10 +13,13 @@ import type {
 	InferCustomFieldMetadata,
 	InferCustomFormMetadata,
 	IntentDispatcher,
+	IntentHandler,
 } from '@conform-to/react/future';
 import {
+	parseIntent,
 	useForm,
 	useFormData,
+	useIntent,
 	configureForms,
 	shape,
 	defineIntent,
@@ -594,8 +597,35 @@ describe('configureForms', () => {
 		expectTypeOf(globalIntentSetup.intent.goToStep).toEqualTypeOf<
 			(payload: { step: number }) => void
 		>();
-		expectTypeOf(custom.useIntent('form-id')).toEqualTypeOf<
-			IntentDispatcher<Record<string, any>, { goToStep: typeof goToStep }>
+		expectTypeOf(custom.useIntent('form-id').goToStep).toEqualTypeOf<
+			(payload: { step: number }) => void
+		>();
+
+		// @ts-expect-error unknown custom intents should not be exposed without typing
+		custom.useIntent('form-id').unknownIntent();
+
+		const parsedGlobalIntent = parseIntent('goToStep({"step":1})', {
+			handlers: {
+				goToStep,
+			},
+		});
+
+		if (parsedGlobalIntent?.type === 'goToStep') {
+			assertType<number>(parsedGlobalIntent.payload.step);
+		} else if (parsedGlobalIntent?.type === 'submit') {
+			assertType<undefined>(parsedGlobalIntent.payload);
+		}
+
+		const parsedConfiguredIntent = custom.parseIntent('goToStep({"step":1})');
+
+		if (parsedConfiguredIntent?.type === 'goToStep') {
+			assertType<number>(parsedConfiguredIntent.payload.step);
+		} else if (parsedConfiguredIntent?.type === 'submit') {
+			assertType<undefined>(parsedConfiguredIntent.payload);
+		}
+
+		expectTypeOf<typeof parsedConfiguredIntent>().not.toEqualTypeOf<
+			{ type: 'confirm'; payload: string } | undefined
 		>();
 
 		const confirm = defineIntent<string>({
@@ -632,13 +662,30 @@ describe('configureForms', () => {
 		expectTypeOf(inlineIntentSetup.intent.confirm).toEqualTypeOf<
 			(payload: string) => void
 		>();
-		expectTypeOf(custom.useIntent('form-id')).toEqualTypeOf<
-			IntentDispatcher<Record<string, any>, { goToStep: typeof goToStep }>
+		expectTypeOf(custom.useIntent('form-id').goToStep).toEqualTypeOf<
+			(payload: { step: number }) => void
 		>();
 	});
 });
 
 test('defineIntent', () => {
+	const confirm = defineIntent<(payload: string) => void>({
+		parse(payload) {
+			assertType<string>(payload);
+
+			return payload;
+		},
+		resolve(context) {
+			assertType<string>(context.payload);
+
+			return context.value;
+		},
+	});
+
+	expectTypeOf(confirm).toEqualTypeOf<
+		IntentHandler<(payload: string) => void>
+	>();
+
 	const updateField = defineIntent<
 		(name: string, value: string) => void,
 		{
@@ -686,6 +733,17 @@ test('defineIntent', () => {
 	expectTypeOf(configured.useIntent('form-id').updateField).toEqualTypeOf<
 		(name: string, value: string) => void
 	>();
+	// @ts-expect-error unknown custom intents should not be exposed without typing
+	configured.useIntent('form-id').unknownIntent();
+
+	expectTypeOf(
+		useIntent<{ updateField: typeof updateField }>('form-id').updateField,
+	).toEqualTypeOf<(name: string, value: string) => void>();
+
+	expectTypeOf(
+		useIntent<{ title: string }, { updateField: typeof updateField }>('form-id')
+			.updateField,
+	).toEqualTypeOf<(name: string, value: string) => void>();
 });
 
 test('IntentDispatcher', () => {

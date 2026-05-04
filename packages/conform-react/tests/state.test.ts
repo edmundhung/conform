@@ -24,7 +24,8 @@ import {
 	getFieldset,
 	getFieldList,
 } from '../future/state';
-import { serializeIntent } from '../future/intent';
+import { defineIntent, serializeIntent } from '../future/intent';
+import { getPathArray, updatePathValue } from '../future/util';
 import type { FormContext } from '../future/types';
 import { createAction } from './helpers';
 
@@ -663,6 +664,93 @@ describe('form state', () => {
 		expect(getErrors(context.state, 'password')).toEqual([
 			'Password is required',
 		]);
+	});
+
+	test('resolve handlers invalidate stale touched fields when list shape changes', () => {
+		const duplicateTask = {
+			duplicateTask: defineIntent<
+				(name: string, index: number) => void,
+				{ name: string; index: number }
+			>({
+				parse(name, index) {
+					if (typeof name !== 'string' || typeof index !== 'number') {
+						throw new Error('Invalid duplicateTask arguments');
+					}
+
+					return { name, index };
+				},
+				resolve({ value, payload }) {
+					const list = Array.from(getPathArray(value, payload.name));
+					const item = list[payload.index];
+
+					if (typeof item === 'undefined') {
+						return value;
+					}
+
+					list.splice(payload.index, 0, item);
+
+					return updatePathValue(value, payload.name, list);
+				},
+				touch({ name, payload }) {
+					return name === payload.name;
+				},
+			}),
+		};
+		const context = createContext({
+			state: initializeState({
+				defaultValue: {
+					tasks: ['Task A', 'Task B'],
+				},
+			}),
+		});
+
+		context.state = updateState(
+			context.state,
+			createAction({
+				type: 'client',
+				entries: [
+					['tasks[0]', 'Task A'],
+					['tasks[1]', 'Task B'],
+					[
+						DEFAULT_INTENT_NAME,
+						serializeIntent({ type: 'validate', args: ['tasks[1]'] }),
+					],
+				],
+			}),
+		);
+
+		expect(isTouched(context.state, 'tasks')).toBe(true);
+		expect(isTouched(context.state, 'tasks[0]')).toBe(false);
+		expect(isTouched(context.state, 'tasks[1]')).toBe(true);
+
+		context.state = updateState(
+			context.state,
+			createAction({
+				type: 'client',
+				handlers: duplicateTask,
+				entries: [
+					['tasks[0]', 'Task A'],
+					['tasks[1]', 'Task B'],
+					[
+						DEFAULT_INTENT_NAME,
+						serializeIntent({
+							type: 'duplicateTask',
+							args: ['tasks', 0],
+						}),
+					],
+				],
+			}),
+		);
+
+		expect(getDefaultOptions(context, 'tasks')).toEqual([
+			'Task A',
+			'Task A',
+			'Task B',
+		]);
+		expect(isTouched(context.state, 'tasks')).toBe(true);
+		expect(isTouched(context.state, 'tasks[0]')).toBe(false);
+		expect(isTouched(context.state, 'tasks[1]')).toBe(false);
+		expect(isTouched(context.state, 'tasks[2]')).toBe(false);
 	});
 
 	test('submission with empty array', () => {

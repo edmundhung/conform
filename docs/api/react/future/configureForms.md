@@ -7,10 +7,17 @@ A factory function that creates customized form hooks based on the provided conf
 ```ts
 import { configureForms } from '@conform-to/react/future';
 
-const { FormProvider, useForm, useFormMetadata, useField, useIntent } =
-  configureForms({
-    // configs...
-  });
+const {
+  FormProvider,
+  useForm,
+  useFormMetadata,
+  useField,
+  useIntent,
+  parseIntent,
+  resolveIntent,
+} = configureForms({
+  // configs...
+});
 ```
 
 ## Options
@@ -41,6 +48,12 @@ If not provided, Conform uses a default serializer with the following behavior:
   - Returned as-is
 
 This is an advanced option. You typically don't need to change this unless you have special serialization requirements.
+
+### `intents?: Record<string, IntentHandler>`
+
+Intent handlers available to every form created by this factory.
+
+Use this to add custom methods to [`useIntent`](./useIntent.md), the `intent` object returned by [`useForm`](./useForm.md), and the bound [`parseIntent`](./parseIntent.md) / [`resolveIntent`](./resolveIntent.md) helpers returned from this factory.
 
 ### `shouldValidate?: 'onSubmit' | 'onBlur' | 'onInput'`
 
@@ -113,6 +126,14 @@ Hook to access field metadata from context. See [useField](./useField.md).
 ### `useIntent`
 
 Hook to get an intent dispatcher. See [useIntent](./useIntent.md).
+
+### `parseIntent`
+
+Helper to parse a serialized intent value with the factory's configured global intent handlers. See [parseIntent](./parseIntent.md).
+
+### `resolveIntent`
+
+Helper to resolve a submission payload with the factory's configured global intent handlers. See [resolveIntent](./resolveIntent.md).
 
 ### `config`
 
@@ -299,4 +320,25 @@ export type Fieldset<
 
 export const useForm = forms.useForm;
 export const FormProvider = forms.FormProvider;
+```
+
+### Defining global custom intents
+
+Use [`defineIntent`](./defineIntent.md) together with the `intents` option to register app-wide custom intent handlers:
+
+```ts
+import { configureForms, defineIntent } from '@conform-to/react/future';
+
+const duplicateTask = defineIntent<
+  (name: string, index: number) => void,
+  { name: string; index: number }
+>({
+  // ...
+});
+
+export const forms = configureForms({
+  intents: {
+    duplicateTask,
+  },
+});
 ```

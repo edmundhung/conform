@@ -4,6 +4,8 @@
 
 A React hook that returns an intent dispatcher for triggering form actions (validate, reset, update, insert, remove, reorder) without submitting the form. Use it for buttons or controls that need to modify form state.
 
+The default exported `useIntent` includes the built-in intents. A customized `useIntent` returned from [`configureForms`](./configureForms.md) also includes that factory's custom intents.
+
 ```ts
 import { useIntent } from '@conform-to/react/future';
 
@@ -21,7 +23,7 @@ A reference to the form element. Can be either:
 
 ## Returns
 
-An `IntentDispatcher` object with the following methods:
+An `IntentDispatcher` object with the built-in methods below. A customized `useIntent` returned from [`configureForms`](./configureForms.md) also includes that factory's custom intents:
 
 ### `validate(name?: string): void`
 
@@ -332,5 +334,55 @@ function Example() {
   });
 
   // ...
+}
+```
+
+### Typing inline custom intents
+
+`useIntent()` does not know about custom intents passed inline to a specific [`useForm`](./useForm.md) call.
+
+If you need typed access to those inline intents, you can pass the inline intents map through the generic type arguments:
+
+```tsx
+import { useRef } from 'react';
+import { defineIntent, useForm, useIntent } from '@conform-to/react/future';
+
+const duplicateTask = defineIntent<
+  (name: string, index: number) => void,
+  { name: string; index: number }
+>({
+  // ...
+});
+
+function DuplicateButton({ name }: { name: string }) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const intent = useIntent<{ duplicateTask: typeof duplicateTask }>(buttonRef);
+
+  // If you want typed form shape as well, pass it as the first generic:
+  // const intent = useIntent<FormShape, { duplicateTask: typeof duplicateTask }>(buttonRef)
+
+  return (
+    <button
+      type="button"
+      ref={buttonRef}
+      onClick={() => intent.duplicateTask(name, 0)}
+    >
+      Duplicate first task
+    </button>
+  );
+}
+
+function Example() {
+  const { form, fields } = useForm({
+    intents: {
+      duplicateTask,
+    },
+  });
+
+  return (
+    <form {...form.props}>
+      <DuplicateButton name={fields.tasks.name} />
+    </form>
+  );
 }
 ```

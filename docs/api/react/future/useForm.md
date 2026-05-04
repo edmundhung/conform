@@ -51,6 +51,12 @@ A custom serialization function for converting form values.
 
 The default serializer can be configured via [configureForms](./configureForms.md).
 
+### `intents?: Record<string, IntentHandler>`
+
+Custom intent handlers available only to this form instance.
+
+Use this when you want to add custom methods to the returned `intent` dispatcher without making them global through [`configureForms`](./configureForms.md).
+
 ### `constraint?: Record<string, ValidationAttributes>`
 
 HTML validation attributes for fields (`required`, `minLength`, `pattern`, etc.).
@@ -108,6 +114,8 @@ Fieldset object containing all form fields as properties. Equivalent to calling 
 ### `intent: IntentDispatcher`
 
 Intent dispatcher for programmatic form actions. Same functionality as [`useIntent`](./useIntent.md) but already connected to this form.
+
+It includes the built-in intent methods plus any custom intents configured through [`configureForms`](./configureForms.md) or this form's own `intents` option.
 
 ## Examples
 

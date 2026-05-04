@@ -104,10 +104,9 @@ test('parseIntent', () => {
 		payload: undefined,
 	});
 
-	expect(parseIntent('custom', { handlers: defaultIntentHandlers })).toEqual({
-		type: 'custom',
-		payload: undefined,
-	});
+	expect(parseIntent('custom', { handlers: defaultIntentHandlers })).toBe(
+		undefined,
+	);
 
 	const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 	const handlers = {
