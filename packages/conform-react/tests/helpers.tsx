@@ -108,7 +108,7 @@ export function createAction(options: {
 	return {
 		...finalResult,
 		type: options.type,
-		intent: intent,
+		intent,
 		ctx: {
 			handlers,
 			status: getApplyStatus(result.targetValue, finalResult.targetValue),

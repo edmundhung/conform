@@ -1,9 +1,9 @@
 import { isFieldElement, FieldName } from '@conform-to/dom';
 import {
 	type Submission,
-	type FormValue,
 	DEFAULT_INTENT_NAME,
 	defaultSerialize,
+	FormValue,
 } from '@conform-to/dom/future';
 import { useContext, useMemo, useId, createContext } from 'react';
 import {
@@ -22,7 +22,6 @@ import {
 	FormOptions,
 	FieldMetadata,
 	FormHandle,
-	FormIntent,
 	InferOutput,
 	InferFormShape,
 	DefaultIntentHandlers,
@@ -30,6 +29,7 @@ import {
 	IntentDispatcher,
 	RequireKey,
 	ValidateResult,
+	FormIntent,
 } from './types';
 import {
 	isStandardSchemaV1,
@@ -40,8 +40,8 @@ import {
 import {
 	defaultIntentHandlers,
 	mergeIntentHandlers,
-	parseIntent as baseParseIntent,
-	resolveIntent as baseResolveIntent,
+	parseIntent,
+	resolveIntent,
 } from './intent';
 
 export function configureForms<
@@ -641,54 +641,40 @@ export function configureForms<
 	}
 
 	/**
-	 * Parses a serialized intent value using the configured default and global intent handlers.
+	 * Parses and resolves a submission payload using the configured default and global intent handlers.
 	 * Pass `handlers` to extend or override them for a specific call.
 	 */
-	function parseIntent<
+	function resolveSubmission<
 		IntentHandlers extends Record<string, IntentHandler<any, any>> = {},
 	>(
-		intentValue: string | null,
+		submission: Submission,
 		options?: {
 			handlers?: IntentHandlers;
 		},
-	):
-		| FormIntent<
-				Record<string, any>,
-				DefaultIntentHandlers & CustomIntentHandlers & IntentHandlers
-		  >
-		| undefined {
-		return baseParseIntent(intentValue, {
-			handlers: mergeIntentHandlers(globalIntentHandlers, options?.handlers),
-		}) as
+	): {
+		intent:
 			| FormIntent<
 					Record<string, any>,
 					DefaultIntentHandlers & CustomIntentHandlers & IntentHandlers
 			  >
+			| { type: 'submit'; payload: undefined }
 			| undefined;
-	}
-
-	/**
-	 * Resolves a submission payload using the configured default and global intent handlers.
-	 * Pass `handlers` to extend or override them for a specific call.
-	 */
-	function resolveIntent<
-		IntentHandlers extends Record<string, IntentHandler<any, any>>,
-	>(
-		submission: Submission,
-		options: {
-			handlers?: IntentHandlers;
-			intent:
-				| FormIntent<
-						Record<string, any>,
-						DefaultIntentHandlers & CustomIntentHandlers & IntentHandlers
-				  >
-				| undefined;
-		},
-	): Record<string, FormValue> | undefined {
-		return baseResolveIntent(submission, {
-			...options,
-			handlers: mergeIntentHandlers(globalIntentHandlers, options?.handlers),
+		value: Record<string, FormValue> | undefined;
+	} {
+		const handlers = mergeIntentHandlers(
+			globalIntentHandlers,
+			options?.handlers,
+		);
+		const intent = parseIntent(submission.intent, { handlers });
+		const value = resolveIntent(submission, {
+			handlers,
+			intent,
 		});
+
+		return {
+			intent,
+			value,
+		};
 	}
 
 	return {
@@ -697,8 +683,7 @@ export function configureForms<
 		useFormMetadata,
 		useField,
 		useIntent,
-		parseIntent,
-		resolveIntent,
+		resolveSubmission,
 		config: globalConfig,
 	};
 }
@@ -827,15 +812,8 @@ export const useField = defaultForms.useField;
 export const useIntent = defaultForms.useIntent;
 
 /**
- * Parses a serialized intent value using the default configured form intent handlers.
+ * Parses and resolves a submission payload using the default configured form intent handlers.
  *
- * See https://conform.guide/api/react/future/parseIntent
+ * See https://conform.guide/api/react/future/resolveSubmission
  */
-export const parseIntent = defaultForms.parseIntent;
-
-/**
- * Resolves a submission payload using the default configured form intent handlers.
- *
- * See https://conform.guide/api/react/future/resolveIntent
- */
-export const resolveIntent = defaultForms.resolveIntent;
+export const resolveSubmission = defaultForms.resolveSubmission;

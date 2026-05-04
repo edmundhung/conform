@@ -39,8 +39,7 @@ export {
 	useFormMetadata,
 	useField,
 	useIntent,
-	parseIntent,
-	resolveIntent,
+	resolveSubmission,
 } from './forms';
 export { defineIntent } from './intent';
 export {

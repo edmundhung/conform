@@ -2,15 +2,12 @@
 
 > The `defineIntent` function is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-`defineIntent` declares a custom intent handler with typed dispatcher arguments and payload. Use it with [`configureForms`](./configureForms.md) or [`useForm`](./useForm.md) to add new intent methods alongside the built-in `validate`, `reset`, `update`, `insert`, `remove`, and `reorder` actions.
+`defineIntent` lets you define a custom intent that you can register with [`configureForms`](./configureForms.md) or [`useForm`](./useForm.md).
 
 ```ts
 import { defineIntent } from '@conform-to/react/future';
 
-const duplicateTask = defineIntent<
-  (name: string, index: number) => void,
-  { name: string; index: number }
->({
+const duplicateTask = defineIntent<(name: string) => void>({
   // ...
 });
 ```
@@ -21,27 +18,42 @@ const duplicateTask = defineIntent<
 
 An object that describes how the custom intent behaves.
 
+Most custom intents only need `parse(...)`. Add `resolve(...)` when the intent should change the value that gets validated or saved.
+
 ### `definition.parse(...args)`
 
-Converts the serialized intent arguments back into a typed payload.
+Use this to read the arguments passed to the intent and turn them into the typed payload consumed by the other handler methods.
+
+In most cases, this is the first method you should implement.
 
 ### `definition.resolve({ value, payload })`
 
-Returns the next form value for this intent. If omitted, the submission payload is used as-is.
+Use this when the intent should update the form value, like `update` or `insert` intents.
+
+```ts
+resolve({ value, payload }) {
+  return setPathValue(
+    value,
+    payload.to,
+    getPathValue(value, payload.from),
+    { clone: true }
+  );
+}
+```
 
 ### `definition.apply({ result, payload })`
 
-Adjusts the `SubmissionResult` after validation. Use this when the final result depends on validation errors or needs to rewrite the returned error shape.
+Use this to adjust the submission result. For example, the built-in `reset` intent uses this to return `{ reset: true }`, while `insert` uses it to adjust the result based on validation errors.
 
 ### `definition.touch({ name, payload })`
 
-Controls which fields become touched after the intent runs.
+Use this when the intent should mark fields as touched. For example, the built-in `validate` intent marks the specified field as touched by checking whether `name === payload`, or marks all fields as touched by returning `true`.
 
 ### `definition.move({ name, status, targetValue, payload })`
 
-Maps existing field names to their next names when the intent changes array positions or nested paths.
+Use this when the intent moves list items and you want to preserve their state.
 
-If you omit `move`, Conform falls back to invalidating list keys and touched state under the changed paths. That is safe, but it loses item identity and touched state preservation, so implement `move` when your intent reorders, inserts, removes, or otherwise renames fields.
+If you omit `move`, Conform falls back to invalidating the affected state under the changed paths.
 
 ## Returns
 
@@ -49,50 +61,101 @@ The same intent handler object, with the dispatcher arguments and payload wired 
 
 ## Example
 
-### Add a custom intent
-
 ```tsx
+import { getPathValue, setPathValue } from '@conform-to/dom/future';
+import type { FieldName } from '@conform-to/react/future';
 import { configureForms, defineIntent } from '@conform-to/react/future';
+import { AddressField } from './AddressField';
 
-const applyTemplate = defineIntent<
-  (title: string, description: string) => void,
-  { title: string; description: string }
->({
-  parse(title, description) {
-    if (typeof title !== 'string' || typeof description !== 'string') {
-      throw new Error('Invalid applyTemplate arguments');
+type CopyField = <FieldShape>(options: {
+  from: FieldName<FieldShape>;
+  to: FieldName<FieldShape>;
+}) => void;
+
+const copyField = defineIntent<CopyField>({
+  parse(options) {
+    if (
+      typeof options !== 'object' ||
+      options === null ||
+      typeof options.from !== 'string' ||
+      typeof options.to !== 'string'
+    ) {
+      throw new Error('Invalid copyField arguments');
     }
 
-    return { title, description };
+    return options;
   },
   resolve({ value, payload }) {
-    return {
-      ...value,
-      title: payload.title,
-      description: payload.description,
-    };
+    const source = getPathValue(value, payload.from);
+    const result = setPathValue(value, payload.to, source, { clone: true });
+
+    return result;
   },
-  touch({ name }) {
-    return name === 'title' || name === 'description';
+  touch({ name, payload }) {
+    return name === payload.to;
   },
 });
 
-const { useForm } = configureForms({
+const forms = configureForms({
   intents: {
-    applyTemplate,
+    copyField,
   },
 });
 
 function Example() {
-  const { intent } = useForm();
+  const { form, fields, intent } = forms.useForm({
+    defaultValue: {
+      billing: {
+        street: '123 Main St',
+        city: 'Paris',
+      },
+      shipping: {
+        street: '',
+        city: '',
+      },
+    },
+  });
 
   return (
-    <button
-      type="button"
-      onClick={() => intent.applyTemplate('Welcome', 'Thanks for signing up')}
-    >
-      Apply template
-    </button>
+    <form {...form.props}>
+      <AddressField name={fields.billing.name} />
+      <AddressField name={fields.shipping.name} />
+      <button
+        type="button"
+        onClick={() =>
+          intent.copyField({
+            from: fields.billing.name,
+            to: fields.shipping.name,
+          })
+        }
+      >
+        Copy billing address to shipping
+      </button>
+    </form>
   );
+}
+```
+
+This adds `intent.copyField(...)` to the form, with the same typed arguments defined by `CopyField`.
+
+Because this intent changes the value that should be validated or saved, the server should resolve the submission with the same configured intent handler:
+
+```ts
+import { parseSubmission, report } from '@conform-to/react/future';
+
+export async function action({ request }) {
+  const submission = parseSubmission(await request.formData());
+  const { intent, value } = forms.resolveSubmission(submission);
+
+  if (!intent) {
+    return new Response('Unknown intent', { status: 400 });
+  }
+
+  if (intent.type !== 'submit') {
+    return report(submission, { value });
+  }
+
+  await save(value);
+  return report(submission, { reset: true });
 }
 ```

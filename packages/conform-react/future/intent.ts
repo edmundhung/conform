@@ -26,6 +26,7 @@ import type {
 	IntentHandler,
 	NormalizeIntentType,
 	UnknownIntent,
+	TransportIntent,
 	ResetIntent,
 	SubmitIntent,
 	ValidateIntent,
@@ -35,11 +36,6 @@ import type {
 	ReorderIntent,
 	DefaultIntentHandlers,
 } from './types';
-
-type TransportIntent = {
-	type: string;
-	args: unknown[];
-};
 
 export function defineIntent<Definition = () => void, Payload = never>(
 	definition?: IntentHandler<NormalizeIntentType<Definition>, Payload>,

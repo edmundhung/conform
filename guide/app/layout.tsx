@@ -70,6 +70,11 @@ const menus: { [code: string]: Menu[] } = {
 					title: 'PreserveBoundary',
 					to: '/api/react/future/PreserveBoundary',
 				},
+				{ title: 'defineIntent', to: '/api/react/future/defineIntent' },
+				{
+					title: 'resolveSubmission',
+					to: '/api/react/future/resolveSubmission',
+				},
 				{ title: 'memoize', to: '/api/react/future/memoize' },
 			],
 		},

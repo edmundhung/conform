@@ -577,6 +577,11 @@ export type UnknownIntent = {
 	payload?: unknown;
 };
 
+export type TransportIntent = {
+	type: string;
+	args: unknown[];
+};
+
 export type UnknownArgs<Args extends any[]> = {
 	[Key in keyof Args]: unknown;
 };

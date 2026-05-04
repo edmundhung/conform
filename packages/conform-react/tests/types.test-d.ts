@@ -16,7 +16,6 @@ import type {
 	IntentHandler,
 } from '@conform-to/react/future';
 import {
-	parseIntent,
 	useForm,
 	useFormData,
 	useIntent,
@@ -604,29 +603,31 @@ describe('configureForms', () => {
 		// @ts-expect-error unknown custom intents should not be exposed without typing
 		custom.useIntent('form-id').unknownIntent();
 
-		const parsedGlobalIntent = parseIntent('goToStep({"step":1})', {
-			handlers: {
-				goToStep,
-			},
+		const resolvedConfiguredSubmission = custom.resolveSubmission({
+			intent: 'goToStep({"step":1})',
+			payload: { step: '0' },
+			fields: ['step'],
 		});
 
-		if (parsedGlobalIntent?.type === 'goToStep') {
-			assertType<number>(parsedGlobalIntent.payload.step);
-		} else if (parsedGlobalIntent?.type === 'submit') {
-			assertType<undefined>(parsedGlobalIntent.payload);
+		assertType<Record<string, FormValue> | undefined>(
+			resolvedConfiguredSubmission.value,
+		);
+
+		if (resolvedConfiguredSubmission.intent?.type === 'goToStep') {
+			assertType<number>(resolvedConfiguredSubmission.intent.payload.step);
+		} else if (resolvedConfiguredSubmission.intent?.type === 'submit') {
+			assertType<undefined>(resolvedConfiguredSubmission.intent.payload);
 		}
 
-		const parsedConfiguredIntent = custom.parseIntent('goToStep({"step":1})');
+		const unresolvedConfiguredSubmission = custom.resolveSubmission({
+			intent: 'unknown',
+			payload: { step: '0' },
+			fields: ['step'],
+		});
 
-		if (parsedConfiguredIntent?.type === 'goToStep') {
-			assertType<number>(parsedConfiguredIntent.payload.step);
-		} else if (parsedConfiguredIntent?.type === 'submit') {
-			assertType<undefined>(parsedConfiguredIntent.payload);
-		}
-
-		expectTypeOf<typeof parsedConfiguredIntent>().not.toEqualTypeOf<
-			{ type: 'confirm'; payload: string } | undefined
-		>();
+		assertType<Record<string, FormValue> | undefined>(
+			unresolvedConfiguredSubmission.value,
+		);
 
 		const confirm = defineIntent<string>({
 			parse(payload) {

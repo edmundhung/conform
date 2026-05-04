@@ -260,7 +260,7 @@ export function useConform<
 				updateState(state, {
 					...finalResult,
 					type,
-					intent: intent,
+					intent,
 					ctx: {
 						handlers: options.intentHandlers,
 						status: getApplyStatus(

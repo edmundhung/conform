@@ -13,8 +13,7 @@ const {
   useFormMetadata,
   useField,
   useIntent,
-  parseIntent,
-  resolveIntent,
+  resolveSubmission,
 } = configureForms({
   // configs...
 });
@@ -53,7 +52,7 @@ This is an advanced option. You typically don't need to change this unless you h
 
 Intent handlers available to every form created by this factory.
 
-Use this to add custom methods to [`useIntent`](./useIntent.md), the `intent` object returned by [`useForm`](./useForm.md), and the bound [`parseIntent`](./parseIntent.md) / [`resolveIntent`](./resolveIntent.md) helpers returned from this factory.
+Use this to add custom methods to [`useIntent`](./useIntent.md), the `intent` object returned by [`useForm`](./useForm.md), and the bound [`resolveSubmission`](./resolveSubmission.md) helper returned from this factory.
 
 ### `shouldValidate?: 'onSubmit' | 'onBlur' | 'onInput'`
 
@@ -127,13 +126,9 @@ Hook to access field metadata from context. See [useField](./useField.md).
 
 Hook to get an intent dispatcher. See [useIntent](./useIntent.md).
 
-### `parseIntent`
+### `resolveSubmission`
 
-Helper to parse a serialized intent value with the factory's configured global intent handlers. See [parseIntent](./parseIntent.md).
-
-### `resolveIntent`
-
-Helper to resolve a submission payload with the factory's configured global intent handlers. See [resolveIntent](./resolveIntent.md).
+Helper to parse and resolve a submission payload with the factory's configured global intent handlers. See [resolveSubmission](./resolveSubmission.md).
 
 ### `config`
 
