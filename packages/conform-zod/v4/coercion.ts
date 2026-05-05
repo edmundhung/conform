@@ -226,9 +226,9 @@ function pipeWithOptionality(
 }
 
 function materializesMissingValue(type: $ZodType): boolean {
-	let def = type._zod.def;
+	const def = type._zod.def;
 
-	while (
+	if (
 		def.type === 'optional' ||
 		def.type === 'nonoptional' ||
 		def.type === 'default' ||
@@ -236,7 +236,21 @@ function materializesMissingValue(type: $ZodType): boolean {
 		def.type === 'catch' ||
 		def.type === 'nullable'
 	) {
-		def = (def as unknown as { innerType: $ZodType }).innerType._zod.def;
+		return materializesMissingValue(
+			(def as unknown as { innerType: $ZodType }).innerType,
+		);
+	}
+
+	if (def.type === 'pipe') {
+		const pipeDef = def as unknown as { in: $ZodType; out: $ZodType };
+
+		if (pipeDef.in._zod.def.type === 'transform') {
+			return materializesMissingValue(pipeDef.out);
+		}
+
+		if (pipeDef.out._zod.def.type === 'transform') {
+			return materializesMissingValue(pipeDef.in);
+		}
 	}
 
 	return def.type === 'array' || def.type === 'object';

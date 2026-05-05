@@ -204,5 +204,20 @@ describe('coercion', () => {
 			expect(shape.caughtItems._zod.optin).toBe('optional');
 			expect(shape.union._zod.def.options[1]._zod.optin).toBeUndefined();
 		});
+
+		test('should materialize missing pipe-wrapped collection fields', () => {
+			const schema = z.object({
+				preprocessed: z.preprocess((value) => value, z.array(z.string())),
+				transformed: z.array(z.string()).transform((value) => value),
+			});
+
+			expect(getResult(coerceFormValue(schema).safeParse({}))).toEqual({
+				success: true,
+				data: {
+					preprocessed: [],
+					transformed: [],
+				},
+			});
+		});
 	});
 });
