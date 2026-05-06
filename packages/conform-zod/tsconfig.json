@@ -4,6 +4,11 @@
 		"target": "ES2022",
 		"module": "ES2022",
 		"moduleResolution": "Bundler",
+		"baseUrl": ".",
+		"paths": {
+			"zod/v4": ["./node_modules/zod-v4/v4"],
+			"zod/v4/*": ["./node_modules/zod-v4/v4/*"]
+		},
 		"allowSyntheticDefaultImports": true,
 		"noUncheckedIndexedAccess": true,
 		"strict": true,
