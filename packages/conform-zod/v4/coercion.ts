@@ -248,9 +248,7 @@ function materializesMissingValue(type: $ZodType): boolean {
 			return materializesMissingValue(pipeDef.out);
 		}
 
-		if (pipeDef.out._zod.def.type === 'transform') {
-			return materializesMissingValue(pipeDef.in);
-		}
+		return materializesMissingValue(pipeDef.in);
 	}
 
 	return def.type === 'array' || def.type === 'object';
