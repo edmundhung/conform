@@ -6,6 +6,10 @@
 		"moduleResolution": "Bundler",
 		"baseUrl": ".",
 		"paths": {
+			// Keep v4 sources and tests on the zod-v4 alias. The zod devDependency is
+			// still v3 for v3 support, so resolving zod/v4 normally would use the v4
+			// compatibility types bundled with zod@3. This alias can be removed when
+			// v3 support is dropped and zod itself is upgraded to v4.
 			"zod/v4": ["./node_modules/zod-v4/v4"],
 			"zod/v4/*": ["./node_modules/zod-v4/v4/*"]
 		},
