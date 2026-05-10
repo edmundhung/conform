@@ -147,5 +147,77 @@ describe('coercion', () => {
 				},
 			});
 		});
+
+		test('should not leak missing-field optionality to reused schemas', () => {
+			const items = z.array(z.string());
+			const schema = z.object({
+				items,
+				nonoptionalItems: items.nonoptional(),
+				caughtItems: items.catch([]),
+				union: z.union([z.literal('other'), items]),
+			});
+			const coerced = coerceFormValue(schema);
+			const shape = (
+				coerced as unknown as {
+					_zod: {
+						def: {
+							out: {
+								_zod: {
+									def: {
+										shape: {
+											items: {
+												_zod: {
+													optin?: 'optional';
+												};
+											};
+											nonoptionalItems: {
+												_zod: {
+													optin?: 'optional';
+												};
+											};
+											caughtItems: {
+												_zod: {
+													optin?: 'optional';
+												};
+											};
+											union: {
+												_zod: {
+													def: {
+														options: [
+															{ _zod: { optin?: 'optional' } },
+															{ _zod: { optin?: 'optional' } },
+														];
+													};
+												};
+											};
+										};
+									};
+								};
+							};
+						};
+					};
+				}
+			)._zod.def.out._zod.def.shape;
+
+			expect(shape.items._zod.optin).toBe('optional');
+			expect(shape.nonoptionalItems._zod.optin).toBe('optional');
+			expect(shape.caughtItems._zod.optin).toBe('optional');
+			expect(shape.union._zod.def.options[1]._zod.optin).toBeUndefined();
+		});
+
+		test('should materialize missing pipe-wrapped collection fields', () => {
+			const schema = z.object({
+				preprocessed: z.preprocess((value) => value, z.array(z.string())),
+				transformed: z.array(z.string()).transform((value) => value),
+			});
+
+			expect(getResult(coerceFormValue(schema).safeParse({}))).toEqual({
+				success: true,
+				data: {
+					preprocessed: [],
+					transformed: [],
+				},
+			});
+		});
 	});
 });
