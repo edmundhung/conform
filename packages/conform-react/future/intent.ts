@@ -38,9 +38,20 @@ import type {
 } from './types';
 
 export function defineIntent<Definition = () => void, Payload = never>(
-	definition?: IntentHandler<NormalizeIntentType<Definition>, Payload>,
+	definition?: Partial<IntentHandler<NormalizeIntentType<Definition>, Payload>>,
 ): IntentHandler<NormalizeIntentType<Definition>, Payload> {
-	return definition ?? {};
+	return {
+		...definition,
+		parse:
+			definition?.parse ??
+			((...args) => {
+				if (args.length > 1) {
+					throw new Error('Invalid intent arguments');
+				}
+
+				return args[0];
+			}),
+	};
 }
 
 export function mergeIntentHandlers<
@@ -70,7 +81,9 @@ export function serializeIntent(intent: TransportIntent): string {
 /**
  * Parses the serialized intent string into a transport intent.
  */
-export function deserializeIntent(serializedIntent: string): TransportIntent {
+export function deserializeIntent(
+	serializedIntent: string,
+): TransportIntent | undefined {
 	let type = serializedIntent;
 	let args: Array<unknown> = [];
 
@@ -88,7 +101,7 @@ export function deserializeIntent(serializedIntent: string): TransportIntent {
 			try {
 				args = JSON.parse(`[${serializedArgs}]`);
 			} catch {
-				// Ignore error and leave args as empty array
+				return undefined;
 			}
 		}
 	}
@@ -115,39 +128,25 @@ export function parseIntent<
 	}
 
 	const transportIntent = deserializeIntent(intentValue);
+
+	if (!transportIntent) {
+		return undefined;
+	}
+
 	const handler = options.handlers[transportIntent.type];
 
 	if (!handler) {
 		return undefined;
 	}
 
-	if (typeof handler?.parse === 'function') {
-		try {
-			return {
-				type: transportIntent.type,
-				payload: handler.parse(...transportIntent.args),
-			} as any;
-		} catch {
-			// eslint-disable-next-line no-console
-			console.warn(
-				`Failed to parse "${transportIntent.type}" intent arguments. Falling back to undefined intent.`,
-			);
-			return undefined;
-		}
-	}
-
-	if (transportIntent.args.length > 1) {
-		// eslint-disable-next-line no-console
-		console.warn(
-			`Failed to parse "${transportIntent.type}" intent arguments. Falling back to undefined intent.`,
-		);
+	try {
+		return {
+			type: transportIntent.type,
+			payload: handler.parse(...transportIntent.args),
+		} as any;
+	} catch {
 		return undefined;
 	}
-
-	return {
-		type: transportIntent.type,
-		payload: transportIntent.args[0],
-	} as any;
 }
 
 export function resolveIntent(

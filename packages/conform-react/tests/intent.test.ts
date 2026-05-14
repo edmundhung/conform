@@ -1,6 +1,7 @@
 import { test, expect, vi } from 'vitest';
 import {
 	applyIntent,
+	defineIntent,
 	serializeIntent,
 	deserializeIntent,
 	parseIntent,
@@ -68,11 +69,8 @@ test('deserializeIntent', () => {
 		args: [{ name: 'email', value: 'test' }],
 	});
 
-	// Test malformed JSON (should ignore error)
-	expect(deserializeIntent('update({invalid)')).toEqual({
-		type: 'update',
-		args: [],
-	});
+	// Test malformed JSON
+	expect(deserializeIntent('update({invalid)')).toBeUndefined();
 
 	// Test without closing parenthesis
 	expect(deserializeIntent('validate("email"')).toEqual({
@@ -108,7 +106,6 @@ test('parseIntent', () => {
 		undefined,
 	);
 
-	const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 	const handlers = {
 		custom: {
 			parse() {
@@ -116,6 +113,34 @@ test('parseIntent', () => {
 			},
 		},
 	} satisfies Record<string, IntentHandler>;
+	const fallbackHandlers = {
+		singleArg: defineIntent({
+			resolve: vi.fn(),
+		}),
+		zeroArg: defineIntent({
+			apply({ result }) {
+				return result;
+			},
+		}),
+	} satisfies Record<string, IntentHandler>;
+
+	expect(
+		parseIntent('singleArg("field")', { handlers: fallbackHandlers }),
+	).toEqual({
+		type: 'singleArg',
+		payload: 'field',
+	});
+	expect(parseIntent('zeroArg', { handlers: fallbackHandlers })).toEqual({
+		type: 'zeroArg',
+		payload: undefined,
+	});
+	expect(
+		parseIntent('singleArg("field",1)', { handlers: fallbackHandlers }),
+	).toBe(undefined);
+
+	expect(
+		parseIntent('reset({invalid)', { handlers: defaultIntentHandlers }),
+	).toBeUndefined();
 
 	expect(
 		parseIntent(
@@ -126,9 +151,6 @@ test('parseIntent', () => {
 			{ handlers },
 		),
 	).toBeUndefined();
-	expect(warn).toHaveBeenCalledWith(
-		'Failed to parse "custom" intent arguments. Falling back to undefined intent.',
-	);
 
 	expect(
 		parseIntent(
@@ -139,10 +161,6 @@ test('parseIntent', () => {
 			{ handlers: defaultIntentHandlers },
 		),
 	).toBeUndefined();
-	expect(warn).toHaveBeenCalledWith(
-		'Failed to parse "custom" intent arguments. Falling back to undefined intent.',
-	);
-	warn.mockRestore();
 });
 
 test('resolveIntent', () => {
@@ -298,7 +316,7 @@ test('applyIntent', () => {
 	});
 
 	const customHandlers = {
-		custom: {
+		custom: defineIntent({
 			apply: vi.fn(({ result, payload }) => ({
 				...result,
 				targetValue: {
@@ -306,7 +324,7 @@ test('applyIntent', () => {
 					custom: payload,
 				},
 			})),
-		},
+		}),
 	} satisfies Record<string, IntentHandler>;
 	const customResult: SubmissionResult = {
 		submission: {

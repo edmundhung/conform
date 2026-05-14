@@ -742,7 +742,7 @@ export type IntentHandler<
 	Dispatch extends IntentDefinition = (payload: any) => void,
 	Payload = never,
 > = {
-	parse?<FormShape extends Record<string, any>>(
+	parse<FormShape extends Record<string, any>>(
 		...args: Parameters<IntentDispatch<Dispatch, FormShape>>
 	): IntentHandlerPayload<Dispatch, Payload, FormShape>;
 	resolve?<FormShape extends Record<string, any>>(ctx: {
