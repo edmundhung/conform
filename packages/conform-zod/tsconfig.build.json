@@ -3,7 +3,8 @@
 	"compilerOptions": {
 		"outDir": "./dist",
 		"emitDeclarationOnly": true,
-		"noEmit": false
+		"noEmit": false,
+		"paths": {}
 	},
 	"exclude": ["**/tests", "dist"]
 }
