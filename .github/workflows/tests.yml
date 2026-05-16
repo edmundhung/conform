@@ -24,7 +24,7 @@ jobs:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
         browser: [webkit, firefox, chromium]
-        node: [20]
+        node: [22]
         exclude:
           - os: macos-latest
             browser: firefox
@@ -70,7 +70,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm i
