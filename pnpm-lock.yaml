@@ -118,10 +118,10 @@ importers:
         specifier: ^2.4.2
         version: 2.8.2(@emotion/react@11.11.1(@types/react@18.3.23)(react@18.3.1))(@emotion/styled@11.11.0(@emotion/react@11.11.1(@types/react@18.3.23)(react@18.3.1))(@types/react@18.3.23)(react@18.3.1))(@types/react@18.3.23)(framer-motion@7.10.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@conform-to/react':
-        specifier: ^1.19.2
+        specifier: ^1.19.3
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: ^1.19.2
+        specifier: ^1.19.3
         version: link:../../packages/conform-zod
       '@emotion/react':
         specifier: ^11.10.5
@@ -179,10 +179,10 @@ importers:
   examples/headless-ui:
     dependencies:
       '@conform-to/react':
-        specifier: ^1.19.2
+        specifier: ^1.19.3
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: ^1.19.2
+        specifier: ^1.19.3
         version: link:../../packages/conform-zod
       '@headlessui/react':
         specifier: ^1.7.13
@@ -249,10 +249,10 @@ importers:
   examples/material-ui:
     dependencies:
       '@conform-to/react':
-        specifier: ^1.19.2
+        specifier: ^1.19.3
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: ^1.19.2
+        specifier: ^1.19.3
         version: link:../../packages/conform-zod
       '@emotion/react':
         specifier: ^11.14.0
@@ -310,10 +310,10 @@ importers:
   examples/nextjs:
     dependencies:
       '@conform-to/react':
-        specifier: 1.19.2
+        specifier: 1.19.3
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: 1.19.2
+        specifier: 1.19.3
         version: link:../../packages/conform-zod
       next:
         specifier: 15.5.18
@@ -347,10 +347,10 @@ importers:
   examples/radix-ui:
     dependencies:
       '@conform-to/react':
-        specifier: ^1.19.2
+        specifier: ^1.19.3
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: ^1.19.2
+        specifier: ^1.19.3
         version: link:../../packages/conform-zod
       '@radix-ui/react-icons':
         specifier: ^1.3.2
@@ -417,10 +417,10 @@ importers:
   examples/react-aria:
     dependencies:
       '@conform-to/react':
-        specifier: ^1.19.2
+        specifier: ^1.19.3
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: ^1.19.2
+        specifier: ^1.19.3
         version: link:../../packages/conform-zod
       '@internationalized/date':
         specifier: ^3.8.0
@@ -478,10 +478,10 @@ importers:
   examples/react-router:
     dependencies:
       '@conform-to/react':
-        specifier: 1.19.2
+        specifier: 1.19.3
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: 1.19.2
+        specifier: 1.19.3
         version: link:../../packages/conform-zod
       '@react-router/node':
         specifier: ^7.14.2
@@ -533,10 +533,10 @@ importers:
   examples/react-spa:
     dependencies:
       '@conform-to/react':
-        specifier: 1.19.2
+        specifier: 1.19.3
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: 1.19.2
+        specifier: 1.19.3
         version: link:../../packages/conform-zod
       react:
         specifier: ^19.1.1
@@ -588,10 +588,10 @@ importers:
   examples/remix:
     dependencies:
       '@conform-to/react':
-        specifier: 1.19.2
+        specifier: 1.19.3
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: 1.19.2
+        specifier: 1.19.3
         version: link:../../packages/conform-zod
       '@remix-run/node':
         specifier: ^1.19.3
@@ -643,10 +643,10 @@ importers:
   examples/shadcn-ui:
     dependencies:
       '@conform-to/react':
-        specifier: ^1.19.2
+        specifier: ^1.19.3
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: ^1.19.2
+        specifier: ^1.19.3
         version: link:../../packages/conform-zod
       '@radix-ui/react-checkbox':
         specifier: ^1.0.4
@@ -21152,7 +21152,7 @@ snapshots:
       sirv: 3.0.2
       tinyrainbow: 3.1.0
       vitest: 4.1.5(@types/node@25.5.0)(@vitest/browser-playwright@4.1.5)(jsdom@27.0.1)(msw@2.11.6(@types/node@25.5.0)(typescript@5.8.3))(vite@7.3.3(@types/node@25.5.0)(jiti@2.6.1)(terser@5.44.0)(yaml@2.8.3))
-      ws: 8.20.1
+      ws: 8.20.0
     transitivePeerDependencies:
       - bufferutil
       - msw
@@ -28746,7 +28746,8 @@ snapshots:
 
   ws@8.20.0: {}
 
-  ws@8.20.1: {}
+  ws@8.20.1:
+    optional: true
 
   xdm@2.1.0:
     dependencies:
