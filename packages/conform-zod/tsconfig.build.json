@@ -4,7 +4,9 @@
 		"outDir": "./dist",
 		"emitDeclarationOnly": true,
 		"noEmit": false,
-		"paths": {}
+		"paths": {
+			// Do not inherit zod-v4 path aliases.
+		}
 	},
 	"exclude": ["**/tests", "dist"]
 }
