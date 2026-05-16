@@ -2,11 +2,6 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig, defineProject } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
 
-const defaultBrowsers = ['chromium', 'firefox', 'webkit'] as const;
-const browsers = process.env.BROWSER
-	? [process.env.BROWSER as (typeof defaultBrowsers)[number]]
-	: [...defaultBrowsers];
-const runMultipleBrowsers = browsers.length > 1;
 const root = fileURLToPath(new URL('.', import.meta.url));
 
 export const projects = [
@@ -24,27 +19,21 @@ export const projects = [
 			browser: {
 				enabled: true,
 				headless: true,
-				provider: playwright(
-					runMultipleBrowsers ? { actionTimeout: 1_000 } : undefined,
-				),
+				provider: playwright(),
 				api: 63317,
 				fileParallelism: false,
-				instances: browsers.map((browser) => ({ browser })),
+				instances: [
+					{ browser: 'chromium' },
+					{ browser: 'firefox' },
+					{ browser: 'webkit' },
+				],
 			},
 			include: ['**/tests/**/*.test.{ts,tsx}'],
 			exclude: ['**/node_modules/**', '**/tests/**/*.node.test.{ts,tsx}'],
-			testTimeout: process.env.CI
-				? 30_000
-				: runMultipleBrowsers
-					? 15_000
-					: 5_000,
+			testTimeout: process.env.CI ? 30_000 : 5_000,
 			expect: {
 				poll: {
-					timeout: process.env.CI
-						? 10_000
-						: runMultipleBrowsers
-							? 5_000
-							: 1_000,
+					timeout: process.env.CI ? 10_000 : 1_000,
 				},
 			},
 		},

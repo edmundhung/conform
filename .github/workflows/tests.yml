@@ -111,9 +111,7 @@ jobs:
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
       - name: Run Vitest tests
-        run: pnpm run test:future
-        env:
-          BROWSER: ${{ matrix.browser }}
+        run: pnpm run test:future --browser.name=${{ matrix.browser }}
   typecheck:
     name: Typecheck
     runs-on: ubuntu-latest
