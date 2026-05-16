@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"lib": ["ES2022", "DOM", "DOM.Iterable"],
+		"target": "ES2022",
+		"module": "ES2022",
+		"moduleResolution": "Bundler",
+		"baseUrl": "../..",
+		"paths": {
+			"zod": ["./node_modules/zod-v4"],
+			"zod/*": ["./node_modules/zod-v4/*"]
+		},
+		"strict": true,
+		"exactOptionalPropertyTypes": true,
+		"noUncheckedIndexedAccess": true,
+		"skipLibCheck": false,
+		"noEmit": true
+	},
+	"include": ["types.test-d.ts"]
+}

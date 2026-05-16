@@ -163,13 +163,14 @@ describe('parse', () => {
 				date: z.date({ invalid_type_error: 'invalid' }),
 				file: z.instanceof(File, { message: 'invalid' }),
 			});
+			const file = new File([], '');
 			const formData = createFormData([
 				['text', 'abc'],
 				['number', '1'],
 				['boolean', 'on'],
 				['bigint', '1'],
 				['date', '1970-01-01'],
-				['file', new File([], '')],
+				['file', file],
 			]);
 
 			expect(
@@ -185,7 +186,7 @@ describe('parse', () => {
 					boolean: 'on',
 					bigint: '1',
 					date: '1970-01-01',
-					file: new File([], ''),
+					file,
 				},
 				error: {
 					number: ['invalid'],

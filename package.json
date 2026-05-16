@@ -9,7 +9,7 @@
 		"dev:playground": "pnpm --filter ./playground run dev",
 		"guide": "pnpm --filter ./guide run dev ",
 		"test": "pnpm run \"/^test:.*/\"",
-		"test:future": "vitest --project='conform-*'",
+		"test:future": "pnpm --filter \"./packages/*\" run --if-present test",
 		"test:api": "vitest --project=browser --project=node",
 		"test:e2e": "playwright test",
 		"version": "changeset version && pnpm install --lockfile-only && .github/version.sh",
