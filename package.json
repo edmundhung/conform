@@ -3,7 +3,7 @@
 	"name": "conform",
 	"license": "MIT",
 	"scripts": {
-		"build": "pnpm run --filter \"./packages/*\" \"/^build:.*/\"",
+		"build": "pnpm run --filter \"./packages/*\" build",
 		"dev": "pnpm run \"/^dev:.*/\"",
 		"dev:packages": "pnpm run --filter \"./packages/*\" \"/^dev:.*/\"",
 		"dev:playground": "pnpm --filter ./playground run dev",

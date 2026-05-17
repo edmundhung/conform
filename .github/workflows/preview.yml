@@ -23,6 +23,8 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm i
+      - name: Build packages
+        run: pnpm build
       - name: Publish to pkg.pr.new
         run: pnpx pkg-pr-new publish --compact './packages/*' --template './examples/*'
 

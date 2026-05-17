@@ -27,6 +27,8 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - name: Install dependencies
         run: pnpm i
+      - name: Build packages
+        run: pnpm build
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
