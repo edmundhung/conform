@@ -36,6 +36,7 @@ jobs:
       - name: Install pre-release
         run: >
           pnpm --filter './examples/*' add
+          https://pkg.pr.new/@conform-to/dom@${{ inputs.preview }}
           https://pkg.pr.new/@conform-to/react@${{ inputs.preview }}
           https://pkg.pr.new/@conform-to/zod@${{ inputs.preview }}
       - name: Install Playwright Browsers
