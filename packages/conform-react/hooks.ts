@@ -96,7 +96,12 @@ export function useForm<
 	});
 	const stateSnapshot = useFormState(context, subjectRef);
 	const noValidate = useNoValidate(options.defaultNoValidate);
-	const form = getFormMetadata(context, subjectRef, stateSnapshot, noValidate);
+	const form = getFormMetadata<Schema, FormError, FormValue>(
+		context,
+		subjectRef,
+		stateSnapshot,
+		noValidate,
+	);
 
 	useEffect(() => {
 		context.runSideEffect(stateSnapshot.pendingIntents);
@@ -119,12 +124,17 @@ export function useFormMetadata<
 	const stateSnapshot = useFormState(context, subjectRef);
 	const noValidate = useNoValidate(options.defaultNoValidate);
 
-	return getFormMetadata(context, subjectRef, stateSnapshot, noValidate);
+	return getFormMetadata<Schema, FormError, unknown>(
+		context,
+		subjectRef,
+		stateSnapshot,
+		noValidate,
+	);
 }
 
 export function useField<
 	FieldSchema,
-	FormSchema extends Record<string, unknown> = Record<string, unknown>,
+	FormSchema extends Record<string, unknown> = any,
 	FormError = string[],
 >(
 	name: FieldName<FieldSchema, FormSchema, FormError>,
@@ -144,7 +154,12 @@ export function useField<
 		stateSnapshot,
 		name,
 	);
-	const form = getFormMetadata(context, subjectRef, stateSnapshot, false);
+	const form = getFormMetadata<FormSchema, FormError, unknown>(
+		context,
+		subjectRef,
+		stateSnapshot,
+		false,
+	);
 
 	return [field, form];
 }

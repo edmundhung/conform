@@ -20,6 +20,10 @@ import {
 	shape,
 } from '@conform-to/react/future';
 import { useRef } from 'react';
+import type {
+	FieldMetadata as StableFieldMetadata,
+	FormMetadata as StableFormMetadata,
+} from '../context';
 
 test('DefaultValue', () => {
 	// Primitive types
@@ -113,6 +117,20 @@ test('DefaultValue', () => {
 	assertType<DefaultValue<number>>(numberWithUndefined);
 	assertType<DefaultValue<UserObject>>(objectWithUndefined);
 	assertType<DefaultValue<string[]>>(arrayWithUndefined);
+});
+
+test('stable metadata default schema types accept typed metadata', () => {
+	type TestSchema = { foo: string };
+	type ListSchema = { users: Array<{ name: string }> };
+
+	const form = {} as StableFormMetadata<TestSchema>;
+	const field = {} as StableFieldMetadata<
+		ListSchema['users'][number],
+		ListSchema
+	>;
+
+	assertType<StableFormMetadata>(form);
+	assertType<StableFieldMetadata>(field);
 });
 
 test('FormOptions', () => {
