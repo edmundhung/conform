@@ -263,7 +263,7 @@ export function setPathValue<T extends Record<string, any>>(
 	target: T,
 	pathOrSegments: string | Array<string | number>,
 	valueOrFn: unknown | ((current: unknown) => unknown),
-	options: { clone?: boolean; silent?: boolean } = {},
+	options: { mutate?: boolean; silent?: boolean } = {},
 ): T {
 	try {
 		// 1) normalize + validate path
@@ -284,20 +284,20 @@ export function setPathValue<T extends Record<string, any>>(
 			);
 		}
 
-		// 2) clone root if needed
-		const result = options.clone ? { ...target } : target;
+		// 2) clone root unless mutation is explicitly requested
+		const result = options.mutate ? target : { ...target };
 		let pointer: any = result;
 
-		// 3) drill down, cloning ancestors
+		// 3) drill down, cloning ancestors unless mutation is explicitly requested
 		for (let i = 0; i < segments.length - 1; i++) {
 			const currentSegment = segments[i] as string | number;
 			const nextSegment = segments[i + 1] as string | number;
 			let child = pointer[currentSegment];
 
 			if (Array.isArray(child)) {
-				child = options.clone ? child.slice() : child;
+				child = options.mutate ? child : child.slice();
 			} else if (isPlainObject(child)) {
-				child = options.clone ? { ...child } : child;
+				child = options.mutate ? child : { ...child };
 			} else {
 				child = typeof nextSegment === 'number' || nextSegment === '' ? [] : {};
 			}
@@ -482,6 +482,7 @@ export function parseSubmission(
 			}
 
 			setPathValue(submission.payload, segments, value, {
+				mutate: true,
 				silent: true, // Avoid errors if the path is invalid
 			});
 			submission.fields.push(name);
@@ -659,9 +660,9 @@ export function report<ErrorShape>(
 		for (const name of options.hideFields) {
 			const path = parsePath(name);
 
-			setPathValue(submission.payload, path, undefined);
+			setPathValue(submission.payload, path, undefined, { mutate: true });
 			if (targetValue) {
-				setPathValue(targetValue, path, undefined);
+				setPathValue(targetValue, path, undefined, { mutate: true });
 			}
 		}
 	}

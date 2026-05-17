@@ -14,6 +14,7 @@ import type {
 	ErrorContext,
 	FormRef,
 	IntentDispatcher,
+	IntentHandler,
 } from './types';
 import { serializeIntent } from './intent';
 import { hasFieldError } from './state';
@@ -168,7 +169,7 @@ export function resolveControlPayload(
 		}
 
 		for (const [name, value] of entries) {
-			setPathValue(result, name, value);
+			setPathValue(result, name, value, { mutate: true });
 		}
 
 		return getPathValue(result, input.name);
@@ -197,7 +198,7 @@ export function deriveDefaultPayload(options: ControlOptions): unknown {
 export function focusFirstInvalidField<ErrorShape>(
 	ctx: ErrorContext<ErrorShape>,
 ) {
-	if (ctx.intent) {
+	if (ctx.intent && ctx.intent.type !== 'submit') {
 		return;
 	}
 
@@ -280,15 +281,18 @@ export function resetFormValue(
  * Creates a proxy that dynamically generates intent dispatch functions.
  * Each property access returns a function that submits the intent to the form.
  */
-export function createIntentDispatcher<FormShape extends Record<string, any>>(
+export function createIntentDispatcher<
+	FormShape extends Record<string, any>,
+	IntentHandlers extends Record<string, IntentHandler<any, any>>,
+>(
 	formElement: HTMLFormElement | (() => HTMLFormElement | null),
 	intentName: string,
-) {
-	return new Proxy<IntentDispatcher<FormShape>>({} as any, {
+): IntentDispatcher<FormShape, IntentHandlers> {
+	return new Proxy({} as IntentDispatcher<FormShape, IntentHandlers>, {
 		get(target, type, receiver) {
 			if (typeof type === 'string') {
 				// @ts-expect-error
-				target[type] ??= (payload?: unknown) => {
+				target[type] ??= (...args: unknown[]) => {
 					const form =
 						typeof formElement === 'function' ? formElement() : formElement;
 
@@ -303,7 +307,7 @@ export function createIntentDispatcher<FormShape extends Record<string, any>>(
 						intentName,
 						serializeIntent({
 							type,
-							payload,
+							args,
 						}),
 					);
 				};

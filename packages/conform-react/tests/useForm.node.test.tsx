@@ -91,10 +91,7 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 						['description', 'Hello World'],
 						[
 							DEFAULT_INTENT_NAME,
-							serializeIntent({
-								type: 'validate',
-								payload: 'title',
-							}),
+							serializeIntent({ type: 'validate', args: ['title'] }),
 						],
 					],
 					{
@@ -129,10 +126,12 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 							DEFAULT_INTENT_NAME,
 							serializeIntent({
 								type: 'update',
-								payload: {
-									name: 'description',
-									value: 'Updated description',
-								},
+								args: [
+									{
+										name: 'description',
+										value: 'Updated description',
+									},
+								],
 							}),
 						],
 					],
@@ -164,12 +163,7 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 					[
 						['title', 'Example'],
 						['description', 'Hello World'],
-						[
-							DEFAULT_INTENT_NAME,
-							serializeIntent({
-								type: 'reset',
-							}),
-						],
+						[DEFAULT_INTENT_NAME, serializeIntent({ type: 'reset', args: [] })],
 					],
 					{
 						error: {
@@ -195,6 +189,39 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 		expect(fields.description.errors).toBe(undefined);
 	});
 
+	test('initialize with submit intent', () => {
+		const { form, fields } = serverRenderHook(() =>
+			useForm<{ title: string; description: string }, string>({
+				lastResult: createResult(
+					[
+						['title', 'Example'],
+						['description', 'Hello World'],
+						[
+							DEFAULT_INTENT_NAME,
+							serializeIntent({ type: 'submit', args: [] }),
+						],
+					],
+					{
+						error: {
+							formErrors: ['Form error'],
+							fieldErrors: {
+								title: ['Title error'],
+								description: ['Description error'],
+							},
+						},
+					},
+				),
+				onValidate: () => undefined,
+			}),
+		);
+
+		expect(form.errors).toEqual(['Form error']);
+		expect(fields.title.defaultValue).toBe('Example');
+		expect(fields.title.errors).toEqual(['Title error']);
+		expect(fields.description.defaultValue).toBe('Hello World');
+		expect(fields.description.errors).toEqual(['Description error']);
+	});
+
 	test('initialize with insert intent', () => {
 		const { form, fields } = serverRenderHook(() =>
 			useForm<{ title: string; notes: string[] }, string[]>({
@@ -205,10 +232,12 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 							DEFAULT_INTENT_NAME,
 							serializeIntent({
 								type: 'insert',
-								payload: {
-									name: 'notes',
-									defaultValue: 'Foo',
-								},
+								args: [
+									{
+										name: 'notes',
+										defaultValue: 'Foo',
+									},
+								],
 							}),
 						],
 					],
@@ -254,11 +283,13 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 							DEFAULT_INTENT_NAME,
 							serializeIntent({
 								type: 'reorder',
-								payload: {
-									name: 'notes',
-									from: 1,
-									to: 0,
-								},
+								args: [
+									{
+										name: 'notes',
+										from: 1,
+										to: 0,
+									},
+								],
 							}),
 						],
 					],
@@ -311,10 +342,12 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 							DEFAULT_INTENT_NAME,
 							serializeIntent({
 								type: 'remove',
-								payload: {
-									name: 'notes',
-									index: 1,
-								},
+								args: [
+									{
+										name: 'notes',
+										index: 1,
+									},
+								],
 							}),
 						],
 					],

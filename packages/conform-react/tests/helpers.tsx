@@ -8,13 +8,14 @@ import {
 } from '@conform-to/dom/future';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
-	resolveIntent,
-	intentHandlers,
-	deserializeIntent,
 	applyIntent,
+	defaultIntentHandlers,
+	mergeIntentHandlers,
+	parseIntent,
+	resolveIntent,
 } from '../future/intent';
-import { FormAction } from '../future/types';
-import { initializeState } from '../future/state';
+import { FormAction, IntentHandler } from '../future/types';
+import { getApplyStatus, initializeState } from '../future/state';
 import { expect } from 'vitest';
 import { Locator } from 'vitest/browser';
 
@@ -42,6 +43,7 @@ export function createResult(
 	options?: {
 		targetValue?: Record<string, FormValue> | null;
 		error?: Partial<FormError<any>> | null;
+		handlers?: Record<string, IntentHandler<any, any>>;
 	},
 ): SubmissionResult<any, any> {
 	const formData = new FormData();
@@ -53,7 +55,12 @@ export function createResult(
 	const submission = parseSubmission(formData, {
 		intentName: DEFAULT_INTENT_NAME,
 	});
-	const value = resolveIntent(submission);
+	const handlers = mergeIntentHandlers(
+		defaultIntentHandlers,
+		options?.handlers,
+	);
+	const intent = parseIntent(submission.intent, { handlers });
+	const value = resolveIntent(submission, { handlers, intent });
 
 	return report(submission, {
 		value:
@@ -69,6 +76,7 @@ export function createAction(options: {
 	defaultValue?: Record<string, unknown> | null;
 	targetValue?: Record<string, FormValue> | null;
 	error?: Partial<FormError<any>> | null;
+	handlers?: Record<string, IntentHandler<any, any>>;
 }): FormAction<any, any, any> {
 	const formData = new FormData();
 
@@ -79,7 +87,12 @@ export function createAction(options: {
 	const submission = parseSubmission(formData, {
 		intentName: DEFAULT_INTENT_NAME,
 	});
-	const value = resolveIntent(submission);
+	const handlers = mergeIntentHandlers(
+		defaultIntentHandlers,
+		options?.handlers,
+	);
+	const intent = parseIntent(submission.intent, { handlers });
+	const value = resolveIntent(submission, { handlers, intent: intent });
 	const result = report(submission, {
 		value:
 			options.targetValue !== undefined
@@ -90,18 +103,15 @@ export function createAction(options: {
 		reset: options.reset,
 		error: options.error,
 	});
-	const intent = submission.intent
-		? deserializeIntent(submission.intent)
-		: null;
-	const finalResult = applyIntent(result, intent, { handlers: intentHandlers });
+	const finalResult = applyIntent(result, intent, { handlers });
 
 	return {
 		...finalResult,
 		type: options.type,
 		intent,
 		ctx: {
-			handlers: intentHandlers,
-			cancelled: finalResult !== result,
+			handlers,
+			status: getApplyStatus(result.targetValue, finalResult.targetValue),
 			reset(defaultValue?: Record<string, unknown> | null) {
 				return initializeState({
 					defaultValue: defaultValue ?? options.defaultValue,

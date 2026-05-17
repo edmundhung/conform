@@ -110,6 +110,7 @@ export function getSubmissionContext(
 				}
 			},
 			{
+				mutate: true,
 				silent: true,
 			},
 		);
@@ -180,7 +181,9 @@ export function parse<FormValue, FormError>(
 
 				if (typeof intent.payload.value !== 'undefined') {
 					if (name) {
-						setPathValue(context.payload, name, () => value);
+						setPathValue(context.payload, name, () => value, {
+							mutate: true,
+						});
 					} else {
 						context.payload = value;
 					}
@@ -191,7 +194,9 @@ export function parse<FormValue, FormError>(
 				const name = appendPath(intent.payload.name, intent.payload.index);
 
 				if (name) {
-					setPathValue(context.payload, name, () => undefined);
+					setPathValue(context.payload, name, () => undefined, {
+						mutate: true,
+					});
 				} else {
 					context.payload = {};
 				}
@@ -264,7 +269,9 @@ export function replySubmission<FormError>(
 			const value = getPathValue(context.payload, name);
 
 			if (typeof value !== 'undefined') {
-				setPathValue(context.payload, name, () => undefined);
+				setPathValue(context.payload, name, () => undefined, {
+					mutate: true,
+				});
 			}
 		}
 	}
@@ -453,13 +460,18 @@ export function setListValue(
 	data: Record<string, unknown>,
 	intent: InsertIntent | RemoveIntent | ReorderIntent,
 ): void {
-	setPathValue(data, intent.payload.name, (value: unknown) => {
-		const list = value ?? [];
+	setPathValue(
+		data,
+		intent.payload.name,
+		(value: unknown) => {
+			const list = value ?? [];
 
-		updateList(list, intent);
+			updateList(list, intent);
 
-		return list;
-	});
+			return list;
+		},
+		{ mutate: true },
+	);
 }
 
 /**
@@ -482,19 +494,24 @@ export function setState(
 		const value = state[key];
 
 		if (isPathPrefix(key, name) && key !== name) {
-			setPathValue(target, key, (currentValue: unknown) => {
-				if (typeof currentValue === 'undefined') {
-					return value;
-				}
+			setPathValue(
+				target,
+				key,
+				(currentValue: unknown) => {
+					if (typeof currentValue === 'undefined') {
+						return value;
+					}
 
-				// As the key should be unique, if currentValue is already defined,
-				// it must be either an object or an array
+					// As the key should be unique, if currentValue is already defined,
+					// it must be either an object or an array
 
-				// @ts-expect-error
-				currentValue[root] = value;
+					// @ts-expect-error
+					currentValue[root] = value;
 
-				return currentValue;
-			});
+					return currentValue;
+				},
+				{ mutate: true },
+			);
 
 			// Remove the value from the data
 			delete state[key];

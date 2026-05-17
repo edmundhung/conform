@@ -6,18 +6,22 @@ import type {
 	FieldMetadata,
 	FieldName,
 	Fieldset,
+	FormValue,
 	FormMetadata,
 	FormOptions,
 	InferBaseErrorShape,
 	InferCustomFieldMetadata,
 	InferCustomFormMetadata,
 	IntentDispatcher,
+	IntentHandler,
 } from '@conform-to/react/future';
 import {
 	useForm,
 	useFormData,
+	useIntent,
 	configureForms,
 	shape,
+	defineIntent,
 } from '@conform-to/react/future';
 import { useRef } from 'react';
 
@@ -217,6 +221,44 @@ test('useForm', () => {
 	>();
 	expectTypeOf(testSchemaWithCustomErrorShape.intent).toEqualTypeOf<
 		IntentDispatcher<{ email: string; password: string }>
+	>();
+
+	const goToStep = defineIntent<{ step: number }>({
+		parse(payload) {
+			if (
+				typeof payload !== 'object' ||
+				payload === null ||
+				!('step' in payload) ||
+				typeof payload.step !== 'number'
+			) {
+				throw new Error('Invalid goToStep payload');
+			}
+
+			return payload;
+		},
+	});
+	const intentInferred = useForm({
+		intents: {
+			goToStep,
+		},
+		onValidate({ intent, error }) {
+			if (intent?.type === 'goToStep') {
+				assertType<number>(intent.payload.step);
+			}
+
+			return error;
+		},
+	});
+
+	expectTypeOf(intentInferred.form).toEqualTypeOf<FormMetadata<string[]>>();
+	expectTypeOf(intentInferred.fields).toEqualTypeOf<
+		Fieldset<Record<string, any>, string[]>
+	>();
+	expectTypeOf(intentInferred.intent).toEqualTypeOf<
+		IntentDispatcher<Record<string, any>, { goToStep: typeof goToStep }>
+	>();
+	expectTypeOf(intentInferred.intent.goToStep).toEqualTypeOf<
+		(payload: { step: number }) => void
 	>();
 });
 
@@ -516,6 +558,193 @@ describe('configureForms', () => {
 			IntentDispatcher<{ email: string; password: string }>
 		>();
 	});
+
+	test('custom intents', () => {
+		const goToStep = defineIntent<{ step: number }>({
+			parse(payload) {
+				if (
+					typeof payload !== 'object' ||
+					payload === null ||
+					!('step' in payload) ||
+					typeof payload.step !== 'number'
+				) {
+					throw new Error('Invalid goToStep payload');
+				}
+
+				return payload;
+			},
+		});
+		const custom = configureForms({
+			intents: {
+				goToStep,
+			},
+		});
+
+		const globalIntentSetup = custom.useForm({
+			onValidate({ intent, error }) {
+				if (intent?.type === 'goToStep') {
+					assertType<number>(intent.payload.step);
+				}
+
+				return error;
+			},
+		});
+
+		expectTypeOf(globalIntentSetup.intent).toEqualTypeOf<
+			IntentDispatcher<Record<string, any>, { goToStep: typeof goToStep }>
+		>();
+		expectTypeOf(globalIntentSetup.intent.goToStep).toEqualTypeOf<
+			(payload: { step: number }) => void
+		>();
+		expectTypeOf(custom.useIntent('form-id').goToStep).toEqualTypeOf<
+			(payload: { step: number }) => void
+		>();
+
+		// @ts-expect-error unknown custom intents should not be exposed without typing
+		custom.useIntent('form-id').unknownIntent();
+
+		const resolvedConfiguredSubmission = custom.resolveSubmission({
+			intent: 'goToStep({"step":1})',
+			payload: { step: '0' },
+			fields: ['step'],
+		});
+
+		assertType<Record<string, FormValue> | undefined>(
+			resolvedConfiguredSubmission.value,
+		);
+
+		if (resolvedConfiguredSubmission.intent?.type === 'goToStep') {
+			assertType<number>(resolvedConfiguredSubmission.intent.payload.step);
+		} else if (resolvedConfiguredSubmission.intent?.type === 'submit') {
+			assertType<undefined>(resolvedConfiguredSubmission.intent.payload);
+		}
+
+		const unresolvedConfiguredSubmission = custom.resolveSubmission({
+			intent: 'unknown',
+			payload: { step: '0' },
+			fields: ['step'],
+		});
+
+		assertType<Record<string, FormValue> | undefined>(
+			unresolvedConfiguredSubmission.value,
+		);
+
+		const confirm = defineIntent<string>({
+			parse(payload) {
+				if (typeof payload !== 'string') {
+					throw new Error('Invalid confirm payload');
+				}
+
+				return payload;
+			},
+		});
+
+		const inlineIntentSetup = custom.useForm({
+			intents: {
+				confirm,
+			},
+			onValidate({ intent, error }) {
+				if (intent?.type === 'confirm') {
+					assertType<string>(intent.payload);
+				} else if (intent?.type === 'goToStep') {
+					assertType<number>(intent.payload.step);
+				}
+
+				return error;
+			},
+		});
+
+		expectTypeOf(inlineIntentSetup.intent).toEqualTypeOf<
+			IntentDispatcher<
+				Record<string, any>,
+				{ goToStep: typeof goToStep; confirm: typeof confirm }
+			>
+		>();
+		expectTypeOf(inlineIntentSetup.intent.confirm).toEqualTypeOf<
+			(payload: string) => void
+		>();
+		expectTypeOf(custom.useIntent('form-id').goToStep).toEqualTypeOf<
+			(payload: { step: number }) => void
+		>();
+	});
+});
+
+test('defineIntent', () => {
+	const confirm = defineIntent<(payload: string) => void>({
+		parse(payload) {
+			assertType<string>(payload);
+
+			return payload;
+		},
+		resolve(context) {
+			assertType<string>(context.payload);
+
+			return context.value;
+		},
+	});
+
+	expectTypeOf(confirm).toEqualTypeOf<
+		IntentHandler<(payload: string) => void>
+	>();
+
+	const updateField = defineIntent<
+		(name: string, value: string) => void,
+		{
+			name: string;
+			value: string;
+		}
+	>({
+		parse(name, value) {
+			assertType<string>(name);
+			assertType<string>(value);
+
+			return { name, value };
+		},
+		resolve(context) {
+			assertType<Record<string, FormValue>>(context.value);
+			assertType<string>(context.payload.name);
+			assertType<string>(context.payload.value);
+
+			return {
+				[context.payload.name]: context.payload.value,
+			};
+		},
+		touch(context) {
+			assertType<string>(context.name);
+			assertType<string>(context.payload.name);
+
+			return context.name === context.payload.name;
+		},
+		move(context) {
+			assertType<string>(context.name);
+			assertType<'applied' | 'reverted' | 'modified'>(context.status);
+			assertType<Record<string, FormValue> | undefined>(context.targetValue);
+			assertType<string>(context.payload.name);
+
+			return context.name;
+		},
+	});
+
+	const configured = configureForms({
+		intents: {
+			updateField,
+		},
+	});
+
+	expectTypeOf(configured.useIntent('form-id').updateField).toEqualTypeOf<
+		(name: string, value: string) => void
+	>();
+	// @ts-expect-error unknown custom intents should not be exposed without typing
+	configured.useIntent('form-id').unknownIntent();
+
+	expectTypeOf(
+		useIntent<{ updateField: typeof updateField }>('form-id').updateField,
+	).toEqualTypeOf<(name: string, value: string) => void>();
+
+	expectTypeOf(
+		useIntent<{ title: string }, { updateField: typeof updateField }>('form-id')
+			.updateField,
+	).toEqualTypeOf<(name: string, value: string) => void>();
 });
 
 test('IntentDispatcher', () => {

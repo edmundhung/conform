@@ -174,7 +174,7 @@ test('getPathValue', () => {
 });
 
 describe('setPathValue', () => {
-	it('mutates the target object and sets a value at a given path by default', () => {
+	it('clones the target object and sets a value at a given path by default', () => {
 		const target: Record<string, any> = {
 			foo: {
 				bar: [
@@ -187,7 +187,7 @@ describe('setPathValue', () => {
 
 		const result = setPathValue(target, 'example', 'test');
 
-		expect(result).toBe(target);
+		expect(result).not.toBe(target);
 		expect(result).toEqual({
 			foo: {
 				bar: [
@@ -198,10 +198,19 @@ describe('setPathValue', () => {
 			},
 			example: 'test',
 		});
+		expect(target).toEqual({
+			foo: {
+				bar: [
+					{
+						baz: 'qux',
+					},
+				],
+			},
+		});
 
 		const result2 = setPathValue(target, 'foo.bar[0].baz', 'new value');
 
-		expect(result2).toBe(target);
+		expect(result2).not.toBe(target);
 		expect(result2).toEqual({
 			foo: {
 				bar: [
@@ -210,8 +219,10 @@ describe('setPathValue', () => {
 					},
 				],
 			},
-			example: 'test',
 		});
+		expect(result2.foo).not.toBe(target.foo);
+		expect(result2.foo.bar).not.toBe(target.foo.bar);
+		expect(result2.foo.bar[0]).not.toBe(target.foo.bar[0]);
 
 		const result3 = setPathValue(
 			target,
@@ -219,61 +230,51 @@ describe('setPathValue', () => {
 			'another value',
 		);
 
-		expect(result3).toBe(target);
+		expect(result3).not.toBe(target);
 		expect(result3).toEqual({
 			foo: {
 				bar: [
 					{
-						baz: 'new value',
+						baz: 'qux',
 					},
 					{
 						baz: 'another value',
 					},
 				],
 			},
-			example: 'test',
 		});
 
 		const result4 = setPathValue(target, 'foo.test', 'test value');
 
-		expect(result4).toBe(target);
+		expect(result4).not.toBe(target);
 		expect(result4).toEqual({
 			foo: {
 				test: 'test value',
 				bar: [
 					{
-						baz: 'new value',
-					},
-					{
-						baz: 'another value',
+						baz: 'qux',
 					},
 				],
 			},
-			example: 'test',
 		});
 
 		const result5 = setPathValue(target, 'foo.bar[0].baz.qux', 'hello world');
 
-		expect(result5).toBe(target);
+		expect(result5).not.toBe(target);
 		expect(result5).toEqual({
 			foo: {
-				test: 'test value',
 				bar: [
 					{
 						baz: {
 							qux: 'hello world',
 						},
 					},
-					{
-						baz: 'another value',
-					},
 				],
 			},
-			example: 'test',
 		});
 	});
 
-	it('clones the target object and all ancestors along the path if the clone option is enabled', () => {
+	it('mutates the target object when the mutate option is enabled', () => {
 		const target: Record<string, any> = {
 			foo: {
 				bar: [
@@ -284,41 +285,40 @@ describe('setPathValue', () => {
 			},
 		};
 
-		const result = setPathValue(target, 'example', 'test', { clone: true });
+		const result = setPathValue(target, 'example', 'test', { mutate: true });
 
-		expect(result).not.toBe(target);
+		expect(result).toBe(target);
 		expect(result.example).toBe('test');
 		expect(result.foo).toBe(target.foo);
 
 		const result2 = setPathValue(target, 'foo.bar[1]', 'new value', {
-			clone: true,
+			mutate: true,
 		});
 
-		expect(result2).not.toBe(target);
-		expect(result2.foo).not.toBe(target.foo);
-		expect(result2.foo.bar).not.toBe(target.foo.bar);
+		expect(result2).toBe(target);
+		expect(result2.foo).toBe(target.foo);
+		expect(result2.foo.bar).toBe(target.foo.bar);
 		expect(result2.foo.bar[0]).toBe(target.foo.bar[0]);
 		expect(result2.foo.bar[1]).toBe('new value');
 
 		const result3 = setPathValue(target, 'foo.bar[]', 'another value', {
-			clone: true,
+			mutate: true,
 		});
 
-		expect(result3).not.toBe(target);
-		expect(result3.foo).not.toBe(target.foo);
-		expect(result3.foo.bar).not.toBe(target.foo.bar);
+		expect(result3).toBe(target);
+		expect(result3.foo).toBe(target.foo);
+		expect(result3.foo.bar).toBe(target.foo.bar);
 		expect(result3.foo.bar[0]).toBe(target.foo.bar[0]);
-		expect(result3.foo.bar[1]).toBe('another value');
+		expect(result3.foo.bar[2]).toBe('another value');
 
 		const result4 = setPathValue(target, 'foo.bar[0].baz.qux', 'hello world', {
-			clone: true,
+			mutate: true,
 		});
 
-		expect(result4).not.toBe(target);
-		expect(result4.foo).not.toBe(target.foo);
-		expect(result4.foo.bar).not.toBe(target.foo.bar);
-		expect(result4.foo.bar[0]).not.toBe(target.foo.bar[0]);
-		expect(result4.foo.bar[0].baz).not.toBe(target.foo.bar[0].baz);
+		expect(result4).toBe(target);
+		expect(result4.foo).toBe(target.foo);
+		expect(result4.foo.bar).toBe(target.foo.bar);
+		expect(result4.foo.bar[0]).toBe(target.foo.bar[0]);
 		expect(result4.foo.bar[0].baz).toEqual({ qux: 'hello world' });
 	});
 

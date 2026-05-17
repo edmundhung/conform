@@ -6,14 +6,13 @@ import {
 	isOptional,
 	getPathArray,
 	updatePathValue,
-	createPathIndexUpdater,
+	updatePathIndex,
 	normalizeValidateResult,
 	resolveValidateResult,
 	resolveStandardSchemaResult,
 	merge,
 	transformKeys,
 	appendUniqueItem,
-	compactMap,
 	generateUniqueKey,
 } from '../future/util';
 import type { FormError } from '@conform-to/dom/future';
@@ -100,33 +99,52 @@ test('updatePathValue', () => {
 	);
 });
 
-test('createPathIndexUpdater', () => {
-	const updater = createPathIndexUpdater('items', (index) =>
-		index < 2 ? index + 1 : index,
-	);
-
+test('updatePathIndex', () => {
 	// Test matching path with index update
-	expect(updater('items[0].name')).toBe('items[1].name');
-	expect(updater('items[1].name')).toBe('items[2].name');
-	expect(updater('items[2].name')).toBe('items[2].name'); // No change
+	expect(
+		updatePathIndex('items[0].name', 'items', (index) =>
+			index < 2 ? index + 1 : index,
+		),
+	).toBe('items[1].name');
+	expect(
+		updatePathIndex('items[1].name', 'items', (index) =>
+			index < 2 ? index + 1 : index,
+		),
+	).toBe('items[2].name');
+	expect(
+		updatePathIndex('items[2].name', 'items', (index) =>
+			index < 2 ? index + 1 : index,
+		),
+	).toBe('items[2].name'); // No change
 
 	// Test non-matching path
-	expect(updater('other[0].name')).toBe('other[0].name');
-	expect(updater('items')).toBe('items'); // No index
+	expect(
+		updatePathIndex('other[0].name', 'items', (index) =>
+			index < 2 ? index + 1 : index,
+		),
+	).toBe('other[0].name');
+	expect(
+		updatePathIndex('items', 'items', (index) =>
+			index < 2 ? index + 1 : index,
+		),
+	).toBe('items'); // No index
 
 	// Test removal (null return)
-	const remover = createPathIndexUpdater('items', (index) =>
-		index === 1 ? null : index,
-	);
-	expect(remover('items[1].name')).toBeNull();
-	expect(remover('items[0].name')).toBe('items[0].name');
+	expect(
+		updatePathIndex('items[1].name', 'items', (index) =>
+			index === 1 ? null : index,
+		),
+	).toBeNull();
+	expect(
+		updatePathIndex('items[0].name', 'items', (index) =>
+			index === 1 ? null : index,
+		),
+	).toBe('items[0].name');
 
 	// Test nested list
-	const nestedUpdater = createPathIndexUpdater(
-		'form.items',
-		(index) => index + 1,
-	);
-	expect(nestedUpdater('form.items[0].field')).toBe('form.items[1].field');
+	expect(
+		updatePathIndex('form.items[0].field', 'form.items', (index) => index + 1),
+	).toBe('form.items[1].field');
 });
 
 test('normalizeValidateResult', () => {
@@ -281,28 +299,6 @@ test('appendUniqueItem', () => {
 	// Test with empty list
 	const result3 = appendUniqueItem([], 'first');
 	expect(result3).toEqual(['first']);
-});
-
-test('compactMap', () => {
-	const list = ['a', 'b', 'c', 'd'];
-
-	// Test filtering and mapping
-	const result1 = compactMap(list, (item) =>
-		item === 'b' ? null : item.toUpperCase(),
-	);
-	expect(result1).toEqual(['A', 'C', 'D']);
-
-	// Test all items pass through
-	const result2 = compactMap(list, (item) => item + '!');
-	expect(result2).toEqual(['a!', 'b!', 'c!', 'd!']);
-
-	// Test all items filtered
-	const result3 = compactMap(list, () => null);
-	expect(result3).toEqual([]);
-
-	// Test empty list
-	const result4 = compactMap([], (item) => item);
-	expect(result4).toEqual([]);
 });
 
 test('generateUniqueKey', () => {

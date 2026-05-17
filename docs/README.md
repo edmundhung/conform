@@ -50,6 +50,8 @@
     - [useField](./api/react/future/useField.md)
     - [useControl](./api/react/future/useControl.md)
     - [useIntent](./api/react/future/useIntent.md)
+    - [defineIntent](./api/react/future/defineIntent.md)
+    - [resolveSubmission](./api/react/future/resolveSubmission.md)
     - [parseSubmission](./api/react/future/parseSubmission.md)
     - [report](./api/react/future/report.md)
     - [getFieldValue](./api/react/future/getFieldValue.md)
