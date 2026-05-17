@@ -3,3 +3,14 @@ packages:
   - 'examples/*'
   - 'guide'
   - 'playground'
+
+minimumReleaseAge: 4320
+
+allowBuilds:
+  deasync: true
+  esbuild: true
+  msw: false
+  sharp: true
+  workerd: true
+
+linkWorkspacePackages: true

@@ -31,7 +31,11 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm i
+      - name: Build packages
+        run: pnpm build
       - name: Install pre-release
+        env:
+          PNPM_CONFIG_BLOCK_EXOTIC_SUBDEPS: 'false'
         run: >
           pnpm --filter './examples/*' add
           https://pkg.pr.new/@conform-to/react@${{ inputs.preview }}

@@ -39,7 +39,7 @@
 		"typescript": "^5.4.5"
 	},
 	"engines": {
-		"node": "20.x"
+		"node": ">=22"
 	},
 	"type": "module"
 }

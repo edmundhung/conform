@@ -24,7 +24,7 @@ jobs:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
         browser: [webkit, firefox, chromium]
-        node: [20]
+        node: [22]
         exclude:
           - os: macos-latest
             browser: firefox
@@ -46,6 +46,8 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm i
+      - name: Build packages
+        run: pnpm build
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
       - name: Run Playwright tests
@@ -70,10 +72,12 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm i
+      - name: Build packages
+        run: pnpm build
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps chromium
       - name: Run Vitest tests
@@ -108,6 +112,8 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm i
+      - name: Build packages
+        run: pnpm build
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
       - name: Run Vitest tests
@@ -129,5 +135,7 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm i
+      - name: Build packages
+        run: pnpm build
       - name: Run Typecheck
         run: pnpm -r run typecheck
