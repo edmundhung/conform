@@ -230,8 +230,8 @@ export function getFormControlProps<Schema>(
  * Derives the properties of an input element based on the field metadata,
  * including common form control attributes like `key`, `id`, `name`, `form`, `autoFocus`, `aria-invalid`, `aria-describedby`
  * and constraint attributes such as `type`, `required`, `minLength`, `maxLength`, `min`, `max`, `step`, `pattern`, `multiple`.
- * Depends on the provided options, it will also set `defaultChecked` / `checked` if it is a checkbox or radio button,
- * or otherwise `defaultValue` / `value`.
+ * Depends on the provided options, it will also set `defaultChecked` / `value` if it is a checkbox or radio button,
+ * or otherwise `defaultValue`.
  *
  * See https://conform.guide/api/react/getInputProps
  *
