@@ -85,7 +85,6 @@ function isFieldMetadataType3<
 export default function Example() {
 	const [form, fields] = useForm<Schema>({});
 
-	// @ts-expect-error https://github.com/edmundhung/conform/issues/406
 	isFormMetadataType0(form);
 	isFormMetadataType1<Schema>(form);
 	isFormMetadataType2<Schema, string[]>(form);

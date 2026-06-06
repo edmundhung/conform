@@ -64,7 +64,7 @@ export type Metadata<
 };
 
 export type FormMetadata<
-	Schema extends Record<string, unknown> = Record<string, unknown>,
+	Schema extends Record<string, unknown> = any,
 	FormError = string[],
 > = Omit<Metadata<Schema, Schema, FormError>, 'id'> &
 	Pick<FormContext<Schema, FormError>, Intent['type']> & {
@@ -106,7 +106,7 @@ type SubfieldMetadata<
 
 export type FieldMetadata<
 	Schema = unknown,
-	FormSchema extends Record<string, any> = Record<string, unknown>,
+	FormSchema extends Record<string, any> = any,
 	FormError = string[],
 > = Metadata<Schema, FormSchema, FormError> &
 	Constraint & { formId: FormId<FormSchema, FormError> } & SubfieldMetadata<
