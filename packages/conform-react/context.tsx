@@ -303,7 +303,7 @@ export function getMetadata<
 
 				for (const [key, error] of Object.entries(state.error)) {
 					if (isPrefix(key, name)) {
-						result[key] = error as FormError;
+						result[key] = error;
 					}
 				}
 
