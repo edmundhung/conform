@@ -35,7 +35,7 @@ jobs:
           title: 'release: bump packages version'
           commit: 'release: bump packages version'
           version: pnpm run version
-          publish: pnpm publish -r
+          publish: pnpm publish -r --publish-branch ${{ github.ref_name }}
           branch: ${{ github.ref_name }}
           createGithubReleases: false
         env:
