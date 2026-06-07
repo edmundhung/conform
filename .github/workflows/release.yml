@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-      - security/**
+      - security/v1.19.4
 permissions:
   id-token: write
   contents: write
@@ -36,6 +36,7 @@ jobs:
           commit: 'release: bump packages version'
           version: pnpm run version
           publish: pnpm publish -r
+          branch: ${{ github.ref_name }}
           createGithubReleases: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
