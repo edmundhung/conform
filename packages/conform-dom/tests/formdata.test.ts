@@ -554,6 +554,33 @@ describe('parseSubmission', () => {
 		});
 	});
 
+	it('parses entries without scanning form data by name', () => {
+		class FormDataWithoutNameLookup extends FormData {
+			override get(): FormDataEntryValue | null {
+				throw new Error('get should not be called');
+			}
+
+			override getAll(): FormDataEntryValue[] {
+				throw new Error('getAll should not be called');
+			}
+		}
+
+		const formData = new FormDataWithoutNameLookup();
+		formData.append('tasks[]', 'a');
+		formData.append('tasks[]', 'b');
+		formData.append('title', 'Example');
+		formData.append(DEFAULT_INTENT_NAME, 'save');
+
+		expect(parseSubmission(formData)).toEqual({
+			payload: {
+				tasks: ['a', 'b'],
+				title: 'Example',
+			},
+			fields: ['tasks[]', 'title'],
+			intent: 'save',
+		});
+	});
+
 	it('strips empty values when stripEmptyValues is true', () => {
 		const emptyFile = new File([], '');
 		const nonEmptyFile = new File(['content'], 'example.txt');

@@ -104,3 +104,11 @@ function MyForm() {
   );
 }
 ```
+
+## Tips
+
+### Limit server-side form submissions before parsing
+
+When parsing server-side form submissions, enforce limits before passing the parsed data to `parseSubmission`. Common limits include the number of submitted parts/fields, total request size, uploaded file size, uploaded file count, and multipart header size.
+
+For multipart requests, React Router recommends [`@remix-run/form-data-parser`](https://www.npmjs.com/package/@remix-run/form-data-parser), which provides `maxParts`, `maxTotalSize`, `maxFileSize`, `maxFiles`, and `maxHeaderSize` options. Frameworks may also provide request body limits, such as Next.js' `serverActions.bodySizeLimit` and Astro's `security.actionBodySizeLimit`.

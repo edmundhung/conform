@@ -454,48 +454,75 @@ export function parseSubmission(
 		intent: null,
 	};
 
-	for (const name of new Set(formData.keys())) {
-		if (name !== intentName && !options?.skipEntry?.(name)) {
-			let value: FormDataEntryValue | FormDataEntryValue[] | undefined =
-				formData.getAll(name);
-			const segments = parsePath(name);
+	const segmentsByName = new Map<string, Array<string | number> | null>();
+	const stripEmptyValues = options?.stripEmptyValues ?? false;
+	let intentValue: string | null | undefined = undefined;
 
-			// If the name ends with [], remove the empty segment and keep the full array
-			// Otherwise, unwrap single values
-			if (segments.length > 0 && segments[segments.length - 1] === '') {
-				segments.pop();
+	for (const [name, entryValue] of formData) {
+		if (name === intentName) {
+			if (intentValue === undefined) {
+				intentValue = typeof entryValue === 'string' ? entryValue : null;
+			}
+
+			continue;
+		}
+
+		let segments = segmentsByName.get(name);
+		let isArrayField = segments != null;
+
+		// If segments are not cached for this name, parse and cache them
+		if (segments === undefined) {
+			if (options?.skipEntry?.(name)) {
+				// If the entry should be skipped, mark its segments as null
+				segments = null;
 			} else {
-				value = value.length > 1 ? value : value[0];
-			}
+				segments = parsePath(name);
+				// If the name ends with empty brackets "[]", treat it as an array field and push values into an array
+				isArrayField =
+					segments.length > 0 && segments[segments.length - 1] === '';
 
-			const stripEmptyValues = options?.stripEmptyValues ?? false;
-
-			if (stripEmptyValues) {
-				// For arrays, filter out individual empty items
-				if (Array.isArray(value)) {
-					value = value.filter((item) => !isEmptyValue(item));
+				if (isArrayField) {
+					segments = segments.slice(0, -1);
 				}
 
-				if (isEmptyValue(value)) {
-					value = undefined;
-				}
+				submission.fields.push(name);
 			}
 
-			setPathValue(submission.payload, segments, value, {
+			segmentsByName.set(name, segments);
+		}
+
+		if (segments === null) {
+			continue;
+		}
+
+		setPathValue(
+			submission.payload,
+			segments,
+			(current: unknown) => {
+				if (stripEmptyValues && isEmptyValue(entryValue)) {
+					return current;
+				}
+
+				if (Array.isArray(current)) {
+					current.push(entryValue);
+					return current;
+				}
+
+				if (current !== undefined) {
+					return [current, entryValue];
+				}
+
+				return isArrayField ? [entryValue] : entryValue;
+			},
+			{
 				mutate: true,
 				silent: true, // Avoid errors if the path is invalid
-			});
-			submission.fields.push(name);
-		}
+			},
+		);
 	}
 
-	if (intentName) {
-		// We take the first value of the intent field if it exists.
-		const intent = formData.get(intentName);
-
-		if (typeof intent === 'string') {
-			submission.intent = intent;
-		}
+	if (intentValue != null) {
+		submission.intent = intentValue;
 	}
 
 	return submission;
