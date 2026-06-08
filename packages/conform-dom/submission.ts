@@ -101,7 +101,7 @@ export function getSubmissionContext(
 			context.payload,
 			name,
 			(prev: unknown) => {
-				if (!prev) {
+				if (prev === undefined) {
 					return next;
 				} else if (Array.isArray(prev)) {
 					return prev.concat(next);
