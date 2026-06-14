@@ -281,3 +281,29 @@ test('parse()', () => {
 		},
 	});
 });
+
+test('parse() preserves empty strings in array fields', () => {
+	const submission = parse(
+		createFormData([
+			['animals', ''],
+			['animals', 'dog'],
+			['animals', ''],
+			['animals', 'cat'],
+		]),
+		{
+			resolve(payload) {
+				return { value: payload };
+			},
+		},
+	);
+
+	expect(submission.payload).toEqual({
+		animals: ['', 'dog', '', 'cat'],
+	});
+	expect(submission).toMatchObject({
+		status: 'success',
+		value: {
+			animals: ['', 'dog', '', 'cat'],
+		},
+	});
+});
