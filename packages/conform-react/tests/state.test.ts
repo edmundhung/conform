@@ -1603,6 +1603,51 @@ test('field metadata serialize override updates default values', () => {
 	expect(field.defaultPayload).toBe('{"foo":"bar"}');
 });
 
+test('getDefaultPayload preserves empty strings', () => {
+	// Nested object where some fields are empty strings
+	const context = createContext({
+		state: initializeState({
+			defaultValue: {
+				address: {
+					street: '',
+					city: 'London',
+				},
+			},
+		}),
+	});
+
+	expect(getDefaultPayload(context, 'address')).toEqual({
+		street: '',
+		city: 'London',
+	});
+
+	// Array where some items are empty strings
+	const contextWithArray = createContext({
+		state: initializeState({
+			defaultValue: {
+				tasks: ['', 'Buy groceries', ''],
+			},
+		}),
+	});
+
+	expect(getDefaultPayload(contextWithArray, 'tasks')).toEqual([
+		'',
+		'Buy groceries',
+		'',
+	]);
+
+	// Single field with an empty string value
+	const contextWithEmptyString = createContext({
+		state: initializeState({
+			defaultValue: {
+				username: '',
+			},
+		}),
+	});
+
+	expect(getDefaultPayload(contextWithEmptyString, 'username')).toBe('');
+});
+
 test('getDefaultListKey', () => {
 	const prefix = 'test-prefix';
 	const initialValue = {

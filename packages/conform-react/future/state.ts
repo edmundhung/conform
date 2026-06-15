@@ -511,7 +511,7 @@ export function getDefaultPayload(
 		return null;
 	}
 
-	return normalize(value, context.serialize, name);
+	return normalize(value, context.serialize, false, name);
 }
 
 export function getDefaultValue(

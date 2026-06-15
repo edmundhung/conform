@@ -892,8 +892,9 @@ export function defaultSerialize(value: unknown): ReturnType<Serialize> {
 
 /**
  * Recursively serializes a value using the provided serialize function,
- * collapsing empty leaves (`null`, `''`, empty files) to `undefined`
+ * collapsing empty leaves (`null`, empty files) to `undefined`
  * and removing empty containers (objects with no remaining keys, empty arrays).
+ * When `stripEmptyStrings` is true (the default), empty strings `''` are also collapsed.
  *
  * When serialize returns `undefined` for a value (i.e. it can't be represented
  * as form data), the raw value is kept and recursed into if it's an object or array.
@@ -904,6 +905,7 @@ export function defaultSerialize(value: unknown): ReturnType<Serialize> {
 export function normalize(
 	value: unknown,
 	serialize: Serialize = defaultSerialize,
+	stripEmptyStrings: boolean = true,
 	name?: string,
 ): unknown {
 	let data: unknown = serialize(value, {
@@ -914,7 +916,7 @@ export function normalize(
 		data = value;
 	}
 
-	if (data === '' || data === null) {
+	if (data === null || (stripEmptyStrings && data === '')) {
 		return undefined;
 	}
 
@@ -932,7 +934,7 @@ export function normalize(
 		}
 
 		const array = data.map((item, index) =>
-			normalize(item, serialize, appendPath(name, index)),
+			normalize(item, serialize, stripEmptyStrings, appendPath(name, index)),
 		);
 
 		if (
@@ -951,6 +953,7 @@ export function normalize(
 				const normalizedValue = normalize(
 					value,
 					serialize,
+					stripEmptyStrings,
 					appendPath(name, key),
 				);
 
