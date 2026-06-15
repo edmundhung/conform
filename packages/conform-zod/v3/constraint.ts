@@ -22,6 +22,7 @@ const keys: Array<keyof Constraint> = [
 
 export function getZodConstraint(
 	schema: ZodTypeAny,
+	flagLegacyRequiredOverride = true,
 ): Record<string, Constraint> {
 	const processingPaths = new Map<ZodTypeAny, string>();
 	const aliases: Array<{
@@ -109,8 +110,10 @@ export function getZodConstraint(
 								result[name] = {
 									...prevConstraint,
 									...nextConstraint,
-									required: false,
 								};
+								if (flagLegacyRequiredOverride) {
+									result[name].required = false;
+								}
 							}
 						}
 

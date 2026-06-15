@@ -1,11 +1,31 @@
+import type { Constraint } from '@conform-to/dom';
+import type { ValidationAttributes } from '@conform-to/dom/future';
+import type { ZodTypeAny } from 'zod/v3';
 import { configureCoercion as baseConfigureCoercion } from './coercion';
+import { getZodConstraint as baseGetZodConstraint } from './constraint';
+import { isSchema } from './schema';
 
 /**
  * @deprecated Use `getConstraints` instead.
  */
-export { getZodConstraint } from './constraint';
+export function getZodConstraint(
+	schema: ZodTypeAny,
+): Record<string, Constraint> {
+	return baseGetZodConstraint(schema, false);
+}
+
+export function getConstraints(
+	schema: unknown,
+): Record<string, ValidationAttributes> | undefined {
+	if (!isSchema(schema)) {
+		return undefined;
+	}
+
+	return baseGetZodConstraint(schema, false);
+}
+
 export { formatResult } from './format';
-export { isSchema, getConstraints } from './schema';
+export { isSchema } from './schema';
 
 function defaultDate(text: string): Date {
 	const date = new Date(shouldAppendUtcSuffix(text) ? `${text}Z` : text);

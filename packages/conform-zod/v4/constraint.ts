@@ -1,12 +1,12 @@
 import type { Constraint } from '@conform-to/dom';
-import { getPaths, formatPaths, getRelativePath } from '@conform-to/dom';
+import { formatPaths, getPaths, getRelativePath } from '@conform-to/dom';
 import { serializeHtmlPattern } from '@conform-to/dom/future';
 import {
-	$ZodType,
-	$ZodTypes,
+	$ZodFile,
 	$ZodNumber,
 	$ZodString,
-	$ZodFile,
+	$ZodType,
+	$ZodTypes,
 } from 'zod/v4/core';
 
 const keys: Array<keyof Constraint> = [
@@ -21,7 +21,10 @@ const keys: Array<keyof Constraint> = [
 	'accept',
 ];
 
-export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
+export function getZodConstraint(
+	schema: $ZodType,
+	flagLegacyRequiredOverride = true,
+): Record<string, Constraint> {
 	const processingPaths = new Map<$ZodType, string>();
 	const aliases: Array<{
 		from: Array<string | number>;
@@ -110,8 +113,10 @@ export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 								result[name] = {
 									...prevConstraint,
 									...nextConstraint,
-									required: false,
 								};
+								if (flagLegacyRequiredOverride) {
+									result[name].required = false;
+								}
 							}
 						}
 

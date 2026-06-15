@@ -252,6 +252,31 @@ describe('getZodConstraint', () => {
 			baz: { minLength: 1 },
 			qux: { required: true, minLength: 1 },
 		});
+
+		// flagLegacyRequiredOverride=false: branch-only fields keep their actual required
+		expect(
+			getZodConstraint(
+				z.union([
+					baseSchema.extend({
+						type: z.literal('a'),
+						foo: z.string().min(1, 'min'),
+						baz: z.string().min(1, 'min'),
+					}),
+					baseSchema.extend({
+						type: z.literal('b'),
+						bar: z.string().min(1, 'min'),
+						baz: z.string().min(1, 'min').optional(),
+					}),
+				]),
+				false,
+			),
+		).toEqual({
+			type: { required: true },
+			foo: { required: true, minLength: 1 },
+			bar: { required: true, minLength: 1 },
+			baz: { minLength: 1 },
+			qux: { required: true, minLength: 1 },
+		});
 	});
 
 	test('discriminated union', () => {
@@ -278,6 +303,31 @@ describe('getZodConstraint', () => {
 			type: { required: true },
 			foo: { required: false, minLength: 1 },
 			bar: { required: false, minLength: 1 },
+			baz: { minLength: 1 },
+			qux: { required: true, minLength: 1 },
+		});
+
+		// flagLegacyRequiredOverride=false: branch-only fields keep their actual required
+		expect(
+			getZodConstraint(
+				z.discriminatedUnion('type', [
+					baseSchema.extend({
+						type: z.literal('a'),
+						foo: z.string().min(1, 'min'),
+						baz: z.string().min(1, 'min'),
+					}),
+					baseSchema.extend({
+						type: z.literal('b'),
+						bar: z.string().min(1, 'min'),
+						baz: z.string().min(1, 'min').optional(),
+					}),
+				]),
+				false,
+			),
+		).toEqual({
+			type: { required: true },
+			foo: { required: true, minLength: 1 },
+			bar: { required: true, minLength: 1 },
 			baz: { minLength: 1 },
 			qux: { required: true, minLength: 1 },
 		});
@@ -399,7 +449,6 @@ describe('getZodConstraint', () => {
 
 		// Static keys — both union options are traversed; recursion is
 		// caught when z.lazy() re-encounters ConditionSchema.
-		// conditions[].conditions only exists in "group", so required: false.
 		expect(constraint).toEqual({
 			type: { required: true },
 			conditions: { required: true, multiple: true },
@@ -422,6 +471,18 @@ describe('getZodConstraint', () => {
 		expect(
 			constraint['conditions[0].conditions[1].conditions[2].type'],
 		).toEqual({ required: true });
+
+		// flagLegacyRequiredOverride = false: conditions[].conditions keeps required: true from its branch
+		const fixedConstraint = getZodConstraint(FilterSchema, false);
+
+		expect(fixedConstraint['conditions[].conditions']).toEqual({
+			required: true,
+			multiple: true,
+		});
+		expect(fixedConstraint['conditions[0].conditions']).toEqual({
+			required: true,
+			multiple: true,
+		});
 	});
 
 	test('tuple with recursive element', () => {
