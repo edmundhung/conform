@@ -13,6 +13,7 @@ import {
 	any,
 	ZodCatch,
 	ZodBranded,
+	ZodReadonly,
 	ZodDefault,
 } from 'zod';
 import type {
@@ -353,6 +354,11 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 		schema = new ZodBranded({
 			...def,
 			type: enableTypeCoercion(def.type, options),
+		});
+	} else if (def.typeName === 'ZodReadonly') {
+		schema = new ZodReadonly({
+			...def,
+			innerType: enableTypeCoercion(def.innerType, options),
 		});
 	} else if (def.typeName === 'ZodTuple') {
 		schema = new ZodTuple({

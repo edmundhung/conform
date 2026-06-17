@@ -62,6 +62,8 @@ export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 				updateConstraint(def.in, data, name);
 			}
 			updateConstraint(def.out, data, name);
+		} else if (def.type === 'readonly') {
+			updateConstraint(def.innerType, data, name);
 		} else if (def.type === 'intersection') {
 			const leftResult: Record<string, Constraint> = {};
 			const rightResult: Record<string, Constraint> = {};

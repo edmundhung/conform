@@ -208,6 +208,25 @@ describe('getZodConstraint', () => {
 		expect(() => getZodConstraint(z.array(z.string()))).toThrow();
 	});
 
+	test('readonly', () => {
+		const schema = z
+			.object({
+				text: z.string().min(1, 'min').max(100, 'max').readonly(),
+				number: z.number().min(1, 'min').readonly(),
+				optionalText: z.string().min(1, 'min').readonly().optional(),
+				nested: z.object({ value: z.string().min(1, 'min') }).readonly(),
+			})
+			.readonly();
+
+		expect(getZodConstraint(schema)).toEqual({
+			text: { required: true, minLength: 1, maxLength: 100 },
+			number: { required: true, min: 1 },
+			optionalText: { required: false, minLength: 1 },
+			nested: { required: true },
+			'nested.value': { required: true, minLength: 1 },
+		});
+	});
+
 	test('intersection', () => {
 		const schema = z.object({
 			text: z.string().min(10, 'min').max(100, 'max'),
