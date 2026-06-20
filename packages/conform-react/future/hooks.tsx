@@ -49,6 +49,8 @@ import type {
 	CustomControlOptions,
 	ControlOptions,
 	IntentHandler,
+	FormCustomState,
+	CustomStateHandler,
 } from './types';
 import { parseIntent, resolveIntent, applyIntent } from './intent';
 import {
@@ -168,6 +170,10 @@ export function useConform<
 	Value = undefined,
 	SchemaValue = undefined,
 	SchemaErrorShape = unknown,
+	CustomStateHandlers extends Record<
+		string,
+		CustomStateHandler<any, any, ErrorShape>
+	> = {},
 >(
 	formRef: FormRef,
 	options: {
@@ -176,6 +182,7 @@ export function useConform<
 		serialize: Serialize;
 		intentName: string;
 		intentHandlers: Record<string, IntentHandler<any, any>>;
+		customStateHandlers?: CustomStateHandlers | undefined;
 		lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null | undefined;
 		onValidate?:
 			| ValidateHandler<ErrorShape, Value, SchemaValue, SchemaErrorShape>
@@ -185,11 +192,17 @@ export function useConform<
 			| SubmitHandler<FormShape, NoInfer<ErrorShape>, NoInfer<Value>>
 			| undefined;
 	},
-): [FormState<ErrorShape>, (event: React.FormEvent<HTMLFormElement>) => void] {
+): [
+	FormState<ErrorShape, FormCustomState<CustomStateHandlers>>,
+	(event: React.FormEvent<HTMLFormElement>) => void,
+] {
 	const { lastResult } = options;
-	const [state, setState] = useState<FormState<ErrorShape>>(() => {
-		let state = initializeState<ErrorShape>({
+	const [state, setState] = useState<
+		FormState<ErrorShape, FormCustomState<CustomStateHandlers>>
+	>(() => {
+		let state = initializeState<ErrorShape, CustomStateHandlers>({
 			defaultValue: options.defaultValue,
+			customStateHandlers: options.customStateHandlers,
 			resetKey: INITIAL_KEY,
 		});
 
@@ -197,24 +210,31 @@ export function useConform<
 			const intent = parseIntent(lastResult.submission.intent, {
 				handlers: options.intentHandlers,
 			});
-			const result = applyIntent(lastResult, intent, {
-				handlers: options.intentHandlers,
-			});
 
-			state = updateState(state, {
-				...result,
-				type: 'initialize',
-				intent,
-				ctx: {
+			if (intent) {
+				const result = applyIntent(lastResult, intent, {
 					handlers: options.intentHandlers,
-					status: getApplyStatus(lastResult.targetValue, result.targetValue),
-					reset: (defaultValue) =>
-						initializeState<ErrorShape>({
-							defaultValue: defaultValue ?? options.defaultValue,
-							resetKey: INITIAL_KEY,
-						}),
-				},
-			});
+				});
+
+				state = updateState(state, {
+					...result,
+					type: 'initialize',
+					intent,
+					ctx: {
+						handlers: options.intentHandlers,
+						status: getApplyStatus(lastResult.targetValue, result.targetValue),
+						customStateHandlers: options.customStateHandlers,
+						reset: (defaultValue) =>
+							initializeState<ErrorShape, CustomStateHandlers>({
+								defaultValue: defaultValue ?? options.defaultValue,
+								resetKey: INITIAL_KEY,
+								reset: true,
+								customStateHandlers: options.customStateHandlers,
+								lastCustomState: state.customState,
+							}),
+					},
+				});
+			}
 		}
 
 		return state;
@@ -244,6 +264,13 @@ export function useConform<
 			const intent = parseIntent(result.submission.intent, {
 				handlers: options.intentHandlers,
 			});
+
+			if (!intent) {
+				throw new Error(
+					`Unknown intent found in the submission result; Received intent: ${result.submission.intent}`,
+				);
+			}
+
 			const finalResult = applyIntent(normalizedResult, intent, {
 				handlers: options.intentHandlers,
 			});
@@ -256,8 +283,8 @@ export function useConform<
 				dispatchInternalUpdateEvent(formElement);
 			}
 
-			setState((state) =>
-				updateState(state, {
+			setState((current) => {
+				const action = {
 					...finalResult,
 					type,
 					intent,
@@ -267,14 +294,20 @@ export function useConform<
 							normalizedResult.targetValue,
 							finalResult.targetValue,
 						),
-						reset(defaultValue) {
-							return initializeState<ErrorShape>({
+						customStateHandlers: options.customStateHandlers,
+						reset(defaultValue: Record<string, unknown> | null | undefined) {
+							return initializeState<ErrorShape, CustomStateHandlers>({
 								defaultValue: defaultValue ?? options.defaultValue,
+								reset: true,
+								customStateHandlers: options.customStateHandlers,
+								lastCustomState: current.customState,
 							});
 						},
 					},
-				}),
-			);
+				};
+
+				return updateState(current, action);
+			});
 
 			// TODO: move on error handler to a new effect
 			if (formElement && finalResult.error) {
@@ -299,8 +332,10 @@ export function useConform<
 		}
 
 		setState(
-			initializeState<ErrorShape>({
+			initializeState<ErrorShape, CustomStateHandlers>({
 				defaultValue: options.defaultValue,
+				customStateHandlers: options.customStateHandlers,
+				reset: true,
 			}),
 		);
 	} else if (lastResult && lastResult !== lastResultRef.current) {

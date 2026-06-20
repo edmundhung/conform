@@ -67,6 +67,8 @@ export function mergeIntentHandlers<
 	};
 }
 
+const undefinedArg = '__undefined__';
+
 /**
  * Serializes a transport intent to string format.
  */
@@ -75,7 +77,9 @@ export function serializeIntent(intent: TransportIntent): string {
 		return intent.type;
 	}
 
-	return `${intent.type}(${JSON.stringify(intent.args).slice(1, -1)})`;
+	return `${intent.type}(${JSON.stringify(intent.args, (_, value) =>
+		value === undefined ? undefinedArg : value,
+	).slice(1, -1)})`;
 }
 
 /**
@@ -84,6 +88,10 @@ export function serializeIntent(intent: TransportIntent): string {
 export function deserializeIntent(
 	serializedIntent: string,
 ): TransportIntent | undefined {
+	if (serializedIntent === '') {
+		return undefined;
+	}
+
 	let type = serializedIntent;
 	let args: Array<unknown> = [];
 
@@ -99,7 +107,9 @@ export function deserializeIntent(
 
 		if (serializedArgs !== '') {
 			try {
-				args = JSON.parse(`[${serializedArgs}]`);
+				args = JSON.parse(`[${serializedArgs}]`, (_, value) =>
+					value === undefinedArg ? undefined : value,
+				);
 			} catch {
 				return undefined;
 			}
@@ -123,7 +133,7 @@ export function parseIntent<
 	| FormIntent<Record<string, any>, Handlers>
 	| { type: 'submit'; payload: undefined }
 	| undefined {
-	if (!intentValue) {
+	if (intentValue === null) {
 		return { type: 'submit', payload: undefined };
 	}
 
