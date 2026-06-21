@@ -23,8 +23,9 @@ const keys: Array<keyof Constraint> = [
 
 export function getZodConstraint(
 	schema: $ZodType,
-	flagLegacyRequiredOverride = true,
+	options: { preserveBranchSpecificRequired?: boolean } = {},
 ): Record<string, Constraint> {
+	const { preserveBranchSpecificRequired = true } = options;
 	const processingPaths = new Map<$ZodType, string>();
 	const aliases: Array<{
 		from: Array<string | number>;
@@ -114,7 +115,7 @@ export function getZodConstraint(
 									...prevConstraint,
 									...nextConstraint,
 								};
-								if (flagLegacyRequiredOverride) {
+								if (!preserveBranchSpecificRequired) {
 									result[name].required = false;
 								}
 							}

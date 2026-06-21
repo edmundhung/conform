@@ -9,7 +9,7 @@ import { isSchema } from './schema';
  * @deprecated Use `getConstraints` instead.
  */
 export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
-	return baseGetZodConstraint(schema, false);
+	return baseGetZodConstraint(schema);
 }
 
 export function getConstraints(
@@ -19,7 +19,7 @@ export function getConstraints(
 		return undefined;
 	}
 
-	return baseGetZodConstraint(schema, false);
+	return baseGetZodConstraint(schema);
 }
 
 export { formatResult } from './format';

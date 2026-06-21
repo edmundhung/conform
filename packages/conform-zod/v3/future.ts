@@ -11,7 +11,7 @@ import { isSchema } from './schema';
 export function getZodConstraint(
 	schema: ZodTypeAny,
 ): Record<string, Constraint> {
-	return baseGetZodConstraint(schema, false);
+	return baseGetZodConstraint(schema);
 }
 
 export function getConstraints(
@@ -21,7 +21,7 @@ export function getConstraints(
 		return undefined;
 	}
 
-	return baseGetZodConstraint(schema, false);
+	return baseGetZodConstraint(schema);
 }
 
 export { formatResult } from './format';

@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'vitest';
-import { getZodConstraint } from '../constraint';
+import { getZodConstraint } from '../index';
+import { getConstraints } from '../future';
 import { z } from 'zod/v3';
 
 describe('getZodConstraint', () => {
@@ -223,23 +224,20 @@ describe('getZodConstraint', () => {
 		const baseSchema = z.object({
 			qux: z.string().min(1, 'min'),
 		});
+		const schema = z.union([
+			baseSchema.extend({
+				type: z.literal('a'),
+				foo: z.string().min(1, 'min'),
+				baz: z.string().min(1, 'min'),
+			}),
+			baseSchema.extend({
+				type: z.literal('b'),
+				bar: z.string().min(1, 'min'),
+				baz: z.string().min(1, 'min').optional(),
+			}),
+		]);
 
-		expect(
-			getZodConstraint(
-				z.union([
-					baseSchema.extend({
-						type: z.literal('a'),
-						foo: z.string().min(1, 'min'),
-						baz: z.string().min(1, 'min'),
-					}),
-					baseSchema.extend({
-						type: z.literal('b'),
-						bar: z.string().min(1, 'min'),
-						baz: z.string().min(1, 'min').optional(),
-					}),
-				]),
-			),
-		).toEqual({
+		expect(getZodConstraint(schema)).toEqual({
 			type: { required: true },
 			foo: { required: false, minLength: 1 },
 			bar: { required: false, minLength: 1 },
@@ -247,24 +245,7 @@ describe('getZodConstraint', () => {
 			qux: { required: true, minLength: 1 },
 		});
 
-		// flagLegacyRequiredOverride=false: branch-only fields keep their actual required
-		expect(
-			getZodConstraint(
-				z.union([
-					baseSchema.extend({
-						type: z.literal('a'),
-						foo: z.string().min(1, 'min'),
-						baz: z.string().min(1, 'min'),
-					}),
-					baseSchema.extend({
-						type: z.literal('b'),
-						bar: z.string().min(1, 'min'),
-						baz: z.string().min(1, 'min').optional(),
-					}),
-				]),
-				false,
-			),
-		).toEqual({
+		expect(getConstraints(schema)).toEqual({
 			type: { required: true },
 			foo: { required: true, minLength: 1 },
 			bar: { required: true, minLength: 1 },
@@ -277,23 +258,20 @@ describe('getZodConstraint', () => {
 		const baseSchema = z.object({
 			qux: z.string().min(1, 'min'),
 		});
+		const schema = z.discriminatedUnion('type', [
+			baseSchema.extend({
+				type: z.literal('a'),
+				foo: z.string().min(1, 'min'),
+				baz: z.string().min(1, 'min'),
+			}),
+			baseSchema.extend({
+				type: z.literal('b'),
+				bar: z.string().min(1, 'min'),
+				baz: z.string().min(1, 'min').optional(),
+			}),
+		]);
 
-		expect(
-			getZodConstraint(
-				z.discriminatedUnion('type', [
-					baseSchema.extend({
-						type: z.literal('a'),
-						foo: z.string().min(1, 'min'),
-						baz: z.string().min(1, 'min'),
-					}),
-					baseSchema.extend({
-						type: z.literal('b'),
-						bar: z.string().min(1, 'min'),
-						baz: z.string().min(1, 'min').optional(),
-					}),
-				]),
-			),
-		).toEqual({
+		expect(getZodConstraint(schema)).toEqual({
 			type: { required: true },
 			foo: { required: false, minLength: 1 },
 			bar: { required: false, minLength: 1 },
@@ -301,24 +279,7 @@ describe('getZodConstraint', () => {
 			qux: { required: true, minLength: 1 },
 		});
 
-		// flagLegacyRequiredOverride=false: branch-only fields keep their actual required
-		expect(
-			getZodConstraint(
-				z.discriminatedUnion('type', [
-					baseSchema.extend({
-						type: z.literal('a'),
-						foo: z.string().min(1, 'min'),
-						baz: z.string().min(1, 'min'),
-					}),
-					baseSchema.extend({
-						type: z.literal('b'),
-						bar: z.string().min(1, 'min'),
-						baz: z.string().min(1, 'min').optional(),
-					}),
-				]),
-				false,
-			),
-		).toEqual({
+		expect(getConstraints(schema)).toEqual({
 			type: { required: true },
 			foo: { required: true, minLength: 1 },
 			bar: { required: true, minLength: 1 },
@@ -409,14 +370,13 @@ describe('getZodConstraint', () => {
 			constraint['conditions[0].conditions[1].conditions[2].type'],
 		).toEqual({ required: true });
 
-		// flagLegacyRequiredOverride = false: conditions[].conditions keeps required: true from its branch
-		const fixedConstraint = getZodConstraint(FilterSchema, false);
+		const fixedConstraint = getConstraints(FilterSchema);
 
-		expect(fixedConstraint['conditions[].conditions']).toEqual({
+		expect(fixedConstraint?.['conditions[].conditions']).toEqual({
 			required: true,
 			multiple: true,
 		});
-		expect(fixedConstraint['conditions[0].conditions']).toEqual({
+		expect(fixedConstraint?.['conditions[0].conditions']).toEqual({
 			required: true,
 			multiple: true,
 		});
