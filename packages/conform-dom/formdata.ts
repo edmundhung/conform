@@ -800,8 +800,8 @@ export function isDirty(
 	};
 
 	return !deepEqual(
-		normalize(formValue, serialize),
-		normalize(options?.defaultValue, serialize),
+		normalize(formValue, { serialize }),
+		normalize(options?.defaultValue, { serialize }),
 	);
 }
 
@@ -891,21 +891,28 @@ export function defaultSerialize(value: unknown): ReturnType<Serialize> {
 }
 
 /**
- * Recursively serializes a value using the provided serialize function,
- * collapsing empty leaves (`null`, `''`, empty files) to `undefined`
- * and removing empty containers (objects with no remaining keys, empty arrays).
+ * Recursively serializes a value using the provided serialize function.
+ * When `stripEmptyValue` is true, empty values, empty arrays, and empty objects
+ * are removed, and single-string arrays are unwrapped to match single-value fields.
  *
  * When serialize returns `undefined` for a value (i.e. it can't be represented
  * as form data), the raw value is kept and recursed into if it's an object or array.
  *
- * Single-element arrays where the element is a string or undefined are unwrapped
- * to handle the case where a multi-value field (e.g. checkboxes) has only one value.
  */
 export function normalize(
 	value: unknown,
-	serialize: Serialize = defaultSerialize,
-	name?: string,
+	options: {
+		serialize?: Serialize;
+		stripEmptyValue?: boolean;
+		name?: string;
+	} = {},
 ): unknown {
+	const {
+		serialize = defaultSerialize,
+		stripEmptyValue = true,
+		name,
+	} = options;
+
 	let data: unknown = serialize(value, {
 		name,
 	});
@@ -914,12 +921,12 @@ export function normalize(
 		data = value;
 	}
 
-	if (data === '' || data === null) {
+	if (stripEmptyValue && (data === null || data === '')) {
 		return undefined;
 	}
 
 	if (isGlobalInstance(data, 'File')) {
-		if (data.name === '' && data.size === 0) {
+		if (stripEmptyValue && data.name === '' && data.size === 0) {
 			return undefined;
 		}
 
@@ -927,15 +934,16 @@ export function normalize(
 	}
 
 	if (Array.isArray(data)) {
-		if (data.length === 0) {
+		if (stripEmptyValue && data.length === 0) {
 			return undefined;
 		}
 
 		const array = data.map((item, index) =>
-			normalize(item, serialize, appendPath(name, index)),
+			normalize(item, { ...options, name: appendPath(name, index) }),
 		);
 
 		if (
+			stripEmptyValue &&
 			array.length === 1 &&
 			(typeof array[0] === 'string' || array[0] === undefined)
 		) {
@@ -948,11 +956,10 @@ export function normalize(
 	if (isPlainObject(data)) {
 		const entries = Object.entries(data).reduce<Array<[string, unknown]>>(
 			(list, [key, value]) => {
-				const normalizedValue = normalize(
-					value,
-					serialize,
-					appendPath(name, key),
-				);
+				const normalizedValue = normalize(value, {
+					...options,
+					name: appendPath(name, key),
+				});
 
 				if (typeof normalizedValue !== 'undefined') {
 					list.push([key, normalizedValue]);
@@ -963,7 +970,7 @@ export function normalize(
 			[],
 		);
 
-		if (entries.length === 0) {
+		if (stripEmptyValue && entries.length === 0) {
 			return undefined;
 		}
 

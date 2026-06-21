@@ -1388,7 +1388,7 @@ describe('form state', () => {
 
 		expect(getListKey(context, 'tasks')).toEqual(['0-tasks[0]']);
 		expect(getDefaultOptions(context, 'tasks')).toEqual(['Final 1']);
-		expect(getDefaultPayload(context, 'tasks')).toBe('Final 1');
+		expect(getDefaultPayload(context, 'tasks')).toEqual(['Final 1']);
 		expect(isTouched(context.state)).toBe(true);
 
 		context.state = updateState(
@@ -1601,6 +1601,34 @@ test('field metadata serialize override updates default values', () => {
 
 	expect(field.defaultValue).toBe('{"foo":"bar"}');
 	expect(field.defaultPayload).toBe('{"foo":"bar"}');
+});
+
+test('getDefaultPayload', () => {
+	const context = createContext({
+		state: initializeState({
+			defaultValue: {
+				address: {
+					street: '',
+					postcode: null,
+					city: 'London',
+				},
+				tasks: ['', 'Buy groceries', ''],
+				username: '',
+			},
+		}),
+	});
+
+	expect(getDefaultPayload(context, 'address')).toEqual({
+		street: '',
+		postcode: null,
+		city: 'London',
+	});
+	expect(getDefaultPayload(context, 'tasks')).toEqual([
+		'',
+		'Buy groceries',
+		'',
+	]);
+	expect(getDefaultPayload(context, 'username')).toBe('');
 });
 
 test('getDefaultListKey', () => {
