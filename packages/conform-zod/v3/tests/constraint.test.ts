@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'vitest';
-import { getZodConstraint } from '../constraint';
+import { getZodConstraint } from '../index';
+import { getConstraints } from '../future';
 import { z } from 'zod/v3';
 
 describe('getZodConstraint', () => {
@@ -223,26 +224,31 @@ describe('getZodConstraint', () => {
 		const baseSchema = z.object({
 			qux: z.string().min(1, 'min'),
 		});
+		const schema = z.union([
+			baseSchema.extend({
+				type: z.literal('a'),
+				foo: z.string().min(1, 'min'),
+				baz: z.string().min(1, 'min'),
+			}),
+			baseSchema.extend({
+				type: z.literal('b'),
+				bar: z.string().min(1, 'min'),
+				baz: z.string().min(1, 'min').optional(),
+			}),
+		]);
 
-		expect(
-			getZodConstraint(
-				z.union([
-					baseSchema.extend({
-						type: z.literal('a'),
-						foo: z.string().min(1, 'min'),
-						baz: z.string().min(1, 'min'),
-					}),
-					baseSchema.extend({
-						type: z.literal('b'),
-						bar: z.string().min(1, 'min'),
-						baz: z.string().min(1, 'min').optional(),
-					}),
-				]),
-			),
-		).toEqual({
+		expect(getZodConstraint(schema)).toEqual({
 			type: { required: true },
 			foo: { required: false, minLength: 1 },
 			bar: { required: false, minLength: 1 },
+			baz: { minLength: 1 },
+			qux: { required: true, minLength: 1 },
+		});
+
+		expect(getConstraints(schema)).toEqual({
+			type: { required: true },
+			foo: { required: true, minLength: 1 },
+			bar: { required: true, minLength: 1 },
 			baz: { minLength: 1 },
 			qux: { required: true, minLength: 1 },
 		});
@@ -252,26 +258,31 @@ describe('getZodConstraint', () => {
 		const baseSchema = z.object({
 			qux: z.string().min(1, 'min'),
 		});
+		const schema = z.discriminatedUnion('type', [
+			baseSchema.extend({
+				type: z.literal('a'),
+				foo: z.string().min(1, 'min'),
+				baz: z.string().min(1, 'min'),
+			}),
+			baseSchema.extend({
+				type: z.literal('b'),
+				bar: z.string().min(1, 'min'),
+				baz: z.string().min(1, 'min').optional(),
+			}),
+		]);
 
-		expect(
-			getZodConstraint(
-				z.discriminatedUnion('type', [
-					baseSchema.extend({
-						type: z.literal('a'),
-						foo: z.string().min(1, 'min'),
-						baz: z.string().min(1, 'min'),
-					}),
-					baseSchema.extend({
-						type: z.literal('b'),
-						bar: z.string().min(1, 'min'),
-						baz: z.string().min(1, 'min').optional(),
-					}),
-				]),
-			),
-		).toEqual({
+		expect(getZodConstraint(schema)).toEqual({
 			type: { required: true },
 			foo: { required: false, minLength: 1 },
 			bar: { required: false, minLength: 1 },
+			baz: { minLength: 1 },
+			qux: { required: true, minLength: 1 },
+		});
+
+		expect(getConstraints(schema)).toEqual({
+			type: { required: true },
+			foo: { required: true, minLength: 1 },
+			bar: { required: true, minLength: 1 },
 			baz: { minLength: 1 },
 			qux: { required: true, minLength: 1 },
 		});
@@ -336,7 +347,6 @@ describe('getZodConstraint', () => {
 
 		// Static keys — both union options are traversed; recursion is
 		// caught when z.lazy() re-encounters ConditionSchema.
-		// conditions[].conditions only exists in "group", so required: false.
 		expect(constraint).toEqual({
 			type: { required: true },
 			conditions: { required: true, multiple: true },
@@ -359,6 +369,17 @@ describe('getZodConstraint', () => {
 		expect(
 			constraint['conditions[0].conditions[1].conditions[2].type'],
 		).toEqual({ required: true });
+
+		const fixedConstraint = getConstraints(FilterSchema);
+
+		expect(fixedConstraint?.['conditions[].conditions']).toEqual({
+			required: true,
+			multiple: true,
+		});
+		expect(fixedConstraint?.['conditions[0].conditions']).toEqual({
+			required: true,
+			multiple: true,
+		});
 	});
 
 	test('regex patterns', () => {
