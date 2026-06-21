@@ -1388,7 +1388,7 @@ describe('form state', () => {
 
 		expect(getListKey(context, 'tasks')).toEqual(['0-tasks[0]']);
 		expect(getDefaultOptions(context, 'tasks')).toEqual(['Final 1']);
-		expect(getDefaultPayload(context, 'tasks')).toBe('Final 1');
+		expect(getDefaultPayload(context, 'tasks')).toEqual(['Final 1']);
 		expect(isTouched(context.state)).toBe(true);
 
 		context.state = updateState(
@@ -1603,49 +1603,32 @@ test('field metadata serialize override updates default values', () => {
 	expect(field.defaultPayload).toBe('{"foo":"bar"}');
 });
 
-test('getDefaultPayload preserves empty strings', () => {
-	// Nested object where some fields are empty strings
+test('getDefaultPayload', () => {
 	const context = createContext({
 		state: initializeState({
 			defaultValue: {
 				address: {
 					street: '',
+					postcode: null,
 					city: 'London',
 				},
+				tasks: ['', 'Buy groceries', ''],
+				username: '',
 			},
 		}),
 	});
 
 	expect(getDefaultPayload(context, 'address')).toEqual({
 		street: '',
+		postcode: null,
 		city: 'London',
 	});
-
-	// Array where some items are empty strings
-	const contextWithArray = createContext({
-		state: initializeState({
-			defaultValue: {
-				tasks: ['', 'Buy groceries', ''],
-			},
-		}),
-	});
-
-	expect(getDefaultPayload(contextWithArray, 'tasks')).toEqual([
+	expect(getDefaultPayload(context, 'tasks')).toEqual([
 		'',
 		'Buy groceries',
 		'',
 	]);
-
-	// Single field with an empty string value
-	const contextWithEmptyString = createContext({
-		state: initializeState({
-			defaultValue: {
-				username: '',
-			},
-		}),
-	});
-
-	expect(getDefaultPayload(contextWithEmptyString, 'username')).toBe('');
+	expect(getDefaultPayload(context, 'username')).toBe('');
 });
 
 test('getDefaultListKey', () => {
