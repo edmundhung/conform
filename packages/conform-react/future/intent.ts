@@ -288,11 +288,10 @@ export const update = defineIntent<UpdateIntent>({
 	},
 	resolve({ value, payload }) {
 		const fieldName = appendPath(payload.name, payload.index);
-		return updatePathValue(
-			value,
-			fieldName,
-			payload.value ?? (fieldName === '' ? {} : null),
-		);
+		const nextValue = (payload.value ??
+			(fieldName === '' ? {} : null)) as FormValue | null;
+
+		return updatePathValue(value, fieldName, nextValue);
 	},
 	touch({ name, payload }) {
 		const fieldName = appendPath(payload.name, payload.index);

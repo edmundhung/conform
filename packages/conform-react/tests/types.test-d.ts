@@ -749,10 +749,19 @@ test('defineIntent', () => {
 
 test('IntentDispatcher', () => {
 	// IntentDispatcher is the return type of useIntent
+	type Trial = {
+		foo: string;
+		bar: number;
+		baz: boolean;
+	};
+
 	type TestSchema = {
 		name: string;
 		tags: string[];
 		tasks: Array<{ content: string; completed: boolean }>;
+		trial: Trial;
+		trials: Trial[];
+		nullableTrials: Trial[] | null | undefined;
 	};
 
 	const intent = {} as IntentDispatcher<TestSchema>;
@@ -792,8 +801,77 @@ test('IntentDispatcher', () => {
 	assertType<void>(intent.update({ name: 'name', value: null }));
 	assertType<void>(intent.update({ name: 'name', value: undefined }));
 	assertType<void>(
-		intent.update({ name: 'tasks', index: 0, value: { content: 'foo' } }),
+		intent.update({
+			name: 'tasks' as FieldName<
+				Array<{ content: string; completed: boolean }>
+			>,
+			index: 0,
+			value: { content: 'foo' },
+		}),
 	);
+	assertType<void>(
+		intent.update({
+			name: 'trials' as FieldName<Trial[]>,
+			index: 0,
+			value: { foo: 'foo' },
+		}),
+	);
+	assertType<void>(
+		intent.update({
+			name: 'trials' as FieldName<Trial[]>,
+			index: 0,
+			value: undefined,
+		}),
+	);
+	assertType<void>(
+		intent.update({
+			name: 'nullableTrials' as FieldName<Trial[] | null | undefined>,
+			index: 0,
+			value: { bar: 1 },
+		}),
+	);
+	assertType<void>(
+		intent.update({
+			name: 'trial' as FieldName<Trial>,
+			value: {
+				foo: 'foo',
+				bar: 1,
+				baz: true,
+			},
+		}),
+	);
+	intent.update({
+		name: 'trial' as FieldName<Trial>,
+		value: {
+			foo: 'foo',
+			bar: 1,
+			baz: true,
+			// @ts-expect-error extra properties should be rejected on non-indexed updates
+			extra: 123,
+		},
+	});
+	intent.update({
+		name: 'trials' as FieldName<Trial[]>,
+		index: 0,
+		value: {
+			foo: 'foo',
+			bar: 1,
+			baz: true,
+			// @ts-expect-error extra properties should be rejected on indexed updates
+			extra: 123,
+		},
+	});
+	intent.update({
+		name: 'nullableTrials' as FieldName<Trial[] | null | undefined>,
+		index: 0,
+		value: {
+			foo: 'foo',
+			bar: 1,
+			baz: true,
+			// @ts-expect-error extra properties should be rejected on nullable indexed updates
+			extra: 123,
+		},
+	});
 	assertType<void>(
 		intent.update({
 			value: {
