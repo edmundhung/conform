@@ -648,23 +648,37 @@ export interface ResetIntent extends TypedIntentDefinition {
 
 export type ValidateIntent = (name?: string) => void;
 
+export type IsUntypedFormShape<FormShape> = unknown extends FormShape
+	? true
+	: string extends keyof FormShape
+		? true
+		: false;
+
 export interface UpdateIntent extends TypedIntentDefinition {
 	dispatch<FieldShape = this['FormShape']>(
-		options:
-			| {
-					name?: FieldName<FieldShape>;
-					index?: undefined;
-					value: DefaultValue<FieldShape>;
-			  }
-			| {
-					name: FieldName<FieldShape>;
-					index: number;
-					value: unknown extends FieldShape
-						? any
-						: FieldShape extends Array<infer ItemShape>
-							? ItemShape
-							: any;
-			  },
+		options: IsUntypedFormShape<this['FormShape']> extends true
+			? {
+					name?: string | undefined;
+					index?: number | undefined;
+					value: unknown;
+				}
+			:
+					| {
+							name?: FieldName<FieldShape>;
+							index?: undefined;
+							value: DefaultValue<FieldShape>;
+					  }
+					| {
+							name: FieldName<
+								FieldShape extends Array<any> | null | undefined
+									? FieldShape
+									: never
+							>;
+							index: number;
+							value: NonNullable<FieldShape> extends Array<infer ItemShape>
+								? DefaultValue<ItemShape>
+								: never;
+					  },
 	): void;
 }
 
