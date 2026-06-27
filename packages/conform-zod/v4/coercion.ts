@@ -467,6 +467,11 @@ function coerceType(type: $ZodType, options: CoerceTypeOptions): $ZodType {
 			...def,
 			innerType: coerceType(def.innerType, options),
 		});
+	} else if (def.type === 'readonly') {
+		schema = new constr({
+			...def,
+			innerType: coerceType(def.innerType, options),
+		});
 	} else if (def.type === 'pipe') {
 		if (options.skipTransforms) {
 			schema = coerceType(def.in, options);

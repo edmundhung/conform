@@ -13,6 +13,7 @@ import {
 	any,
 	ZodCatch,
 	ZodBranded,
+	ZodReadonly,
 	ZodDefault,
 } from 'zod/v3';
 import type {
@@ -412,6 +413,11 @@ function coerceType<Schema extends ZodTypeAny>(
 		schema = new ZodBranded({
 			...def,
 			type: coerceType(def.type, options),
+		});
+	} else if (def.typeName === 'ZodReadonly') {
+		schema = new ZodReadonly({
+			...def,
+			innerType: coerceType(def.innerType, options),
 		});
 	} else if (def.typeName === 'ZodTuple') {
 		schema = new ZodTuple({
