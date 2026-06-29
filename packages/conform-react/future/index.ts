@@ -18,6 +18,7 @@ export type {
 	DefaultValue,
 	BaseFieldMetadata,
 	CustomSchemaTypes,
+	CustomStateHandler,
 	FormsConfig,
 	FormContext,
 	FormMetadata,
@@ -31,6 +32,7 @@ export type {
 	InferBaseErrorShape,
 	InferCustomFormMetadata,
 	InferCustomFieldMetadata,
+	InferCustomState,
 } from './types';
 export {
 	configureForms,
@@ -42,6 +44,7 @@ export {
 	resolveSubmission,
 } from './forms';
 export { defineIntent } from './intent';
+export { defineCustomState } from './state';
 export {
 	BaseControl,
 	PreserveBoundary,

@@ -1,5 +1,6 @@
 import {
 	type FieldName,
+	type SubmissionResult,
 	appendPath,
 	formatPath,
 	parsePath,
@@ -23,6 +24,8 @@ import type {
 	BaseFormMetadata,
 	DefineConditionalField,
 	ApplyStatus,
+	CustomStateHandler,
+	FormCustomState,
 } from './types';
 import {
 	appendUniqueItem,
@@ -32,10 +35,19 @@ import {
 	when,
 } from './util';
 
-export function initializeState<ErrorShape>(options?: {
+export function initializeState<
+	ErrorShape = any,
+	CustomStateHandlers extends Record<
+		string,
+		CustomStateHandler<any, any, ErrorShape>
+	> = {},
+>(options?: {
 	defaultValue?: Record<string, unknown> | null | undefined;
 	resetKey?: string | undefined;
-}): FormState<ErrorShape> {
+	reset?: boolean | undefined;
+	customStateHandlers?: CustomStateHandlers | undefined;
+	lastCustomState?: FormCustomState<CustomStateHandlers> | undefined;
+}): FormState<ErrorShape, FormCustomState<CustomStateHandlers>> {
 	return {
 		resetKey: options?.resetKey ?? generateUniqueKey(),
 		listKeys: {},
@@ -45,6 +57,11 @@ export function initializeState<ErrorShape>(options?: {
 		serverError: null,
 		clientError: null,
 		touchedFields: [],
+		customState: initializeCustomState({
+			handlers: options?.customStateHandlers,
+			lastState: options?.lastCustomState,
+			reset: options?.reset ?? false,
+		}),
 	};
 }
 
@@ -54,20 +71,27 @@ export function initializeState<ErrorShape>(options?: {
  * - Server actions: update server errors and clear client errors, with optional target value
  * - Initialize: set initial server value
  */
-export function updateState<ErrorShape>(
-	state: FormState<ErrorShape>,
+export function updateState<
+	ErrorShape,
+	CustomStateHandlers extends Record<
+		string,
+		CustomStateHandler<any, any, ErrorShape>
+	> = {},
+>(
+	state: FormState<ErrorShape, FormCustomState<CustomStateHandlers>>,
 	action: FormAction<
 		ErrorShape,
-		UnknownIntent | undefined,
+		UnknownIntent,
 		{
 			handlers: Record<string, IntentHandler<any, any>>;
 			status: ApplyStatus;
+			customStateHandlers?: CustomStateHandlers | undefined;
 			reset: (
 				defaultValue?: Record<string, unknown> | null | undefined,
-			) => FormState<ErrorShape>;
+			) => FormState<ErrorShape, FormCustomState<CustomStateHandlers>>;
 		}
 	>,
-): FormState<ErrorShape> {
+): FormState<ErrorShape, FormCustomState<CustomStateHandlers>> {
 	if (action.reset) {
 		return action.ctx.reset(action.targetValue);
 	}
@@ -119,11 +143,7 @@ export function updateState<ErrorShape>(
 	const intent = action.intent ?? { type: 'validate' };
 	const handler = action.ctx.handlers?.[intent.type];
 
-	if (!handler || action.type === 'server') {
-		return state;
-	}
-
-	if (action.type === 'client') {
+	if (handler && action.type === 'client') {
 		if (typeof handler.move === 'function') {
 			const handleMove = handler.move;
 			state = moveState(state, action.submission.payload, value, (name) =>
@@ -139,7 +159,11 @@ export function updateState<ErrorShape>(
 		}
 	}
 
-	if (typeof handler.touch === 'function') {
+	if (
+		handler &&
+		action.type !== 'server' &&
+		typeof handler.touch === 'function'
+	) {
 		let touchedFields = state.touchedFields;
 
 		for (const name of getFields(action)) {
@@ -153,11 +177,15 @@ export function updateState<ErrorShape>(
 		});
 	}
 
-	return state;
+	return merge(state, {
+		customState: updateCustomState(state.customState, action, {
+			handlers: action.ctx.customStateHandlers,
+		}),
+	});
 }
 
 export function getFields<ErrorShape>(
-	action: FormAction<ErrorShape, UnknownIntent | null | undefined>,
+	action: FormAction<ErrorShape, UnknownIntent>,
 ): string[] {
 	let fields = action.submission.fields;
 
@@ -194,11 +222,14 @@ export function getApplyStatus(
  * providing a `move()` mapping. It drops list keys and touched fields under
  * changed paths so stale client state does not point at the wrong fields.
  */
-export function invalidateState<ErrorShape>(
-	state: FormState<ErrorShape>,
+export function invalidateState<
+	ErrorShape,
+	CustomState extends Record<string, unknown> = Record<string, unknown>,
+>(
+	state: FormState<ErrorShape, CustomState>,
 	previousValue: Record<string, unknown>,
 	nextValue: Record<string, unknown>,
-): FormState<ErrorShape> {
+): FormState<ErrorShape, CustomState> {
 	if (previousValue === nextValue) {
 		return state;
 	}
@@ -320,12 +351,15 @@ export function invalidateState<ErrorShape>(
  * Preserves list keys and touched fields for intents that can map old field
  * paths to new ones, such as insert, remove, and reorder.
  */
-export function moveState<ErrorShape>(
-	state: FormState<ErrorShape>,
+export function moveState<
+	ErrorShape,
+	CustomState extends Record<string, unknown> = Record<string, unknown>,
+>(
+	state: FormState<ErrorShape, CustomState>,
 	previousValue: Record<string, unknown>,
 	nextValue: Record<string, unknown>,
 	move: (name: string) => string | null,
-): FormState<ErrorShape> {
+): FormState<ErrorShape, CustomState> {
 	if (previousValue === nextValue) {
 		return state;
 	}
@@ -722,29 +756,40 @@ export function getFormMetadata<
 	ErrorShape,
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
+	CustomState extends Record<string, unknown> = {},
 >(
-	context: FormContext<ErrorShape>,
+	context: FormContext<ErrorShape, CustomState>,
 	options?: {
 		extendFormMetadata?:
-			| ((metadata: BaseFormMetadata<ErrorShape>) => CustomFormMetadata)
+			| ((
+					metadata: BaseFormMetadata<ErrorShape, CustomState>,
+			  ) => CustomFormMetadata)
 			| undefined;
 		extendFieldMetadata?:
 			| (<FieldShape>(
 					metadata: BaseFieldMetadata<FieldShape, ErrorShape>,
 					ctx: {
-						form: BaseFormMetadata<ErrorShape>;
+						form: BaseFormMetadata<ErrorShape, CustomState>;
 						when: DefineConditionalField;
 					},
 			  ) => CustomFieldMetadata)
 			| undefined;
 	},
-): FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata> {
-	const metadata: BaseFormMetadata<ErrorShape> = {
+): FormMetadata<
+	ErrorShape,
+	CustomFormMetadata,
+	CustomFieldMetadata,
+	CustomState
+> {
+	const metadata: BaseFormMetadata<ErrorShape, CustomState> = {
 		key: context.state.resetKey,
 		id: context.formId,
 		errorId: `${context.formId}-form-error`,
 		descriptionId: `${context.formId}-form-description`,
 		defaultValue: context.state.defaultValue,
+		get customState() {
+			return context.state.customState;
+		},
 		get errors() {
 			return getErrors(context.state);
 		},
@@ -796,7 +841,8 @@ export function getFormMetadata<
 	return extended as FormMetadata<
 		ErrorShape,
 		CustomFormMetadata,
-		CustomFieldMetadata
+		CustomFieldMetadata,
+		CustomState
 	>;
 }
 
@@ -805,19 +851,19 @@ export function getField<
 	ErrorShape = string,
 	CustomFieldMetadata extends Record<string, unknown> = {},
 >(
-	context: FormContext<ErrorShape>,
+	context: FormContext<ErrorShape, any>,
 	options: {
 		name: FieldName<FieldShape>;
 		extendFieldMetadata?:
 			| (<F>(
 					metadata: BaseFieldMetadata<F, ErrorShape>,
 					ctx: {
-						form: BaseFormMetadata<ErrorShape>;
+						form: BaseFormMetadata<ErrorShape, any>;
 						when: DefineConditionalField;
 					},
 			  ) => CustomFieldMetadata)
 			| undefined;
-		form?: BaseFormMetadata<ErrorShape, CustomFieldMetadata> | undefined;
+		form?: BaseFormMetadata<ErrorShape, any> | undefined;
 		key?: string | undefined;
 	},
 ): FieldMetadata<FieldShape, ErrorShape, CustomFieldMetadata> {
@@ -912,19 +958,19 @@ export function getFieldset<
 	ErrorShape = string,
 	CustomFieldMetadata extends Record<string, unknown> = {},
 >(
-	context: FormContext<ErrorShape>,
+	context: FormContext<ErrorShape, any>,
 	options: {
 		name?: FieldName<FieldShape> | undefined;
 		extendFieldMetadata?:
 			| (<F>(
 					metadata: BaseFieldMetadata<F, ErrorShape>,
 					ctx: {
-						form: BaseFormMetadata<ErrorShape>;
+						form: BaseFormMetadata<ErrorShape, any>;
 						when: DefineConditionalField;
 					},
 			  ) => CustomFieldMetadata)
 			| undefined;
-		form?: BaseFormMetadata<ErrorShape, CustomFieldMetadata> | undefined;
+		form?: BaseFormMetadata<ErrorShape, any> | undefined;
 	},
 ): Fieldset<FieldShape, ErrorShape, CustomFieldMetadata> {
 	return new Proxy({} as any, {
@@ -954,14 +1000,14 @@ export function getFieldList<
 	ErrorShape = string,
 	CustomFieldMetadata extends Record<string, unknown> = {},
 >(
-	context: FormContext<ErrorShape>,
+	context: FormContext<ErrorShape, any>,
 	options: {
 		name: FieldName<FieldShape>;
 		extendFieldMetadata?:
 			| (<F>(
 					metadata: BaseFieldMetadata<F, ErrorShape>,
 					ctx: {
-						form: BaseFormMetadata<ErrorShape>;
+						form: BaseFormMetadata<ErrorShape, any>;
 						when: DefineConditionalField;
 					},
 			  ) => CustomFieldMetadata)
@@ -989,4 +1035,112 @@ export function getFieldList<
 			key,
 		});
 	});
+}
+
+export function defineCustomState<
+	State,
+	CustomIntentHandlers extends Record<string, IntentHandler<any, any>> = {},
+	ErrorShape = any,
+>(
+	definition: CustomStateHandler<State, CustomIntentHandlers, ErrorShape>,
+): CustomStateHandler<State, CustomIntentHandlers, ErrorShape> {
+	return definition;
+}
+
+export function mergeCustomStateHandlers<
+	GlobalCustomState extends
+		| Record<string, CustomStateHandler<any, any, any>>
+		| undefined,
+	InlineCustomState extends
+		| Record<string, CustomStateHandler<any, any, any>>
+		| undefined,
+>(
+	globalCustomState: GlobalCustomState,
+	inlineCustomState: InlineCustomState,
+): GlobalCustomState & InlineCustomState {
+	if (globalCustomState && inlineCustomState) {
+		for (const key of Object.keys(inlineCustomState)) {
+			if (key in globalCustomState) {
+				throw new Error(`Duplicate custom state key "${key}"`);
+			}
+		}
+	}
+
+	return {
+		...globalCustomState,
+		...inlineCustomState,
+	};
+}
+
+export function initializeCustomState<
+	ErrorShape,
+	CustomStateHandlers extends Record<
+		string,
+		CustomStateHandler<any, any, ErrorShape>
+	>,
+>(options: {
+	handlers: CustomStateHandlers | undefined;
+	lastState?: FormCustomState<CustomStateHandlers> | undefined;
+	reset: boolean;
+}): FormCustomState<CustomStateHandlers> {
+	return Object.fromEntries(
+		Object.entries(options.handlers ?? {}).map(([key, handler]) => [
+			key,
+			handler.initialize({
+				lastState: options.lastState?.[key],
+				reset: options.reset,
+			}),
+		]),
+	) as FormCustomState<CustomStateHandlers>;
+}
+
+export function updateCustomState<
+	ErrorShape,
+	CustomStateHandlers extends Record<
+		string,
+		CustomStateHandler<any, any, ErrorShape>
+	>,
+>(
+	state: FormCustomState<CustomStateHandlers>,
+	action: FormAction<ErrorShape, UnknownIntent>,
+	options: {
+		handlers: CustomStateHandlers | undefined;
+		lastState?: FormCustomState<CustomStateHandlers> | undefined;
+	},
+): FormCustomState<CustomStateHandlers> {
+	if (!options.handlers) {
+		return state;
+	}
+
+	if (action.reset) {
+		return initializeCustomState({
+			handlers: options.handlers,
+			lastState: options.lastState ?? state,
+			reset: true,
+		});
+	}
+
+	return Object.fromEntries(
+		Object.entries(options.handlers).map(([key, handler]) => {
+			let nextState = state[key];
+
+			if (action.type !== 'server' && handler.handleIntent) {
+				nextState = handler.handleIntent(nextState, {
+					intent: action.intent,
+					submission: action.submission,
+				});
+			}
+
+			if (handler.handleResult) {
+				nextState = handler.handleResult(nextState, {
+					intent: action.intent,
+					submission: action.submission,
+					error: action.error,
+					phase: action.type === 'client' ? 'client' : 'server',
+				});
+			}
+
+			return [key, nextState];
+		}),
+	) as FormCustomState<CustomStateHandlers>;
 }

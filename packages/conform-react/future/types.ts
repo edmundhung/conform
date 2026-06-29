@@ -4,6 +4,7 @@ import type {
 	FormError,
 	FormValue,
 	Serialize,
+	Submission,
 	SubmissionResult,
 	ValidationAttributes,
 } from '@conform-to/dom/future';
@@ -196,7 +197,10 @@ export type DefaultValue<Shape> =
 				? null | undefined // We don't support setting default value for file inputs yet
 				: Shape | string | null | undefined;
 
-export type FormState<ErrorShape = any> = {
+export type FormState<
+	ErrorShape = any,
+	CustomState extends Record<string, unknown> = {},
+> = {
 	/** Unique identifier that changes on form reset to trigger reset side effects */
 	resetKey: string;
 	/** Initial form values */
@@ -213,11 +217,13 @@ export type FormState<ErrorShape = any> = {
 	touchedFields: string[];
 	/** Mapping of array field names to their item keys for React list rendering */
 	listKeys: Record<string, string[]>;
+	/** Current custom state for the form */
+	customState: CustomState;
 };
 
 export type FormAction<
 	ErrorShape = any,
-	Intent extends UnknownIntent | null | undefined = UnknownIntent | null,
+	Intent extends UnknownIntent = UnknownIntent,
 	Context = {},
 > = SubmissionResult<ErrorShape> & {
 	type: 'initialize' | 'server' | 'client';
@@ -339,6 +345,10 @@ export type FormsConfig<
 	CustomFormMetadata extends Record<string, unknown>,
 	CustomFieldMetadata extends Record<string, unknown>,
 	CustomIntentHandlers extends Record<string, IntentHandler<any, any>>,
+	CustomStateHandlers extends Record<
+		string,
+		CustomStateHandler<any, any, BaseErrorShape>
+	>,
 > = {
 	/**
 	 * The name of the submit button field that indicates the submission intent.
@@ -353,6 +363,13 @@ export type FormsConfig<
 	 * Intent handlers available to every form created by this factory.
 	 */
 	intents?: CustomIntentHandlers;
+	/**
+	 * Custom state available to every form created by this factory.
+	 */
+	customState?: CustomStateDefinition<
+		CustomStateHandlers,
+		CustomIntentHandlers
+	>;
 	/**
 	 * Determines when validation should run for the first time on a field.
 	 * @default "onSubmit"
@@ -409,7 +426,10 @@ export type FormsConfig<
 	 * Extends form metadata with custom properties.
 	 */
 	extendFormMetadata?: <ErrorShape extends BaseErrorShape>(
-		metadata: BaseFormMetadata<ErrorShape>,
+		metadata: BaseFormMetadata<
+			ErrorShape,
+			FormCustomState<CustomStateHandlers>
+		>,
 	) => CustomFormMetadata;
 	/**
 	 * Extends field metadata with custom properties.
@@ -418,7 +438,7 @@ export type FormsConfig<
 	extendFieldMetadata?: <FieldShape, ErrorShape extends BaseErrorShape>(
 		metadata: BaseFieldMetadata<FieldShape, ErrorShape>,
 		ctx: {
-			form: BaseFormMetadata<ErrorShape>;
+			form: BaseFormMetadata<ErrorShape, FormCustomState<CustomStateHandlers>>;
 			when: DefineConditionalField;
 		},
 	) => CustomFieldMetadata;
@@ -471,6 +491,10 @@ export type FormOptions<
 	SchemaErrorShape = ErrorShape,
 	CustomIntentHandlers extends Record<string, IntentHandler<any, any>> = {},
 	GlobalIntentHandlers extends Record<string, IntentHandler<any, any>> = {},
+	CustomStateHandlers extends Record<
+		string,
+		CustomStateHandler<any, any, any>
+	> = {},
 > = {
 	/** Optional form identifier. If not provided, a unique ID is automatically generated. */
 	id?: string | undefined;
@@ -493,6 +517,15 @@ export type FormOptions<
 	 * Custom intent handlers available only to this form instance.
 	 */
 	intents?: CustomIntentHandlers | undefined;
+	/**
+	 * Custom state available only to this form instance.
+	 */
+	customState?:
+		| CustomStateDefinition<
+				CustomStateHandlers,
+				GlobalIntentHandlers & CustomIntentHandlers
+		  >
+		| undefined;
 	/** HTML validation attributes for fields (required, minLength, pattern, etc.). */
 	constraint?: Record<string, ValidationAttributes> | undefined;
 	/**
@@ -546,20 +579,29 @@ export type FormHandle<
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
 	CustomIntentHandlers extends Record<string, IntentHandler<any, any>> = {},
+	CustomState extends Record<string, unknown> = {},
 > = {
 	/** Form-level metadata and helpers. */
-	form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
+	form: FormMetadata<
+		ErrorShape,
+		CustomFormMetadata,
+		CustomFieldMetadata,
+		CustomState
+	>;
 	/** Field metadata mapped from the form shape. */
 	fields: Fieldset<FormShape, ErrorShape, CustomFieldMetadata>;
 	/** Intent dispatcher for validate, reset, insert, remove, reorder, and update actions. */
 	intent: IntentDispatcher<FormShape, CustomIntentHandlers>;
 };
 
-export interface FormContext<ErrorShape = any> {
+export interface FormContext<
+	ErrorShape = any,
+	CustomState extends Record<string, unknown> = {},
+> {
 	/** The form's unique identifier */
 	formId: string;
 	/** Internal form state with validation results and field data */
-	state: FormState<ErrorShape>;
+	state: FormState<ErrorShape, CustomState>;
 	/** Serializer used to derive field defaults and sync values for this form. */
 	serialize: Serialize;
 	/** HTML validation attributes for fields */
@@ -574,7 +616,7 @@ export interface FormContext<ErrorShape = any> {
 
 export type UnknownIntent = {
 	type: string;
-	payload?: unknown;
+	payload: unknown;
 };
 
 export type TransportIntent = {
@@ -779,6 +821,62 @@ export type IntentHandler<
 	}): string | null;
 };
 
+export type CustomStateHandler<
+	State,
+	CustomIntentHandlers extends Record<string, IntentHandler<any, any>> = {},
+	ErrorShape = any,
+> = {
+	initialize(ctx: { reset: boolean; lastState: State | undefined }): State;
+	handleIntent?(
+		state: State,
+		ctx: {
+			intent: FormIntent<any, DefaultIntentHandlers & CustomIntentHandlers>;
+			submission: Submission;
+		},
+	): State;
+	handleResult?(
+		state: State,
+		ctx: {
+			intent: FormIntent<any, DefaultIntentHandlers & CustomIntentHandlers>;
+			submission: Submission;
+			error: FormError<ErrorShape> | null | undefined;
+			phase: 'client' | 'server';
+		},
+	): State;
+};
+
+export type FormCustomState<
+	Handlers extends Record<string, CustomStateHandler<any, any, any>>,
+> = {
+	[Key in keyof Handlers]: Handlers[Key] extends CustomStateHandler<
+		infer State,
+		any,
+		any
+	>
+		? State
+		: never;
+};
+
+type CustomStateDefinition<
+	CustomStateHandlers extends Record<string, CustomStateHandler<any, any, any>>,
+	IntentHandlers extends Record<string, IntentHandler<any, any>>,
+> = {
+	[Key in keyof CustomStateHandlers]: CustomStateHandlers[Key] extends CustomStateHandler<
+		any,
+		infer RequiredIntents,
+		any
+	>
+		? Exclude<keyof RequiredIntents, keyof IntentHandlers> extends never
+			? RequiredIntents extends Pick<
+					IntentHandlers,
+					Extract<keyof RequiredIntents, keyof IntentHandlers>
+				>
+				? CustomStateHandlers[Key]
+				: never
+			: never
+		: never;
+};
+
 type BaseCombine<
 	T,
 	K extends PropertyKey = T extends unknown ? keyof T : never,
@@ -904,6 +1002,7 @@ export type FormMetadata<
 	ErrorShape = any,
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
+	CustomState extends Record<string, unknown> = {},
 > = Readonly<
 	{
 		/** Unique identifier that changes on form reset */
@@ -926,6 +1025,8 @@ export type FormMetadata<
 		fieldErrors: Record<string, ErrorShape>;
 		/** The form's initial default values. */
 		defaultValue: Record<string, unknown>;
+		/** Current custom state for the form. */
+		customState: CustomState;
 		/** Form props object for spreading onto the <form> element. */
 		props: Readonly<{
 			id: string;
@@ -935,7 +1036,7 @@ export type FormMetadata<
 			noValidate: boolean;
 		}>;
 		/** The current state of the form */
-		context: FormContext<ErrorShape>;
+		context: FormContext<ErrorShape, CustomState>;
 		/** Method to get metadata for a specific field by name. */
 		getField<FieldShape>(
 			name: FieldName<FieldShape>,
@@ -969,8 +1070,8 @@ export type FormMetadata<
  */
 export type BaseFormMetadata<
 	ErrorShape = any,
-	CustomFieldMetadata extends Record<string, unknown> = {},
-> = FormMetadata<ErrorShape, {}, CustomFieldMetadata>;
+	CustomState extends Record<string, unknown> = {},
+> = FormMetadata<ErrorShape, {}, {}, CustomState>;
 
 export type ValidateResult<ErrorShape, Value> =
 	| FormError<ErrorShape>
@@ -1103,7 +1204,7 @@ export type SubmitHandler<
  * ```
  */
 export type InferBaseErrorShape<Config> =
-	Config extends FormsConfig<infer ErrorShape, any, any, any, any, any>
+	Config extends FormsConfig<infer ErrorShape, any, any, any, any, any, any>
 		? ErrorShape
 		: string;
 
@@ -1124,7 +1225,15 @@ export type InferBaseErrorShape<Config> =
  * ```
  */
 export type InferCustomFormMetadata<Config> =
-	Config extends FormsConfig<any, any, any, infer CustomFormMetadata, any, any>
+	Config extends FormsConfig<
+		any,
+		any,
+		any,
+		infer CustomFormMetadata,
+		any,
+		any,
+		any
+	>
 		? CustomFormMetadata
 		: {};
 
@@ -1142,8 +1251,32 @@ export type InferCustomFormMetadata<Config> =
  * ```
  */
 export type InferCustomFieldMetadata<Config> =
-	Config extends FormsConfig<any, any, any, any, infer CustomFieldMetadata, any>
+	Config extends FormsConfig<
+		any,
+		any,
+		any,
+		any,
+		infer CustomFieldMetadata,
+		any,
+		any
+	>
 		? CustomFieldMetadata
+		: {};
+
+/**
+ * Infer the configured custom-state shape from a FormsConfig.
+ */
+export type InferCustomState<Config> =
+	Config extends FormsConfig<
+		any,
+		any,
+		any,
+		any,
+		any,
+		any,
+		infer CustomStateHandlers
+	>
+		? FormCustomState<CustomStateHandlers>
 		: {};
 
 /**

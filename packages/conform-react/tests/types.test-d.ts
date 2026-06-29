@@ -12,6 +12,7 @@ import type {
 	InferBaseErrorShape,
 	InferCustomFieldMetadata,
 	InferCustomFormMetadata,
+	InferCustomState,
 	IntentDispatcher,
 	IntentHandler,
 } from '@conform-to/react/future';
@@ -22,6 +23,7 @@ import {
 	configureForms,
 	shape,
 	defineIntent,
+	defineCustomState,
 } from '@conform-to/react/future';
 import { useRef } from 'react';
 
@@ -666,6 +668,181 @@ describe('configureForms', () => {
 		expectTypeOf(custom.useIntent('form-id').goToStep).toEqualTypeOf<
 			(payload: { step: number }) => void
 		>();
+	});
+
+	test('custom state', () => {
+		const goToStep = defineIntent<{ step: number }>({
+			parse(payload) {
+				if (
+					typeof payload !== 'object' ||
+					payload === null ||
+					!('step' in payload) ||
+					typeof payload.step !== 'number'
+				) {
+					throw new Error('Invalid goToStep payload');
+				}
+
+				return payload;
+			},
+		});
+		const step = defineCustomState<number, { goToStep: typeof goToStep }>({
+			initialize() {
+				return 0;
+			},
+			handleIntent(state, ctx) {
+				assertType<
+					| 'submit'
+					| 'reset'
+					| 'validate'
+					| 'update'
+					| 'insert'
+					| 'remove'
+					| 'reorder'
+					| 'goToStep'
+				>(ctx.intent.type);
+				if (ctx.intent.type === 'goToStep') {
+					assertType<number>(ctx.intent.payload.step);
+					return ctx.intent.payload.step;
+				}
+
+				return state;
+			},
+		});
+		const dismiss = defineIntent();
+		const summary = defineCustomState<
+			{ dismissed: boolean },
+			{ goToStep: typeof goToStep; dismiss: typeof dismiss }
+		>({
+			initialize() {
+				return { dismissed: false };
+			},
+			handleIntent(state, ctx) {
+				if (ctx.intent.type === 'dismiss') {
+					return {
+						dismissed: true,
+					};
+				}
+
+				if (ctx.intent.type === 'goToStep') {
+					return {
+						dismissed: false,
+					};
+				}
+
+				return state;
+			},
+		});
+		const status = defineCustomState<'idle' | 'success' | 'error'>({
+			initialize() {
+				return 'idle';
+			},
+			handleResult(state, ctx) {
+				assertType<'client' | 'server'>(ctx.phase);
+				assertType<string[] | null | undefined>(ctx.error?.formErrors);
+
+				if (ctx.intent.type === 'submit') {
+					return ctx.error ? 'error' : 'success';
+				}
+
+				return state;
+			},
+		});
+
+		const custom = configureForms({
+			customState: {
+				step,
+				status,
+			},
+			intents: {
+				goToStep,
+			},
+			extendFormMetadata(form) {
+				return {
+					currentStep: form.customState.step,
+				};
+			},
+		});
+
+		expectTypeOf<InferCustomState<typeof custom.config>>().toEqualTypeOf<{
+			step: number;
+			status: 'idle' | 'success' | 'error';
+		}>();
+
+		const setup = custom.useForm({
+			intents: {
+				dismiss,
+			},
+			customState: {
+				summary,
+			},
+			onValidate({ error }) {
+				return error;
+			},
+		});
+
+		expectTypeOf(setup.form.customState).toEqualTypeOf<{
+			step: number;
+			status: 'idle' | 'success' | 'error';
+			summary: { dismissed: boolean };
+		}>();
+		expectTypeOf(setup.form.currentStep).toEqualTypeOf<number>();
+
+		configureForms({
+			customState: {
+				// @ts-expect-error custom intents used in custom state handlers must be defined
+				step,
+			},
+		});
+
+		custom.useForm({
+			customState: {
+				// @ts-expect-error custom intents used in custom state handlers must be defined
+				summary,
+			},
+			onValidate({ error }) {
+				return error;
+			},
+		});
+
+		configureForms({
+			intents: {
+				goToStep: defineIntent<(step: number) => void>(),
+			},
+			customState: {
+				// @ts-expect-error custom intent signature should match (`step: number` vs `{ step: number }`)
+				wizard: defineCustomState<
+					{ step: number },
+					{ goToStep: typeof goToStep }
+				>({
+					initialize() {
+						return { step: 0 };
+					},
+					handleIntent(state) {
+						return state;
+					},
+				}),
+			},
+		});
+
+		const inlineSetup = useForm({
+			customState: {
+				summary: defineCustomState({
+					initialize() {
+						return { dismissed: false };
+					},
+					handleIntent(state) {
+						return state;
+					},
+				}),
+			},
+			onValidate({ error }) {
+				return error;
+			},
+		});
+
+		expectTypeOf(inlineSetup.form.customState).toEqualTypeOf<{
+			summary: { dismissed: boolean };
+		}>();
 	});
 });
 

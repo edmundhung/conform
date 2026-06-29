@@ -23,6 +23,9 @@ import {
 	getField,
 	getFieldset,
 	getFieldList,
+	defineCustomState,
+	initializeCustomState,
+	updateCustomState,
 } from '../future/state';
 import { defineIntent, serializeIntent } from '../future/intent';
 import { getPathArray, updatePathValue } from '../future/util';
@@ -1974,4 +1977,247 @@ test('getFieldList', () => {
 	expect(firstUserFieldset?.name?.defaultValue).toBe('John');
 	expect(firstUserFieldset?.age?.name).toBe('users[0].age');
 	expect(firstUserFieldset?.age?.defaultValue).toBe('25');
+});
+
+test('initializeCustomState', () => {
+	const customState = initializeCustomState({
+		handlers: {
+			wizard: defineCustomState({
+				initialize() {
+					return { step: 0 };
+				},
+				handleIntent(state) {
+					return state;
+				},
+			}),
+			summary: defineCustomState({
+				initialize() {
+					return { dismissed: false };
+				},
+				handleIntent(state) {
+					return state;
+				},
+			}),
+		},
+		reset: false,
+	});
+
+	expect(customState).toEqual({
+		wizard: { step: 0 },
+		summary: { dismissed: false },
+	});
+});
+
+test('updateCustomState', () => {
+	const handlers = {
+		submitCount: defineCustomState({
+			initialize() {
+				return 0;
+			},
+			handleIntent(state, ctx) {
+				if (ctx.intent.type === 'submit') {
+					return state + 1;
+				}
+
+				return state;
+			},
+		}),
+		failedSubmitCount: defineCustomState({
+			initialize() {
+				return 0;
+			},
+			handleResult(state, ctx) {
+				if (ctx.intent.type === 'submit' && ctx.error) {
+					return state + 1;
+				}
+
+				return state;
+			},
+		}),
+		summary: defineCustomState({
+			initialize() {
+				return { dismissed: false };
+			},
+			handleIntent(state) {
+				return state;
+			},
+		}),
+		status: defineCustomState<'idle' | 'submitted' | 'success' | 'error'>({
+			initialize(ctx) {
+				if (ctx.reset && ctx.lastState) {
+					return ctx.lastState;
+				}
+
+				return 'idle';
+			},
+			handleIntent(state, ctx) {
+				if (ctx.intent.type === 'submit') {
+					return 'submitted';
+				}
+
+				return state;
+			},
+			handleResult(state, ctx) {
+				if (ctx.intent.type !== 'submit') {
+					return state;
+				}
+
+				if (ctx.error) {
+					return 'error';
+				}
+
+				if (ctx.phase === 'server' && ctx.error === null) {
+					return 'success';
+				}
+
+				return state;
+			},
+		}),
+		step: defineCustomState({
+			initialize() {
+				return 0;
+			},
+			handleResult(state, ctx) {
+				if (
+					ctx.intent.type === 'submit' &&
+					ctx.phase === 'client' &&
+					ctx.error === null
+				) {
+					return state + 1;
+				}
+
+				return state;
+			},
+		}),
+	};
+	const initialState = {
+		submitCount: 0,
+		failedSubmitCount: 0,
+		summary: { dismissed: false },
+		status: 'idle' as const,
+		step: 0,
+	};
+
+	const pendingState = updateCustomState(
+		initialState,
+		createAction({
+			type: 'client',
+			entries: [['title', 'Example']],
+		}),
+		{
+			handlers,
+		},
+	);
+
+	expect(pendingState).toEqual({
+		submitCount: 1,
+		failedSubmitCount: 0,
+		summary: { dismissed: false },
+		status: 'submitted',
+		step: 0,
+	});
+
+	const asyncPassAction = createAction({
+		type: 'server',
+		entries: [['title', 'Example']],
+		error: null,
+	});
+
+	const asyncPassState = updateCustomState(pendingState, asyncPassAction, {
+		handlers,
+	});
+
+	expect(asyncPassState).toEqual({
+		submitCount: 1,
+		failedSubmitCount: 0,
+		summary: { dismissed: false },
+		status: 'success',
+		step: 0,
+	});
+
+	const serverPassState = updateCustomState(
+		asyncPassState,
+		createAction({
+			type: 'server',
+			entries: [['title', 'Example']],
+			error: null,
+		}),
+		{
+			handlers,
+		},
+	);
+
+	expect(serverPassState).toEqual({
+		submitCount: 1,
+		failedSubmitCount: 0,
+		summary: { dismissed: false },
+		status: 'success',
+		step: 0,
+	});
+
+	const failureState = updateCustomState(
+		initialState,
+		createAction({
+			type: 'client',
+			entries: [['title', '']],
+			error: {
+				fieldErrors: {
+					title: ['Required'],
+				},
+			},
+		}),
+		{
+			handlers,
+		},
+	);
+
+	expect(failureState).toEqual({
+		submitCount: 1,
+		failedSubmitCount: 1,
+		summary: { dismissed: false },
+		status: 'error',
+		step: 0,
+	});
+
+	const ssrState = updateCustomState(
+		initialState,
+		createAction({
+			type: 'initialize',
+			entries: [['title', 'Example']],
+			error: null,
+		}),
+		{
+			handlers,
+		},
+	);
+
+	expect(ssrState).toEqual({
+		submitCount: 1,
+		failedSubmitCount: 0,
+		summary: { dismissed: false },
+		status: 'success',
+		step: 0,
+	});
+
+	const nextState2 = updateCustomState(
+		serverPassState,
+		createAction({
+			type: 'client',
+			entries: [
+				[DEFAULT_INTENT_NAME, serializeIntent({ type: 'reset', args: [] })],
+			],
+			reset: true,
+		}),
+		{
+			handlers,
+		},
+	);
+
+	expect(nextState2).toEqual({
+		submitCount: 0,
+		failedSubmitCount: 0,
+		summary: { dismissed: false },
+		status: 'success',
+		step: 0,
+	});
 });

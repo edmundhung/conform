@@ -43,7 +43,7 @@ test('serializeIntent', () => {
 		'custom(null)',
 	);
 	expect(serializeIntent({ type: 'custom', args: [undefined, 1] })).toBe(
-		'custom(null,1)',
+		'custom("__undefined__",1)',
 	);
 
 	// Test intent with undefined payload
@@ -85,10 +85,13 @@ test('deserializeIntent', () => {
 	});
 
 	// Test serialized undefined argument
-	expect(deserializeIntent('custom(null,1)')).toEqual({
+	expect(deserializeIntent('custom("__undefined__",1)')).toEqual({
 		type: 'custom',
-		args: [null, 1],
+		args: [undefined, 1],
 	});
+
+	// Test empty string
+	expect(deserializeIntent('')).toBeUndefined();
 });
 
 test('parseIntent', () => {
@@ -101,10 +104,20 @@ test('parseIntent', () => {
 		type: 'submit',
 		payload: undefined,
 	});
-
 	expect(parseIntent('custom', { handlers: defaultIntentHandlers })).toBe(
 		undefined,
 	);
+	expect(
+		parseIntent('validate(null)', { handlers: defaultIntentHandlers }),
+	).toBe(undefined);
+	expect(
+		parseIntent('validate("__undefined__")', {
+			handlers: defaultIntentHandlers,
+		}),
+	).toEqual({
+		type: 'validate',
+		payload: undefined,
+	});
 
 	const handlers = {
 		custom: {

@@ -7,6 +7,7 @@ import {
 	type FormError,
 	type FormOptions,
 	defineIntent,
+	defineCustomState,
 	useForm as useFormDefault,
 	report,
 	parseSubmission,
@@ -1082,6 +1083,71 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 		await expect
 			.element(screen.getByLabelText('Task #3 Local'))
 			.toHaveValue('Local 2 preserved');
+	});
+
+	test('custom state', async () => {
+		const submitCount = defineCustomState({
+			initialize() {
+				return 0;
+			},
+			handleIntent(count, ctx) {
+				if (ctx.intent.type === 'submit') {
+					return count + 1;
+				}
+
+				return count;
+			},
+		});
+
+		function CustomStateForm() {
+			const { form, fields, intent } = useForm({
+				defaultValue: {
+					title: 'Example',
+				},
+				customState: {
+					submitCount,
+				},
+				onValidate({ error }) {
+					return error;
+				},
+				onSubmit(event) {
+					event.preventDefault();
+				},
+			});
+
+			return (
+				<form {...form.props}>
+					<input
+						name={fields.title.name}
+						defaultValue={fields.title.defaultValue}
+						aria-label="Title"
+					/>
+					<div data-testid="submit-count">{form.customState.submitCount}</div>
+					<button>Submit</button>
+					<button type="button" onClick={() => intent.reset()}>
+						Reset
+					</button>
+				</form>
+			);
+		}
+
+		const screen = render(<CustomStateForm />);
+
+		await expect
+			.element(screen.getByTestId('submit-count'))
+			.toHaveTextContent('0');
+		await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+		await expect
+			.element(screen.getByTestId('submit-count'))
+			.toHaveTextContent('1');
+		await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+		await expect
+			.element(screen.getByTestId('submit-count'))
+			.toHaveTextContent('2');
+		await userEvent.click(screen.getByRole('button', { name: 'Reset' }));
+		await expect
+			.element(screen.getByTestId('submit-count'))
+			.toHaveTextContent('0');
 	});
 
 	test('server report', async () => {
