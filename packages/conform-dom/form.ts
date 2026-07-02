@@ -944,7 +944,10 @@ export function createFormContext<
 			return;
 		}
 
-		const initialValue = result.initialValue ?? meta.initialValue;
+		const initialValue =
+			typeof result.initialValue !== 'undefined'
+				? result.initialValue
+				: meta.initialValue;
 		const error = Object.entries(result.error ?? {}).reduce<
 			Record<string, FormError>
 		>((result, [name, newError]) => {
@@ -966,7 +969,8 @@ export function createFormContext<
 			pendingIntents,
 			isValueUpdated: false,
 			submissionStatus: result.status,
-			value: initialValue,
+			value:
+				typeof result.initialValue !== 'undefined' ? initialValue : meta.value,
 			validated: {
 				...meta.validated,
 				...result.state?.validated,
