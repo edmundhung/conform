@@ -103,7 +103,10 @@ export function createAction(options: {
 		reset: options.reset,
 		error: options.error,
 	});
-	const finalResult = applyIntent(result, intent, { handlers });
+	const finalResult =
+		options.type === 'client:async'
+			? result
+			: applyIntent(result, intent, { handlers });
 
 	return {
 		...finalResult,

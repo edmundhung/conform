@@ -943,6 +943,41 @@ describe('form state', () => {
 		expect(isTouched(context.state, 'tasks[1]')).toBe(true);
 		expect(isTouched(context.state, 'tasks[2]')).toBe(false);
 
+		context.state = updateState(
+			context.state,
+			createAction({
+				type: 'client:async',
+				entries: [
+					['title', 'My Tasks'],
+					['tasks[0]', 'Default task 1'],
+					['tasks[1]', 'Default task 2'],
+					['tasks[2]', 'New task'],
+					[
+						DEFAULT_INTENT_NAME,
+						serializeIntent({
+							type: 'insert',
+							args: [
+								{
+									name: 'tasks',
+									index: 0,
+									defaultValue: 'Async task',
+								},
+							],
+						}),
+					],
+				],
+				error: null,
+			}),
+		);
+
+		expect(getDefaultOptions(context, 'tasks')).toEqual([
+			'Default task 1',
+			'Default task 2',
+			'New task',
+		]);
+		expect(isTouched(context.state, 'tasks[1]')).toBe(true);
+		expect(isTouched(context.state, 'tasks[2]')).toBe(false);
+
 		// Test inserting an item at a specific index
 		vi.advanceTimersByTime(1);
 		context.state = updateState(
@@ -2117,22 +2152,24 @@ test('updateCustomState', () => {
 		step: 0,
 	});
 
-	const asyncPassAction = createAction({
-		type: 'server',
-		entries: [['title', 'Example']],
-		error: null,
-	});
-
-	const asyncPassState = updateCustomState(pendingState, asyncPassAction, {
-		handlers,
-	});
+	const asyncPassState = updateCustomState(
+		pendingState,
+		createAction({
+			type: 'client:async',
+			entries: [['title', 'Example']],
+			error: null,
+		}),
+		{
+			handlers,
+		},
+	);
 
 	expect(asyncPassState).toEqual({
 		submitCount: 1,
 		failedSubmitCount: 0,
 		summary: { dismissed: false },
-		status: 'success',
-		step: 0,
+		status: 'submitted',
+		step: 1,
 	});
 
 	const serverPassState = updateCustomState(
@@ -2152,7 +2189,7 @@ test('updateCustomState', () => {
 		failedSubmitCount: 0,
 		summary: { dismissed: false },
 		status: 'success',
-		step: 0,
+		step: 1,
 	});
 
 	const failureState = updateCustomState(

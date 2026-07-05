@@ -51,6 +51,7 @@
     - [useControl](./api/react/future/useControl.md)
     - [useIntent](./api/react/future/useIntent.md)
     - [defineIntent](./api/react/future/defineIntent.md)
+    - [defineCustomState](./api/react/future/defineCustomState.md)
     - [resolveSubmission](./api/react/future/resolveSubmission.md)
     - [parseSubmission](./api/react/future/parseSubmission.md)
     - [report](./api/react/future/report.md)

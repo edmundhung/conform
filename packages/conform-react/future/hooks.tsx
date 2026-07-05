@@ -251,7 +251,7 @@ export function useConform<
 	const abortControllerRef = useRef<AbortController | null>(null);
 	const handleSubmission = useCallback(
 		(
-			type: 'server' | 'client',
+			type: 'server' | 'client' | 'client:async',
 			result: SubmissionResult<ErrorShape>,
 			options = optionsRef.current,
 		) => {
@@ -271,13 +271,17 @@ export function useConform<
 				);
 			}
 
-			const finalResult = applyIntent(normalizedResult, intent, {
-				handlers: options.intentHandlers,
-			});
 			const formElement = getFormElement(formRef);
+			const finalResult =
+				type === 'client'
+					? applyIntent(normalizedResult, intent, {
+							handlers: options.intentHandlers,
+						})
+					: normalizedResult;
 
 			if (
 				formElement &&
+				type === 'client' &&
 				(finalResult.reset || typeof finalResult.targetValue !== 'undefined')
 			) {
 				dispatchInternalUpdateEvent(formElement);
@@ -475,7 +479,7 @@ export function useConform<
 						if (!abortController.signal.aborted) {
 							submissionResult.error = error;
 
-							handleSubmission('server', submissionResult);
+							handleSubmission('client:async', submissionResult);
 
 							// If the form is meant to be submitted and there is no error
 							if (

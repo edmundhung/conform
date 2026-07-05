@@ -57,6 +57,12 @@ Custom intent handlers available only to this form instance.
 
 Use this when you want to add custom methods to the returned `intent` dispatcher without making them global through [`configureForms`](./configureForms.md).
 
+### `customState?: Record<string, CustomStateHandler>`
+
+Custom state handlers available only to this form instance.
+
+Use [`defineCustomState`](./defineCustomState.md) to define custom state that can be read from `form.customState`.
+
 ### `constraint?: Record<string, ValidationAttributes>`
 
 HTML validation attributes for fields (`required`, `minLength`, `pattern`, etc.).

@@ -62,6 +62,10 @@ Object containing validation errors for all touched fields.
 
 Initial form values.
 
+### `customState: Record<string, unknown>`
+
+Current custom state registered through [`configureForms`](./configureForms.md) or [`useForm`](./useForm.md). Define custom state with [`defineCustomState`](./defineCustomState.md).
+
 ### `props: FormProps`
 
 Form props object for spreading onto the `<form>` element:

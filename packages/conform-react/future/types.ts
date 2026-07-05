@@ -226,7 +226,7 @@ export type FormAction<
 	Intent extends UnknownIntent = UnknownIntent,
 	Context = {},
 > = SubmissionResult<ErrorShape> & {
-	type: 'initialize' | 'server' | 'client';
+	type: 'initialize' | 'server' | 'client' | 'client:async';
 	intent: Intent;
 	ctx: Context;
 };

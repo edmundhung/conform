@@ -97,53 +97,62 @@ export function updateState<
 	}
 
 	const value = action.targetValue ?? action.submission.payload;
+	const isClientAction =
+		action.type === 'client' || action.type === 'client:async';
+	const hasIntentEffects =
+		action.type !== 'server' && action.type !== 'client:async';
 
 	// Apply the form error and target value from the result first
-	state =
-		action.type === 'client'
-			? merge(state, {
-					targetValue: action.targetValue ?? state.targetValue,
-					serverValue: action.targetValue ? null : state.serverValue,
-					// Update client error only if the error is different from the previous one to minimize unnecessary re-renders
-					clientError:
-						typeof action.error !== 'undefined' &&
-						!deepEqual(state.clientError, action.error)
-							? action.error
-							: state.clientError,
-					// Reset server error if form value is changed
-					serverError:
-						typeof action.error !== 'undefined' &&
-						!deepEqual(state.serverValue, value)
-							? null
-							: state.serverError,
-				})
-			: merge(state, {
-					// Clear client error to avoid showing stale errors
-					clientError: null,
-					// Update server error if the error is defined.
-					// There is no need to check if the error is different as we are updating other states as well
-					serverError:
-						typeof action.error !== 'undefined'
-							? action.error
-							: state.serverError,
-					listKeys:
-						action.type === 'server' && action.targetValue
-							? pruneListKeys(state.listKeys, action.targetValue)
-							: state.listKeys,
-					targetValue:
-						action.type === 'server' && action.targetValue
-							? action.targetValue
-							: state.targetValue,
-					// Keep track of the value that the serverError is based on
-					serverValue: !deepEqual(state.serverValue, value)
-						? value
+	state = isClientAction
+		? merge(state, {
+				targetValue:
+					action.type === 'client'
+						? (action.targetValue ?? state.targetValue)
+						: state.targetValue,
+				serverValue:
+					action.type === 'client' && action.targetValue
+						? null
 						: state.serverValue,
-				});
+				// Update client error only if the error is different from the previous one to minimize unnecessary re-renders
+				clientError:
+					typeof action.error !== 'undefined' &&
+					!deepEqual(state.clientError, action.error)
+						? action.error
+						: state.clientError,
+				// Reset server error if form value is changed
+				serverError:
+					typeof action.error !== 'undefined' &&
+					!deepEqual(state.serverValue, value)
+						? null
+						: state.serverError,
+			})
+		: merge(state, {
+				// Clear client error to avoid showing stale errors
+				clientError: null,
+				// Update server error if the error is defined.
+				// There is no need to check if the error is different as we are updating other states as well
+				serverError:
+					typeof action.error !== 'undefined'
+						? action.error
+						: state.serverError,
+				listKeys:
+					action.type === 'server' && action.targetValue
+						? pruneListKeys(state.listKeys, action.targetValue)
+						: state.listKeys,
+				targetValue:
+					action.type === 'server' && action.targetValue
+						? action.targetValue
+						: state.targetValue,
+				// Keep track of the value that the serverError is based on
+				serverValue: !deepEqual(state.serverValue, value)
+					? value
+					: state.serverValue,
+			});
 	// Validate the whole form if no intent is provided (default submission)
 	const intent = action.intent ?? { type: 'validate' };
 	const handler = action.ctx.handlers?.[intent.type];
 
-	if (handler && action.type === 'client') {
+	if (handler && action.type === 'client' && hasIntentEffects) {
 		if (typeof handler.move === 'function') {
 			const handleMove = handler.move;
 			state = moveState(state, action.submission.payload, value, (name) =>
@@ -162,6 +171,7 @@ export function updateState<
 	if (
 		handler &&
 		action.type !== 'server' &&
+		hasIntentEffects &&
 		typeof handler.touch === 'function'
 	) {
 		let touchedFields = state.touchedFields;
@@ -1124,7 +1134,11 @@ export function updateCustomState<
 		Object.entries(options.handlers).map(([key, handler]) => {
 			let nextState = state[key];
 
-			if (action.type !== 'server' && handler.handleIntent) {
+			if (
+				action.type !== 'server' &&
+				action.type !== 'client:async' &&
+				handler.handleIntent
+			) {
 				nextState = handler.handleIntent(nextState, {
 					intent: action.intent,
 					submission: action.submission,
@@ -1136,7 +1150,10 @@ export function updateCustomState<
 					intent: action.intent,
 					submission: action.submission,
 					error: action.error,
-					phase: action.type === 'client' ? 'client' : 'server',
+					phase:
+						action.type === 'client' || action.type === 'client:async'
+							? 'client'
+							: 'server',
 				});
 			}
 
