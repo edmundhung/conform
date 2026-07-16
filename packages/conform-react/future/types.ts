@@ -826,7 +826,8 @@ export type CustomStateHandler<
 	CustomIntentHandlers extends Record<string, IntentHandler<any, any>> = {},
 	ErrorShape = any,
 > = {
-	initialize(ctx: { reset: boolean; lastState: State | undefined }): State;
+	initialize(): State;
+	reset?: boolean;
 	handleIntent?(
 		state: State,
 		ctx: {
@@ -839,7 +840,7 @@ export type CustomStateHandler<
 		ctx: {
 			intent: FormIntent<any, DefaultIntentHandlers & CustomIntentHandlers>;
 			submission: Submission;
-			error: FormError<ErrorShape> | null | undefined;
+			error: FormError<ErrorShape> | null;
 			phase: 'client' | 'server';
 		},
 	): State;

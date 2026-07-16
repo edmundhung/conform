@@ -689,6 +689,7 @@ describe('configureForms', () => {
 			initialize() {
 				return 0;
 			},
+			reset: false,
 			handleIntent(state, ctx) {
 				assertType<
 					| 'submit'
@@ -738,7 +739,7 @@ describe('configureForms', () => {
 			},
 			handleResult(state, ctx) {
 				assertType<'client' | 'server'>(ctx.phase);
-				assertType<string[] | null | undefined>(ctx.error?.formErrors);
+				assertType<string[] | undefined>(ctx.error?.formErrors);
 
 				if (ctx.intent.type === 'submit') {
 					return ctx.error ? 'error' : 'success';

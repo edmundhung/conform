@@ -1098,14 +1098,25 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 				return count;
 			},
 		});
+		const preservedCount = defineCustomState({
+			initialize() {
+				return 0;
+			},
+			reset: false,
+			handleIntent(state, ctx) {
+				return ctx.intent.type === 'submit' ? state + 1 : state;
+			},
+		});
 
-		function CustomStateForm() {
+		function CustomStateForm({ formKey }: { formKey: string }) {
 			const { form, fields, intent } = useForm({
+				key: formKey,
 				defaultValue: {
 					title: 'Example',
 				},
 				customState: {
 					submitCount,
+					preservedCount,
 				},
 				onValidate({ error }) {
 					return error;
@@ -1123,6 +1134,9 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 						aria-label="Title"
 					/>
 					<div data-testid="submit-count">{form.customState.submitCount}</div>
+					<div data-testid="preserved-count">
+						{form.customState.preservedCount}
+					</div>
 					<button>Submit</button>
 					<button type="button" onClick={() => intent.reset()}>
 						Reset
@@ -1131,7 +1145,7 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 			);
 		}
 
-		const screen = render(<CustomStateForm />);
+		const screen = render(<CustomStateForm formKey="first" />);
 
 		await expect
 			.element(screen.getByTestId('submit-count'))
@@ -1144,10 +1158,24 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 		await expect
 			.element(screen.getByTestId('submit-count'))
 			.toHaveTextContent('2');
+		await expect
+			.element(screen.getByTestId('preserved-count'))
+			.toHaveTextContent('2');
 		await userEvent.click(screen.getByRole('button', { name: 'Reset' }));
 		await expect
 			.element(screen.getByTestId('submit-count'))
 			.toHaveTextContent('0');
+		await expect
+			.element(screen.getByTestId('preserved-count'))
+			.toHaveTextContent('2');
+
+		screen.rerender(<CustomStateForm formKey="second" />);
+		await expect
+			.element(screen.getByTestId('submit-count'))
+			.toHaveTextContent('0');
+		await expect
+			.element(screen.getByTestId('preserved-count'))
+			.toHaveTextContent('2');
 	});
 
 	test('server report', async () => {

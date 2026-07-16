@@ -1,6 +1,5 @@
 import {
 	type FieldName,
-	type SubmissionResult,
 	appendPath,
 	formatPath,
 	parsePath,
@@ -44,7 +43,6 @@ export function initializeState<
 >(options?: {
 	defaultValue?: Record<string, unknown> | null | undefined;
 	resetKey?: string | undefined;
-	reset?: boolean | undefined;
 	customStateHandlers?: CustomStateHandlers | undefined;
 	lastCustomState?: FormCustomState<CustomStateHandlers> | undefined;
 }): FormState<ErrorShape, FormCustomState<CustomStateHandlers>> {
@@ -59,8 +57,7 @@ export function initializeState<
 		touchedFields: [],
 		customState: initializeCustomState({
 			handlers: options?.customStateHandlers,
-			lastState: options?.lastCustomState,
-			reset: options?.reset ?? false,
+			currentState: options?.lastCustomState,
 		}),
 	};
 }
@@ -1070,7 +1067,7 @@ export function mergeCustomStateHandlers<
 ): GlobalCustomState & InlineCustomState {
 	if (globalCustomState && inlineCustomState) {
 		for (const key of Object.keys(inlineCustomState)) {
-			if (key in globalCustomState) {
+			if (Object.prototype.hasOwnProperty.call(globalCustomState, key)) {
 				throw new Error(`Duplicate custom state key "${key}"`);
 			}
 		}
@@ -1090,16 +1087,16 @@ export function initializeCustomState<
 	>,
 >(options: {
 	handlers: CustomStateHandlers | undefined;
-	lastState?: FormCustomState<CustomStateHandlers> | undefined;
-	reset: boolean;
+	currentState?: FormCustomState<CustomStateHandlers> | undefined;
 }): FormCustomState<CustomStateHandlers> {
 	return Object.fromEntries(
 		Object.entries(options.handlers ?? {}).map(([key, handler]) => [
 			key,
-			handler.initialize({
-				lastState: options.lastState?.[key],
-				reset: options.reset,
-			}),
+			options.currentState &&
+			Object.prototype.hasOwnProperty.call(options.currentState, key) &&
+			handler.reset === false
+				? options.currentState[key]
+				: handler.initialize(),
 		]),
 	) as FormCustomState<CustomStateHandlers>;
 }
@@ -1115,19 +1112,10 @@ export function updateCustomState<
 	action: FormAction<ErrorShape, UnknownIntent>,
 	options: {
 		handlers: CustomStateHandlers | undefined;
-		lastState?: FormCustomState<CustomStateHandlers> | undefined;
 	},
 ): FormCustomState<CustomStateHandlers> {
 	if (!options.handlers) {
 		return state;
-	}
-
-	if (action.reset) {
-		return initializeCustomState({
-			handlers: options.handlers,
-			lastState: options.lastState ?? state,
-			reset: true,
-		});
 	}
 
 	return Object.fromEntries(
@@ -1145,7 +1133,7 @@ export function updateCustomState<
 				});
 			}
 
-			if (handler.handleResult) {
+			if (handler.handleResult && typeof action.error !== 'undefined') {
 				nextState = handler.handleResult(nextState, {
 					intent: action.intent,
 					submission: action.submission,

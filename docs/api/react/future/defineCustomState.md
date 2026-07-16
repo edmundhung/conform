@@ -23,21 +23,13 @@ const submitCount = defineCustomState({
 
 An object that describes how to initialize and update the custom state.
 
-### `definition.initialize({ reset, lastState })`
+### `definition.initialize()`
 
-Creates the initial state value. This method is required.
+Creates the initial state value. This method is required. It runs when the custom-state slice is first created and again on reset when `reset` is not defined.
 
-`reset` is `true` when Conform is resetting the form state. `lastState` contains the previous value for this custom state key when one exists.
+### `definition.reset: boolean`
 
-```ts
-initialize({ reset, lastState }) {
-  if (reset && lastState) {
-    return lastState;
-  }
-
-  return 'idle';
-}
-```
+Controls whether Conform resets the custom state. When omitted or `true`, Conform calls `initialize()` again. Set it to `false` to preserve the current state.
 
 ### `definition.handleIntent(state, ctx)`
 
@@ -50,13 +42,13 @@ Updates state when Conform applies an intent. Use this for state derived from th
 
 ### `definition.handleResult(state, ctx)`
 
-Updates state when Conform applies a validation or submission result. Use this for state derived from success, failure, or errors.
+Updates state when Conform applies a validation or submission result with an explicit outcome. Use this for state derived from success, failure, or errors.
 
 `ctx` contains:
 
 - `intent`: The resolved intent.
 - `submission`: The parsed submission.
-- `error`: The result error. `undefined` means the result is not known yet, `null` means the result has no error, and an object means validation failed.
+- `error`: The result error. `null` means the result has no error, and an object means validation failed.
 - `phase`: Either `'client'` or `'server'`.
 
 `phase: 'client'` is used for client validation results, including async validation. `phase: 'server'` is used for server or application results, including `lastResult` and `onSubmit().update(...)`.

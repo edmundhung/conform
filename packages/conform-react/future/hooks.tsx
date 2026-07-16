@@ -228,7 +228,6 @@ export function useConform<
 							initializeState<ErrorShape, CustomStateHandlers>({
 								defaultValue: defaultValue ?? options.defaultValue,
 								resetKey: INITIAL_KEY,
-								reset: true,
 								customStateHandlers: options.customStateHandlers,
 								lastCustomState: state.customState,
 							}),
@@ -302,7 +301,6 @@ export function useConform<
 						reset(defaultValue: Record<string, unknown> | null | undefined) {
 							return initializeState<ErrorShape, CustomStateHandlers>({
 								defaultValue: defaultValue ?? options.defaultValue,
-								reset: true,
 								customStateHandlers: options.customStateHandlers,
 								lastCustomState: current.customState,
 							});
@@ -335,11 +333,11 @@ export function useConform<
 			dispatchInternalUpdateEvent(formElement);
 		}
 
-		setState(
+		setState((current) =>
 			initializeState<ErrorShape, CustomStateHandlers>({
 				defaultValue: options.defaultValue,
 				customStateHandlers: options.customStateHandlers,
-				reset: true,
+				lastCustomState: current.customState,
 			}),
 		);
 	} else if (lastResult && lastResult !== lastResultRef.current) {
