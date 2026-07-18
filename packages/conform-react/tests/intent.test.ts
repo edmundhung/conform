@@ -43,8 +43,15 @@ test('serializeIntent', () => {
 		'custom(null)',
 	);
 	expect(serializeIntent({ type: 'custom', args: [undefined, 1] })).toBe(
-		'custom("__undefined__",1)',
+		'custom(,1)',
 	);
+	expect(serializeIntent({ type: 'custom', args: [undefined] })).toBe('custom');
+	expect(
+		serializeIntent({
+			type: 'custom',
+			args: [{ a: undefined, b: 123 }, undefined],
+		}),
+	).toBe('custom({"b":123})');
 
 	// Test intent with undefined payload
 	expect(serializeIntent({ type: 'reset', args: [] })).toBe('reset');
@@ -84,10 +91,25 @@ test('deserializeIntent', () => {
 		args: [],
 	});
 
-	// Test serialized undefined argument
-	expect(deserializeIntent('custom("__undefined__",1)')).toEqual({
+	expect(deserializeIntent('custom("__undefined__")')).toEqual({
+		type: 'custom',
+		args: ['__undefined__'],
+	});
+	expect(deserializeIntent('custom(,1)')).toEqual({
 		type: 'custom',
 		args: [undefined, 1],
+	});
+	expect(deserializeIntent('custom({"nested":{"$undefined":true}})')).toEqual({
+		type: 'custom',
+		args: [{ nested: { $undefined: true } }],
+	});
+	expect(deserializeIntent('custom("",1)')).toEqual({
+		type: 'custom',
+		args: ['', 1],
+	});
+	expect(deserializeIntent('custom("a,b",{"items":[1,2]})')).toEqual({
+		type: 'custom',
+		args: ['a,b', { items: [1, 2] }],
 	});
 
 	// Test empty string
@@ -110,11 +132,7 @@ test('parseIntent', () => {
 	expect(
 		parseIntent('validate(null)', { handlers: defaultIntentHandlers }),
 	).toBe(undefined);
-	expect(
-		parseIntent('validate("__undefined__")', {
-			handlers: defaultIntentHandlers,
-		}),
-	).toEqual({
+	expect(parseIntent('validate', { handlers: defaultIntentHandlers })).toEqual({
 		type: 'validate',
 		payload: undefined,
 	});

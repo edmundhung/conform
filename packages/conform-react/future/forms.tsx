@@ -5,7 +5,7 @@ import {
 	defaultSerialize,
 	FormValue,
 } from '@conform-to/dom/future';
-import { useContext, useMemo, useId, createContext } from 'react';
+import { useContext, useMemo, useId, useState, createContext } from 'react';
 import {
 	focusFirstInvalidField,
 	createIntentDispatcher,
@@ -376,10 +376,8 @@ export function configureForms<
 			() => resolveSerialize(options.serialize, globalSerialize),
 			[options.serialize],
 		);
-		const customStateHandlers = useMemo(
-			() =>
-				mergeCustomStateHandlers(globalConfig.customState, options.customState),
-			[options.customState],
+		const [customStateHandlers] = useState(() =>
+			mergeCustomStateHandlers(globalConfig.customState, options.customState),
 		);
 		const fallbackId = useId();
 		const formId = options.id ?? `form-${fallbackId}`;

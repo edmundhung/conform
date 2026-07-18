@@ -67,19 +67,53 @@ export function mergeIntentHandlers<
 	};
 }
 
-const undefinedArg = '__undefined__';
+function deserializeIntentArgs(value: string): unknown[] {
+	const args: unknown[] = [];
+	let token: string | undefined;
+
+	for (const part of value.split(',')) {
+		token = token === undefined ? part : `${token},${part}`;
+
+		if (token.trim() === '') {
+			args.push(undefined);
+			token = undefined;
+			continue;
+		}
+
+		try {
+			args.push(JSON.parse(token));
+			token = undefined;
+		} catch {
+			// The comma was inside a JSON string, object, or array.
+		}
+	}
+
+	if (token !== undefined) {
+		throw new Error('Invalid intent arguments');
+	}
+
+	return args;
+}
 
 /**
  * Serializes a transport intent to string format.
  */
 export function serializeIntent(intent: TransportIntent): string {
-	if (intent.args.length === 0) {
+	const args = intent.args.slice();
+
+	while (args.length > 0 && args[args.length - 1] === undefined) {
+		args.pop();
+	}
+
+	if (args.length === 0) {
 		return intent.type;
 	}
 
-	return `${intent.type}(${JSON.stringify(intent.args, (_, value) =>
-		value === undefined ? undefinedArg : value,
-	).slice(1, -1)})`;
+	return `${intent.type}(${args
+		.map((value) =>
+			value === undefined ? '' : JSON.stringify([value]).slice(1, -1),
+		)
+		.join(',')})`;
 }
 
 /**
@@ -107,9 +141,7 @@ export function deserializeIntent(
 
 		if (serializedArgs !== '') {
 			try {
-				args = JSON.parse(`[${serializedArgs}]`, (_, value) =>
-					value === undefinedArg ? undefined : value,
-				);
+				args = deserializeIntentArgs(serializedArgs);
 			} catch {
 				return undefined;
 			}
