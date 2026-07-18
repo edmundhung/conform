@@ -63,6 +63,8 @@ Custom state handlers available only to this form instance.
 
 Use [`defineCustomState`](./defineCustomState.md) to define custom state that can be read from `form.customState`.
 
+The handler map is captured when the form mounts and does not change when the form is reset.
+
 ### `constraint?: Record<string, ValidationAttributes>`
 
 HTML validation attributes for fields (`required`, `minLength`, `pattern`, etc.).

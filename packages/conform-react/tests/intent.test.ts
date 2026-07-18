@@ -43,8 +43,14 @@ test('serializeIntent', () => {
 		'custom(null)',
 	);
 	expect(serializeIntent({ type: 'custom', args: [undefined, 1] })).toBe(
-		'custom(,1)',
+		'custom("$$__undefined__$$",1)',
 	);
+	expect(
+		serializeIntent({
+			type: 'custom',
+			args: [undefined, 1, undefined, 2, undefined],
+		}),
+	).toBe('custom("$$__undefined__$$",1,"$$__undefined__$$",2)');
 	expect(serializeIntent({ type: 'custom', args: [undefined] })).toBe('custom');
 	expect(
 		serializeIntent({
@@ -52,6 +58,25 @@ test('serializeIntent', () => {
 			args: [{ a: undefined, b: 123 }, undefined],
 		}),
 	).toBe('custom({"b":123})');
+	// Undefined object properties are omitted while array positions are preserved.
+	expect(
+		serializeIntent({
+			type: 'custom',
+			args: [[undefined, { a: undefined, b: 1 }]],
+		}),
+	).toBe('custom(["$$__undefined__$$",{"b":1}])');
+	expect(
+		serializeIntent({
+			type: 'custom',
+			args: [{ items: [undefined, 1, undefined], missing: undefined }],
+		}),
+	).toBe('custom({"items":["$$__undefined__$$",1,"$$__undefined__$$"]})');
+	expect(
+		serializeIntent({
+			type: 'custom',
+			args: [[1, undefined], undefined],
+		}),
+	).toBe('custom([1,"$$__undefined__$$"])');
 
 	// Test intent with undefined payload
 	expect(serializeIntent({ type: 'reset', args: [] })).toBe('reset');
@@ -95,9 +120,23 @@ test('deserializeIntent', () => {
 		type: 'custom',
 		args: ['__undefined__'],
 	});
-	expect(deserializeIntent('custom(,1)')).toEqual({
+	expect(deserializeIntent('custom("$$__undefined__$$",1)')).toEqual({
 		type: 'custom',
 		args: [undefined, 1],
+	});
+	expect(
+		deserializeIntent('custom("$$__undefined__$$",1,"$$__undefined__$$",2)'),
+	).toEqual({
+		type: 'custom',
+		args: [undefined, 1, undefined, 2],
+	});
+	expect(deserializeIntent('custom( "$$__undefined__$$" ,1)')).toEqual({
+		type: 'custom',
+		args: [undefined, 1],
+	});
+	expect(deserializeIntent('custom("$$__undefined__$$")')).toEqual({
+		type: 'custom',
+		args: [undefined],
 	});
 	expect(deserializeIntent('custom({"nested":{"$undefined":true}})')).toEqual({
 		type: 'custom',
@@ -111,6 +150,64 @@ test('deserializeIntent', () => {
 		type: 'custom',
 		args: ['a,b', { items: [1, 2] }],
 	});
+	expect(deserializeIntent('custom("a\\\"?{},b","c\\\\d",{"?":"?"})')).toEqual({
+		type: 'custom',
+		args: ['a"?{},b', 'c\\d', { '?': '?' }],
+	});
+	expect(
+		deserializeIntent('custom({"items":[1,{"nested":[2,3]}]},[4,[5,6]])'),
+	).toEqual({
+		type: 'custom',
+		args: [{ items: [1, { nested: [2, 3] }] }, [4, [5, 6]]],
+	});
+	expect(deserializeIntent('custom(true,-1.5,1e3)')).toEqual({
+		type: 'custom',
+		args: [true, -1.5, 1000],
+	});
+	expect(
+		deserializeIntent(
+			serializeIntent({
+				type: 'custom',
+				args: [
+					[undefined, { items: [1, undefined] }],
+					{ items: [undefined], missing: undefined },
+				],
+			}),
+		),
+	).toEqual({
+		type: 'custom',
+		args: [[undefined, { items: [1, undefined] }], { items: [undefined] }],
+	});
+	expect(
+		deserializeIntent(
+			serializeIntent({
+				type: 'custom',
+				args: [
+					['$__undefined__$$', '$$__undefined__$', '__undefined__'],
+					{ value: 'prefix$$__undefined__$$suffix' },
+				],
+			}),
+		),
+	).toEqual({
+		type: 'custom',
+		args: [
+			['$__undefined__$$', '$$__undefined__$', '__undefined__'],
+			{ value: 'prefix$$__undefined__$$suffix' },
+		],
+	});
+	expect(
+		deserializeIntent(serializeIntent({ type: 'custom', args: [-0] })),
+	).toEqual({
+		type: 'custom',
+		args: [0],
+	});
+	expect(deserializeIntent('custom(1,)')).toBeUndefined();
+	expect(deserializeIntent('custom({])')).toBeUndefined();
+	expect(deserializeIntent('custom([})')).toBeUndefined();
+	expect(deserializeIntent('custom("unterminated,,,,)')).toBeUndefined();
+	expect(
+		deserializeIntent(`custom("${'\\"?'.repeat(50_000)})`),
+	).toBeUndefined();
 
 	// Test empty string
 	expect(deserializeIntent('')).toBeUndefined();
