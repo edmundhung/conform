@@ -9,6 +9,7 @@ import type {
 	FormValue,
 	FormMetadata,
 	FormOptions,
+	SubmissionResult,
 	InferBaseErrorShape,
 	InferCustomFieldMetadata,
 	InferCustomFormMetadata,
@@ -717,6 +718,11 @@ describe('configureForms', () => {
 			initialize() {
 				return { dismissed: false };
 			},
+			reset(state, ctx) {
+				assertType<SubmissionResult | undefined>(ctx.result);
+
+				return state;
+			},
 			handleIntent(state, ctx) {
 				if (ctx.intent.type === 'dismiss') {
 					return {
@@ -733,16 +739,28 @@ describe('configureForms', () => {
 				return state;
 			},
 		});
-		const status = defineCustomState<'idle' | 'success' | 'error'>({
+		const status = defineCustomState<
+			'idle' | 'success' | 'error',
+			{},
+			string[]
+		>({
 			initialize() {
 				return 'idle';
 			},
+			reset(state, ctx) {
+				assertType<'idle' | 'success' | 'error'>(state);
+				assertType<SubmissionResult<string[]> | undefined>(ctx.result);
+				assertType<string[] | null | undefined>(ctx.result?.error?.formErrors);
+
+				return state;
+			},
 			handleResult(state, ctx) {
 				assertType<'client' | 'server'>(ctx.phase);
-				assertType<string[] | undefined>(ctx.error?.formErrors);
+				assertType<SubmissionResult<string[]>>(ctx.result);
+				assertType<string[] | null | undefined>(ctx.result.error?.formErrors);
 
 				if (ctx.intent.type === 'submit') {
-					return ctx.error ? 'error' : 'success';
+					return ctx.result.error ? 'error' : 'success';
 				}
 
 				return state;

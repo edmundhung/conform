@@ -2046,6 +2046,9 @@ test('custom state', () => {
 	// Test reset handling
 	const initializePreserved = vi.fn(() => 0);
 	const initializeReinitialized = vi.fn(() => 0);
+	const resetCustomized = vi.fn();
+	const handleCustomizedIntent = vi.fn((state: number) => state + 10);
+	const handleCustomizedResult = vi.fn((state: number) => state + 100);
 	const resetHandlers = {
 		preserved: defineCustomState({
 			initialize: initializePreserved,
@@ -2055,17 +2058,65 @@ test('custom state', () => {
 			initialize: initializeReinitialized,
 			reset: true,
 		}),
+		customized: defineCustomState({
+			initialize() {
+				return 0;
+			},
+			reset(state, { result }) {
+				resetCustomized(state, result);
+				return result?.error === null ? state + 1 : state;
+			},
+			handleIntent: handleCustomizedIntent,
+			handleResult: handleCustomizedResult,
+		}),
 	};
 	const initialResetState = initializeCustomState({ handlers: resetHandlers });
 
+	const lifecycleResetState = initializeCustomState({
+		handlers: resetHandlers,
+		currentState: initialResetState,
+	});
+
+	expect(lifecycleResetState).toEqual({
+		preserved: 0,
+		reinitialized: 0,
+		customized: 0,
+	});
+	expect(initializePreserved).toHaveBeenCalledOnce();
+	expect(initializeReinitialized).toHaveBeenCalledTimes(2);
+	expect(resetCustomized).toHaveBeenCalledWith(0, undefined);
+
+	const formState = initializeState({
+		customStateHandlers: resetHandlers,
+	});
+	const resetAction = createAction({
+		type: 'client',
+		entries: [['title', 'Example']],
+		reset: true,
+		targetValue: { title: 'Reset title' },
+		error: null,
+		customStateHandlers: resetHandlers,
+		lastCustomState: formState.customState,
+	});
 	expect(
 		initializeCustomState({
 			handlers: resetHandlers,
-			currentState: initialResetState,
+			currentState: lifecycleResetState,
+			result: resetAction.result,
 		}),
-	).toEqual({ preserved: 0, reinitialized: 0 });
-	expect(initializePreserved).toHaveBeenCalledOnce();
-	expect(initializeReinitialized).toHaveBeenCalledTimes(2);
+	).toEqual({ preserved: 0, reinitialized: 0, customized: 1 });
+	expect(resetCustomized).toHaveBeenLastCalledWith(0, resetAction.result);
+
+	const resetState = updateState(formState, resetAction);
+
+	expect(resetState.defaultValue).toEqual({ title: 'Reset title' });
+	expect(resetState.customState).toEqual({
+		preserved: 0,
+		reinitialized: 0,
+		customized: 1,
+	});
+	expect(handleCustomizedIntent).not.toHaveBeenCalled();
+	expect(handleCustomizedResult).not.toHaveBeenCalled();
 
 	// Test custom state handler collisions
 	const slice = defineCustomState({
@@ -2131,7 +2182,7 @@ test('custom state', () => {
 				return 0;
 			},
 			handleResult(state, ctx) {
-				if (ctx.intent.type === 'submit' && ctx.error) {
+				if (ctx.intent.type === 'submit' && ctx.result.error) {
 					return state + 1;
 				}
 
@@ -2162,11 +2213,11 @@ test('custom state', () => {
 					return state;
 				}
 
-				if (ctx.error) {
+				if (ctx.result.error) {
 					return 'error';
 				}
 
-				if (ctx.phase === 'server' && ctx.error === null) {
+				if (ctx.phase === 'server' && ctx.result.error === null) {
 					return 'success';
 				}
 
@@ -2181,7 +2232,7 @@ test('custom state', () => {
 				if (
 					ctx.intent.type === 'submit' &&
 					ctx.phase === 'client' &&
-					ctx.error === null
+					ctx.result.error === null
 				) {
 					return state + 1;
 				}

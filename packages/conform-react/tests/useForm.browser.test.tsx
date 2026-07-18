@@ -6,6 +6,7 @@ import {
 	type FormValue,
 	type FormError,
 	type FormOptions,
+	type SubmissionResult,
 	defineIntent,
 	defineCustomState,
 	useForm as useFormDefault,
@@ -1107,6 +1108,14 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 				return ctx.intent.type === 'submit' ? state + 1 : state;
 			},
 		});
+		const resetHistory = defineCustomState({
+			initialize(): string[] {
+				return [];
+			},
+			reset(history, { result }) {
+				return history.concat(result ? 'result' : 'lifecycle');
+			},
+		});
 
 		function CustomStateForm({ formKey }: { formKey: string }) {
 			const { form, fields, intent } = useForm({
@@ -1117,6 +1126,7 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 				customState: {
 					submitCount,
 					preservedCount,
+					resetHistory,
 				},
 				onValidate({ error }) {
 					return error;
@@ -1136,6 +1146,9 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 					<div data-testid="submit-count">{form.customState.submitCount}</div>
 					<div data-testid="preserved-count">
 						{form.customState.preservedCount}
+					</div>
+					<div data-testid="reset-history">
+						{form.customState.resetHistory.join(',')}
 					</div>
 					<button>Submit</button>
 					<button type="button" onClick={() => intent.reset()}>
@@ -1168,6 +1181,9 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 		await expect
 			.element(screen.getByTestId('preserved-count'))
 			.toHaveTextContent('2');
+		await expect
+			.element(screen.getByTestId('reset-history'))
+			.toHaveTextContent('result');
 
 		screen.rerender(<CustomStateForm formKey="second" />);
 		await expect
@@ -1176,6 +1192,61 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 		await expect
 			.element(screen.getByTestId('preserved-count'))
 			.toHaveTextContent('2');
+		await expect
+			.element(screen.getByTestId('reset-history'))
+			.toHaveTextContent('result,lifecycle');
+	});
+
+	test('custom state reset callback receives server result', async () => {
+		const handleResult = vi.fn((state: string) => state);
+		const submissionStatus = defineCustomState({
+			initialize() {
+				return 'idle';
+			},
+			reset(_state, { result }) {
+				return result?.error === null ? 'success' : 'idle';
+			},
+			handleResult,
+		});
+
+		function CustomStateForm({
+			lastResult,
+		}: {
+			lastResult?: SubmissionResult<string[]>;
+		}) {
+			const { form } = useForm({
+				lastResult,
+				customState: {
+					submissionStatus,
+				},
+				onValidate({ error }) {
+					return error;
+				},
+				onSubmit(event) {
+					event.preventDefault();
+				},
+			});
+
+			return (
+				<form {...form.props}>
+					<output>{form.customState.submissionStatus}</output>
+				</form>
+			);
+		}
+
+		const screen = render(<CustomStateForm />);
+		await expect.element(screen.getByText('idle')).toBeInTheDocument();
+
+		const formData = new FormData();
+		formData.set('title', 'Example');
+		const result = report<string[]>(parseSubmission(formData), {
+			reset: true,
+			error: null,
+		});
+
+		screen.rerender(<CustomStateForm lastResult={result} />);
+		await expect.element(screen.getByText('success')).toBeInTheDocument();
+		expect(handleResult).not.toHaveBeenCalled();
 	});
 
 	test('server report', async () => {

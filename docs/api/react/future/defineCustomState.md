@@ -2,7 +2,7 @@
 
 > The `defineCustomState` function is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-`defineCustomState` lets you keep derived state alongside Conform's built-in form state. Register custom state through [`configureForms`](./configureForms.md) or [`useForm`](./useForm.md), then read it from `form.customState`.
+`defineCustomState` lets you add application-specific state to a form. Register the handler with [`configureForms`](./configureForms.md) or [`useForm`](./useForm.md), then read its value from `form.customState`.
 
 ```ts
 import { defineCustomState } from '@conform-to/react/future';
@@ -17,51 +17,64 @@ const submitCount = defineCustomState({
 });
 ```
 
+Custom state is updated as part of the same transition as Conform's built-in state. Use it for form-specific information that Conform does not model directly, such as submission counters, workflow state, or application-specific status.
+
 ## Parameters
 
 ### `definition: CustomStateHandler`
 
-An object that describes how to initialize and update the custom state.
+An object that defines the initial value and how it changes in response to form transitions.
 
 ### `definition.initialize()`
 
-Creates the initial state value. This method is required. It runs when the custom-state slice is first created and again on reset when `reset` is not defined.
+Returns the initial state value. This method is required, and its return value is used to infer the state type.
 
-### `definition.reset: boolean`
+Conform calls `initialize()` when the state is first created. It also calls it again on reset unless `reset` is `false` or a callback.
 
-Controls whether Conform resets the custom state. When omitted or `true`, Conform calls `initialize()` again. Set it to `false` to preserve the current state.
+### `definition.reset: boolean | ((state, ctx) => State)`
+
+Controls what happens to the custom state when the form resets:
+
+- When omitted or `true`, Conform calls `initialize()` again.
+- When `false`, Conform preserves the current state.
+- When a callback is provided, its return value becomes the next state.
+
+The callback receives the current state and a context object with the following property:
+
+- `result`: The `SubmissionResult` that requested the reset. It will be `undefined` when the form resets via the `key` option passed to `useForm`.
 
 ### `definition.handleIntent(state, ctx)`
 
-Updates state when Conform applies an intent. Use this for state derived from the intent itself, such as submit counts, timestamps, or the last attempted payload.
+Updates the state in response to an intent. Use this when the attempted action matters regardless of its validation result, such as counting submit attempts.
 
-`ctx` contains:
+The context contains:
 
 - `intent`: The resolved intent.
-- `submission`: The parsed submission.
+- `submission`: The parsed submission associated with the intent.
 
 ### `definition.handleResult(state, ctx)`
 
-Updates state when Conform applies a validation or submission result with an explicit outcome. Use this for state derived from success, failure, or errors.
+Updates the state when a form transition sets `result.error` to either an error object or `null`. Use this when the next state depends on whether validation or submission succeeded or failed.
 
-`ctx` contains:
+The context contains:
 
 - `intent`: The resolved intent.
-- `submission`: The parsed submission.
-- `error`: The result error. `null` means the result has no error, and an object means validation failed.
-- `phase`: Either `'client'` or `'server'`.
+- `result`: The `SubmissionResult`, including its parsed submission, target value, and error.
+- `phase`: The source of the result, either `'client'` or `'server'`.
 
-`phase: 'client'` is used for client validation results, including async validation. `phase: 'server'` is used for server or application results, including `lastResult` and `onSubmit().update(...)`.
+`result.error` is `null` when the result has no error and an object when validation failed.
+
+The `'client'` phase covers synchronous and asynchronous client validation. The `'server'` phase covers results supplied through `lastResult` or `ctx.update(...)` inside `onSubmit`.
 
 ## Returns
 
-The same custom state handler object, with the state and custom intent types wired into TypeScript.
+Returns the definition unchanged. `defineCustomState` provides type checking and inference for the state value and handler arguments.
 
 ## Examples
 
 ### Submit count
 
-Use `handleIntent` when the state should change because the user attempted an intent.
+Use `handleIntent` to count every submit attempt.
 
 ```ts
 const submitCount = defineCustomState({
@@ -69,26 +82,22 @@ const submitCount = defineCustomState({
     return 0;
   },
   handleIntent(count, { intent }) {
-    if (intent.type === 'submit') {
-      return count + 1;
-    }
-
-    return count;
+    return intent.type === 'submit' ? count + 1 : count;
   },
 });
 ```
 
 ### Failed submit count
 
-Use `handleResult` when the state depends on the result.
+Use `handleResult` when the state depends on the validation result.
 
 ```ts
 const failedSubmitCount = defineCustomState({
   initialize() {
     return 0;
   },
-  handleResult(count, { intent, error }) {
-    if (intent.type === 'submit' && error) {
+  handleResult(count, { intent, result }) {
+    if (intent.type === 'submit' && result.error) {
       return count + 1;
     }
 
@@ -99,32 +108,30 @@ const failedSubmitCount = defineCustomState({
 
 ### Submission status
 
-Use both methods when you want to record that an intent happened, then update based on the result.
+Track the status of the latest submission. The state starts as `undefined`, changes to `'error'` when validation fails, and changes to `'success'` only if the server result is successful. Use the `reset` callback to handle responses that also reset the form, such as a create form that clears its fields after adding an entry.
 
 ```ts
-const submissionStatus = defineCustomState<
-  'idle' | 'submitted' | 'success' | 'error'
->({
+const submissionStatus = defineCustomState<'success' | 'error' | undefined>({
   initialize() {
-    return 'idle';
+    return undefined;
   },
-  handleIntent(status, { intent }) {
-    if (intent.type === 'submit') {
-      return 'submitted';
+  reset(_, { result }) {
+    if (typeof result?.error === 'undefined') {
+      return undefined;
     }
 
-    return status;
+    return result.error ? 'error' : 'success';
   },
-  handleResult(status, { intent, error, phase }) {
+  handleResult(status, { intent, result, phase }) {
     if (intent.type !== 'submit') {
       return status;
     }
 
-    if (error) {
+    if (result.error) {
       return 'error';
     }
 
-    if (phase === 'server' && error === null) {
+    if (phase === 'server') {
       return 'success';
     }
 
@@ -133,26 +140,36 @@ const submissionStatus = defineCustomState<
 });
 ```
 
-## Registering Custom State
+## Tips
 
-Register custom state globally with [`configureForms`](./configureForms.md):
+### Registering custom state
 
-```ts
-const forms = configureForms({
-  customState: {
-    submitCount,
-  },
-});
-```
-
-Or register it for one form with [`useForm`](./useForm.md):
+Register a handler with `configureForms` to make it available to every form created by that factory:
 
 ```tsx
-const { form } = useForm({
+const { useForm } = configureForms({
   customState: {
     submitCount,
   },
 });
 
-form.customState.submitCount;
+function Example() {
+  const { form } = useForm();
+
+  return <output>{form.customState.submitCount}</output>;
+}
+```
+
+Alternatively, register a handler for a single form with `useForm`:
+
+```tsx
+function Example() {
+  const { form } = useForm({
+    customState: {
+      submitCount,
+    },
+  });
+
+  return <output>{form.customState.submitCount}</output>;
+}
 ```

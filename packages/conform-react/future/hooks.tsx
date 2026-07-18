@@ -217,20 +217,22 @@ export function useConform<
 				});
 
 				state = updateState(state, {
-					...result,
 					type: 'initialize',
 					intent,
+					result,
 					ctx: {
-						handlers: options.intentHandlers,
-						status: getApplyStatus(lastResult.targetValue, result.targetValue),
+						intentHandlers: options.intentHandlers,
 						customStateHandlers: options.customStateHandlers,
-						reset: (defaultValue) =>
-							initializeState<ErrorShape, CustomStateHandlers>({
-								defaultValue: defaultValue ?? options.defaultValue,
+						status: getApplyStatus(lastResult.targetValue, result.targetValue),
+						reset() {
+							return initializeState<ErrorShape, CustomStateHandlers>({
+								defaultValue: result.targetValue ?? options.defaultValue,
 								resetKey: INITIAL_KEY,
 								customStateHandlers: options.customStateHandlers,
 								lastCustomState: state.customState,
-							}),
+								result: result,
+							});
+						},
 					},
 				});
 			}
@@ -286,30 +288,29 @@ export function useConform<
 				dispatchInternalUpdateEvent(formElement);
 			}
 
-			setState((current) => {
-				const action = {
-					...finalResult,
+			setState((current) =>
+				updateState(current, {
 					type,
 					intent,
+					result: finalResult,
 					ctx: {
-						handlers: options.intentHandlers,
+						intentHandlers: options.intentHandlers,
+						customStateHandlers: options.customStateHandlers,
 						status: getApplyStatus(
 							normalizedResult.targetValue,
 							finalResult.targetValue,
 						),
-						customStateHandlers: options.customStateHandlers,
-						reset(defaultValue: Record<string, unknown> | null | undefined) {
+						reset() {
 							return initializeState<ErrorShape, CustomStateHandlers>({
-								defaultValue: defaultValue ?? options.defaultValue,
+								defaultValue: finalResult.targetValue ?? options.defaultValue,
 								customStateHandlers: options.customStateHandlers,
 								lastCustomState: current.customState,
+								result: finalResult,
 							});
 						},
 					},
-				};
-
-				return updateState(current, action);
-			});
+				}),
+			);
 
 			// TODO: move on error handler to a new effect
 			if (formElement && finalResult.error) {

@@ -56,7 +56,7 @@ If you omit `move`, Conform falls back to invalidating the affected state under 
 
 ## Returns
 
-The same intent handler object, with the dispatcher arguments and payload wired into TypeScript.
+Returns the definition unchanged. `defineIntent` provides type checking for the dispatcher arguments, parsed payload, and handler arguments.
 
 ## Example
 

@@ -225,9 +225,10 @@ export type FormAction<
 	ErrorShape = any,
 	Intent extends UnknownIntent = UnknownIntent,
 	Context = {},
-> = SubmissionResult<ErrorShape> & {
+> = {
 	type: 'initialize' | 'server' | 'client' | 'client:async';
 	intent: Intent;
+	result: SubmissionResult<ErrorShape>;
 	ctx: Context;
 };
 
@@ -827,7 +828,12 @@ export type CustomStateHandler<
 	ErrorShape = any,
 > = {
 	initialize(): State;
-	reset?: boolean;
+	reset?:
+		| boolean
+		| ((
+				state: State,
+				ctx: { result: SubmissionResult<ErrorShape> | undefined },
+		  ) => State);
 	handleIntent?(
 		state: State,
 		ctx: {
@@ -839,8 +845,7 @@ export type CustomStateHandler<
 		state: State,
 		ctx: {
 			intent: FormIntent<any, DefaultIntentHandlers & CustomIntentHandlers>;
-			submission: Submission;
-			error: FormError<ErrorShape> | null;
+			result: SubmissionResult<ErrorShape>;
 			phase: 'client' | 'server';
 		},
 	): State;

@@ -9,6 +9,7 @@ import {
 	deepEqual,
 	FormError,
 	isPlainObject,
+	type SubmissionResult,
 } from '@conform-to/dom/future';
 import type {
 	FieldMetadata,
@@ -45,6 +46,7 @@ export function initializeState<
 	resetKey?: string | undefined;
 	customStateHandlers?: CustomStateHandlers | undefined;
 	lastCustomState?: FormCustomState<CustomStateHandlers> | undefined;
+	result?: SubmissionResult<ErrorShape> | undefined;
 }): FormState<ErrorShape, FormCustomState<CustomStateHandlers>> {
 	return {
 		resetKey: options?.resetKey ?? generateUniqueKey(),
@@ -58,6 +60,7 @@ export function initializeState<
 		customState: initializeCustomState({
 			handlers: options?.customStateHandlers,
 			currentState: options?.lastCustomState,
+			result: options?.result,
 		}),
 	};
 }
@@ -80,20 +83,18 @@ export function updateState<
 		ErrorShape,
 		UnknownIntent,
 		{
-			handlers: Record<string, IntentHandler<any, any>>;
+			intentHandlers: Record<string, IntentHandler<any, any>>;
+			customStateHandlers: CustomStateHandlers | undefined;
 			status: ApplyStatus;
-			customStateHandlers?: CustomStateHandlers | undefined;
-			reset: (
-				defaultValue?: Record<string, unknown> | null | undefined,
-			) => FormState<ErrorShape, FormCustomState<CustomStateHandlers>>;
+			reset: () => FormState<ErrorShape, FormCustomState<CustomStateHandlers>>;
 		}
 	>,
 ): FormState<ErrorShape, FormCustomState<CustomStateHandlers>> {
-	if (action.reset) {
-		return action.ctx.reset(action.targetValue);
+	if (action.result.reset) {
+		return action.ctx.reset();
 	}
 
-	const value = action.targetValue ?? action.submission.payload;
+	const value = action.result.targetValue ?? action.result.submission.payload;
 	const isClientAction =
 		action.type === 'client' || action.type === 'client:async';
 	const hasIntentEffects =
@@ -104,21 +105,21 @@ export function updateState<
 		? merge(state, {
 				targetValue:
 					action.type === 'client'
-						? (action.targetValue ?? state.targetValue)
+						? (action.result.targetValue ?? state.targetValue)
 						: state.targetValue,
 				serverValue:
-					action.type === 'client' && action.targetValue
+					action.type === 'client' && action.result.targetValue
 						? null
 						: state.serverValue,
 				// Update client error only if the error is different from the previous one to minimize unnecessary re-renders
 				clientError:
-					typeof action.error !== 'undefined' &&
-					!deepEqual(state.clientError, action.error)
-						? action.error
+					typeof action.result.error !== 'undefined' &&
+					!deepEqual(state.clientError, action.result.error)
+						? action.result.error
 						: state.clientError,
 				// Reset server error if form value is changed
 				serverError:
-					typeof action.error !== 'undefined' &&
+					typeof action.result.error !== 'undefined' &&
 					!deepEqual(state.serverValue, value)
 						? null
 						: state.serverError,
@@ -129,16 +130,16 @@ export function updateState<
 				// Update server error if the error is defined.
 				// There is no need to check if the error is different as we are updating other states as well
 				serverError:
-					typeof action.error !== 'undefined'
-						? action.error
+					typeof action.result.error !== 'undefined'
+						? action.result.error
 						: state.serverError,
 				listKeys:
-					action.type === 'server' && action.targetValue
-						? pruneListKeys(state.listKeys, action.targetValue)
+					action.type === 'server' && action.result.targetValue
+						? pruneListKeys(state.listKeys, action.result.targetValue)
 						: state.listKeys,
 				targetValue:
-					action.type === 'server' && action.targetValue
-						? action.targetValue
+					action.type === 'server' && action.result.targetValue
+						? action.result.targetValue
 						: state.targetValue,
 				// Keep track of the value that the serverError is based on
 				serverValue: !deepEqual(state.serverValue, value)
@@ -147,21 +148,25 @@ export function updateState<
 			});
 	// Validate the whole form if no intent is provided (default submission)
 	const intent = action.intent ?? { type: 'validate' };
-	const handler = action.ctx.handlers?.[intent.type];
+	const handler = action.ctx.intentHandlers?.[intent.type];
 
 	if (handler && action.type === 'client' && hasIntentEffects) {
 		if (typeof handler.move === 'function') {
 			const handleMove = handler.move;
-			state = moveState(state, action.submission.payload, value, (name) =>
-				handleMove({
-					name,
-					payload: intent.payload,
-					status: action.ctx.status,
-					targetValue: action.targetValue,
-				}),
+			state = moveState(
+				state,
+				action.result.submission.payload,
+				value,
+				(name) =>
+					handleMove({
+						name,
+						payload: intent.payload,
+						status: action.ctx.status,
+						targetValue: action.result.targetValue,
+					}),
 			);
 		} else if (typeof handler.resolve === 'function') {
-			state = invalidateState(state, action.submission.payload, value);
+			state = invalidateState(state, action.result.submission.payload, value);
 		}
 	}
 
@@ -173,7 +178,7 @@ export function updateState<
 	) {
 		let touchedFields = state.touchedFields;
 
-		for (const name of getFields(action)) {
+		for (const name of getFields(action.result)) {
 			if (handler.touch({ name, payload: intent.payload })) {
 				touchedFields = appendUniqueItem(touchedFields, name);
 			}
@@ -192,25 +197,25 @@ export function updateState<
 }
 
 export function getFields<ErrorShape>(
-	action: FormAction<ErrorShape, UnknownIntent>,
+	result: SubmissionResult<ErrorShape>,
 ): string[] {
-	let fields = action.submission.fields;
+	let fields = result.submission.fields;
 
-	if (action.error) {
-		fields = fields.concat(Object.keys(action.error.fieldErrors));
+	if (result.error) {
+		fields = fields.concat(Object.keys(result.error.fieldErrors));
 	}
 
-	const result = new Set(['']);
+	const fieldsSet = new Set(['']);
 
 	for (const field of fields) {
 		const paths = parsePath(field);
 
 		for (let index = 1; index <= paths.length; index++) {
-			result.add(formatPath(paths.slice(0, index)));
+			fieldsSet.add(formatPath(paths.slice(0, index)));
 		}
 	}
 
-	return Array.from(result);
+	return Array.from(fieldsSet);
 }
 
 export function getApplyStatus(
@@ -1088,16 +1093,27 @@ export function initializeCustomState<
 >(options: {
 	handlers: CustomStateHandlers | undefined;
 	currentState?: FormCustomState<CustomStateHandlers> | undefined;
+	result?: SubmissionResult<ErrorShape> | undefined;
 }): FormCustomState<CustomStateHandlers> {
 	return Object.fromEntries(
-		Object.entries(options.handlers ?? {}).map(([key, handler]) => [
-			key,
-			options.currentState &&
-			Object.prototype.hasOwnProperty.call(options.currentState, key) &&
-			handler.reset === false
-				? options.currentState[key]
-				: handler.initialize(),
-		]),
+		Object.entries(options.handlers ?? {}).map(([key, handler]) => {
+			if (
+				!options.currentState ||
+				!Object.prototype.hasOwnProperty.call(options.currentState, key) ||
+				handler.reset === undefined ||
+				handler.reset === true
+			) {
+				return [key, handler.initialize()];
+			}
+
+			const currentState = options.currentState[key];
+
+			if (typeof handler.reset === 'function') {
+				return [key, handler.reset(currentState, { result: options.result })];
+			}
+
+			return [key, currentState];
+		}),
 	) as FormCustomState<CustomStateHandlers>;
 }
 
@@ -1129,15 +1145,14 @@ export function updateCustomState<
 			) {
 				nextState = handler.handleIntent(nextState, {
 					intent: action.intent,
-					submission: action.submission,
+					submission: action.result.submission,
 				});
 			}
 
-			if (handler.handleResult && typeof action.error !== 'undefined') {
+			if (handler.handleResult && typeof action.result.error !== 'undefined') {
 				nextState = handler.handleResult(nextState, {
 					intent: action.intent,
-					submission: action.submission,
-					error: action.error,
+					result: action.result,
 					phase:
 						action.type === 'client' || action.type === 'client:async'
 							? 'client'
