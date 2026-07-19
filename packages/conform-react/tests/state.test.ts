@@ -23,6 +23,10 @@ import {
 	getField,
 	getFieldset,
 	getFieldList,
+	defineCustomState,
+	initializeCustomState,
+	mergeCustomStateHandlers,
+	updateCustomState,
 } from '../future/state';
 import { defineIntent, serializeIntent } from '../future/intent';
 import { getPathArray, updatePathValue } from '../future/util';
@@ -937,6 +941,41 @@ describe('form state', () => {
 		expect(isTouched(context.state, 'title')).toBe(false);
 		expect(isTouched(context.state, 'tasks')).toBe(true);
 		expect(isTouched(context.state, 'tasks[0]')).toBe(false);
+		expect(isTouched(context.state, 'tasks[1]')).toBe(true);
+		expect(isTouched(context.state, 'tasks[2]')).toBe(false);
+
+		context.state = updateState(
+			context.state,
+			createAction({
+				type: 'client:async',
+				entries: [
+					['title', 'My Tasks'],
+					['tasks[0]', 'Default task 1'],
+					['tasks[1]', 'Default task 2'],
+					['tasks[2]', 'New task'],
+					[
+						DEFAULT_INTENT_NAME,
+						serializeIntent({
+							type: 'insert',
+							args: [
+								{
+									name: 'tasks',
+									index: 0,
+									defaultValue: 'Async task',
+								},
+							],
+						}),
+					],
+				],
+				error: null,
+			}),
+		);
+
+		expect(getDefaultOptions(context, 'tasks')).toEqual([
+			'Default task 1',
+			'Default task 2',
+			'New task',
+		]);
 		expect(isTouched(context.state, 'tasks[1]')).toBe(true);
 		expect(isTouched(context.state, 'tasks[2]')).toBe(false);
 
@@ -1974,4 +2013,355 @@ test('getFieldList', () => {
 	expect(firstUserFieldset?.name?.defaultValue).toBe('John');
 	expect(firstUserFieldset?.age?.name).toBe('users[0].age');
 	expect(firstUserFieldset?.age?.defaultValue).toBe('25');
+});
+
+test('custom state', () => {
+	// Test initialization
+	const customState = initializeCustomState({
+		handlers: {
+			wizard: defineCustomState({
+				initialize() {
+					return { step: 0 };
+				},
+				handleIntent(state) {
+					return state;
+				},
+			}),
+			summary: defineCustomState({
+				initialize() {
+					return { dismissed: false };
+				},
+				handleIntent(state) {
+					return state;
+				},
+			}),
+		},
+	});
+
+	expect(customState).toEqual({
+		wizard: { step: 0 },
+		summary: { dismissed: false },
+	});
+
+	// Test reset handling
+	const initializePreserved = vi.fn(() => 0);
+	const initializeReinitialized = vi.fn(() => 0);
+	const resetCustomized = vi.fn();
+	const handleCustomizedIntent = vi.fn((state: number) => state + 10);
+	const handleCustomizedResult = vi.fn((state: number) => state + 100);
+	const resetHandlers = {
+		preserved: defineCustomState({
+			initialize: initializePreserved,
+			reset: false,
+		}),
+		reinitialized: defineCustomState({
+			initialize: initializeReinitialized,
+			reset: true,
+		}),
+		customized: defineCustomState({
+			initialize() {
+				return 0;
+			},
+			reset(state, { result }) {
+				resetCustomized(state, result);
+				return result?.error === null ? state + 1 : state;
+			},
+			handleIntent: handleCustomizedIntent,
+			handleResult: handleCustomizedResult,
+		}),
+	};
+	const initialResetState = initializeCustomState({ handlers: resetHandlers });
+
+	const lifecycleResetState = initializeCustomState({
+		handlers: resetHandlers,
+		currentState: initialResetState,
+	});
+
+	expect(lifecycleResetState).toEqual({
+		preserved: 0,
+		reinitialized: 0,
+		customized: 0,
+	});
+	expect(initializePreserved).toHaveBeenCalledOnce();
+	expect(initializeReinitialized).toHaveBeenCalledTimes(2);
+	expect(resetCustomized).toHaveBeenCalledWith(0, undefined);
+
+	const formState = initializeState({
+		customStateHandlers: resetHandlers,
+	});
+	const resetAction = createAction({
+		type: 'client',
+		entries: [['title', 'Example']],
+		reset: true,
+		targetValue: { title: 'Reset title' },
+		error: null,
+		customStateHandlers: resetHandlers,
+		lastCustomState: formState.customState,
+	});
+	expect(
+		initializeCustomState({
+			handlers: resetHandlers,
+			currentState: lifecycleResetState,
+			result: resetAction.result,
+		}),
+	).toEqual({ preserved: 0, reinitialized: 0, customized: 1 });
+	expect(resetCustomized).toHaveBeenLastCalledWith(0, resetAction.result);
+
+	const resetState = updateState(formState, resetAction);
+
+	expect(resetState.defaultValue).toEqual({ title: 'Reset title' });
+	expect(resetState.customState).toEqual({
+		preserved: 0,
+		reinitialized: 0,
+		customized: 1,
+	});
+	expect(handleCustomizedIntent).not.toHaveBeenCalled();
+	expect(handleCustomizedResult).not.toHaveBeenCalled();
+
+	// Test custom state handler collisions
+	const slice = defineCustomState({
+		initialize() {
+			return 0;
+		},
+	});
+
+	expect(
+		mergeCustomStateHandlers({ global: slice }, { toString: slice }).toString,
+	).toBe(slice);
+	expect(() =>
+		mergeCustomStateHandlers({ duplicate: slice }, { duplicate: slice }),
+	).toThrow('Duplicate custom state key "duplicate"');
+
+	// Test pending and explicit results
+	const handleResult = vi.fn((state: number) => state + 1);
+	const resultHandlers = {
+		resultCount: defineCustomState({
+			initialize() {
+				return 0;
+			},
+			handleResult,
+		}),
+	};
+	const initialResultState = initializeCustomState({
+		handlers: resultHandlers,
+	});
+	const pendingResultState = updateCustomState(
+		initialResultState,
+		createAction({ type: 'client', entries: [] }),
+		{ handlers: resultHandlers },
+	);
+
+	expect(pendingResultState).toEqual({ resultCount: 0 });
+	expect(handleResult).not.toHaveBeenCalled();
+
+	const resultState = updateCustomState(
+		initialResultState,
+		createAction({ type: 'client:async', entries: [], error: null }),
+		{ handlers: resultHandlers },
+	);
+
+	expect(resultState).toEqual({ resultCount: 1 });
+	expect(handleResult).toHaveBeenCalledOnce();
+
+	// Test action phases
+	const handlers = {
+		submitCount: defineCustomState({
+			initialize() {
+				return 0;
+			},
+			handleIntent(state, ctx) {
+				if (ctx.intent.type === 'submit') {
+					return state + 1;
+				}
+
+				return state;
+			},
+		}),
+		failedSubmitCount: defineCustomState({
+			initialize() {
+				return 0;
+			},
+			handleResult(state, ctx) {
+				if (ctx.intent.type === 'submit' && ctx.result.error) {
+					return state + 1;
+				}
+
+				return state;
+			},
+		}),
+		summary: defineCustomState({
+			initialize() {
+				return { dismissed: false };
+			},
+			handleIntent(state) {
+				return state;
+			},
+		}),
+		status: defineCustomState<'idle' | 'submitted' | 'success' | 'error'>({
+			initialize() {
+				return 'idle';
+			},
+			handleIntent(state, ctx) {
+				if (ctx.intent.type === 'submit') {
+					return 'submitted';
+				}
+
+				return state;
+			},
+			handleResult(state, ctx) {
+				if (ctx.intent.type !== 'submit') {
+					return state;
+				}
+
+				if (ctx.result.error) {
+					return 'error';
+				}
+
+				if (ctx.phase === 'server' && ctx.result.error === null) {
+					return 'success';
+				}
+
+				return state;
+			},
+		}),
+		step: defineCustomState({
+			initialize() {
+				return 0;
+			},
+			handleResult(state, ctx) {
+				if (
+					ctx.intent.type === 'submit' &&
+					ctx.phase === 'client' &&
+					ctx.result.error === null
+				) {
+					return state + 1;
+				}
+
+				return state;
+			},
+		}),
+	};
+	const initialState = {
+		submitCount: 0,
+		failedSubmitCount: 0,
+		summary: { dismissed: false },
+		status: 'idle' as const,
+		step: 0,
+	};
+
+	const pendingState = updateCustomState(
+		initialState,
+		createAction({
+			type: 'client',
+			entries: [['title', 'Example']],
+		}),
+		{
+			handlers,
+		},
+	);
+
+	expect(pendingState).toEqual({
+		submitCount: 1,
+		failedSubmitCount: 0,
+		summary: { dismissed: false },
+		status: 'submitted',
+		step: 0,
+	});
+
+	const asyncPassState = updateCustomState(
+		pendingState,
+		createAction({
+			type: 'client:async',
+			entries: [['title', 'Example']],
+			error: null,
+		}),
+		{
+			handlers,
+		},
+	);
+
+	expect(asyncPassState).toEqual({
+		submitCount: 1,
+		failedSubmitCount: 0,
+		summary: { dismissed: false },
+		status: 'submitted',
+		step: 1,
+	});
+
+	const serverPassState = updateCustomState(
+		asyncPassState,
+		createAction({
+			type: 'server',
+			entries: [['title', 'Example']],
+			error: null,
+		}),
+		{
+			handlers,
+		},
+	);
+
+	expect(serverPassState).toEqual({
+		submitCount: 1,
+		failedSubmitCount: 0,
+		summary: { dismissed: false },
+		status: 'success',
+		step: 1,
+	});
+
+	const failureState = updateCustomState(
+		initialState,
+		createAction({
+			type: 'client',
+			entries: [['title', '']],
+			error: {
+				fieldErrors: {
+					title: ['Required'],
+				},
+			},
+		}),
+		{
+			handlers,
+		},
+	);
+
+	expect(failureState).toEqual({
+		submitCount: 1,
+		failedSubmitCount: 1,
+		summary: { dismissed: false },
+		status: 'error',
+		step: 0,
+	});
+
+	const ssrState = updateCustomState(
+		initialState,
+		createAction({
+			type: 'initialize',
+			entries: [['title', 'Example']],
+			error: null,
+		}),
+		{
+			handlers,
+		},
+	);
+
+	expect(ssrState).toEqual({
+		submitCount: 1,
+		failedSubmitCount: 0,
+		summary: { dismissed: false },
+		status: 'success',
+		step: 0,
+	});
+
+	const nextState2 = initializeCustomState({
+		handlers,
+		currentState: serverPassState,
+	});
+
+	expect(nextState2).toEqual({
+		submitCount: 0,
+		failedSubmitCount: 0,
+		summary: { dismissed: false },
+		status: 'idle',
+		step: 0,
+	});
 });

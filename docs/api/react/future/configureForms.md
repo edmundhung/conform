@@ -54,6 +54,12 @@ Intent handlers available to every form created by this factory.
 
 Use this to add custom methods to [`useIntent`](./useIntent.md), the `intent` object returned by [`useForm`](./useForm.md), and the bound [`resolveSubmission`](./resolveSubmission.md) helper returned from this factory.
 
+### `customState?: Record<string, CustomStateHandler>`
+
+Custom state handlers available to every form created by this factory.
+
+Use [`defineCustomState`](./defineCustomState.md) to define custom state that can be read from `form.customState`.
+
 ### `shouldValidate?: 'onSubmit' | 'onBlur' | 'onInput'`
 
 Determines when validation should run for the first time on a field. Default is `onSubmit`.

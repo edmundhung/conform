@@ -2,7 +2,7 @@
 import { describe, test, expect } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { userEvent } from 'vitest/browser';
-import { configureForms, defineIntent } from '../future';
+import { configureForms, defineIntent, defineCustomState } from '../future';
 import { expectErrorMessage, expectNoErrorMessages } from './helpers';
 import { useRef } from 'react';
 import { getPathArray, updatePathIndex, updatePathValue } from '../future/util';
@@ -249,6 +249,91 @@ describe('configureForms', () => {
 		await userEvent.click(submitButton);
 		await expectNoErrorMessages(title);
 		await expect.element(title).not.toHaveAttribute('aria-invalid', 'true');
+	});
+
+	test('custom state is available on form metadata and resets', async () => {
+		const submitCount = defineCustomState({
+			initialize() {
+				return 0;
+			},
+			handleIntent(state, ctx) {
+				if (ctx.intent.type === 'submit') {
+					return state + 1;
+				}
+
+				return state;
+			},
+		});
+		const customized = configureForms({
+			customState: {
+				submitCount,
+			},
+			extendFormMetadata(form) {
+				return {
+					submitCount: form.customState.submitCount,
+				};
+			},
+		});
+
+		function Form() {
+			const { form, fields, intent } = customized.useForm<Schema, string[]>({
+				onValidate({ payload, error }) {
+					if (!payload.title) {
+						error.fieldErrors.title = ['Title is required'];
+					}
+
+					return error;
+				},
+				onSubmit(event) {
+					event.preventDefault();
+				},
+			});
+
+			return (
+				<form {...form.props}>
+					<input
+						name={fields.title.name}
+						defaultValue={fields.title.defaultValue}
+						aria-label="Title"
+					/>
+					<div data-testid="submit-count">{form.submitCount}</div>
+					<button>Submit</button>
+					<button type="button" onClick={() => intent.submit()}>
+						Submit via Intent
+					</button>
+					<button
+						type="button"
+						onClick={() => intent.update({ name: 'title', value: 'example' })}
+					>
+						Update
+					</button>
+					<button type="button" onClick={() => intent.reset()}>
+						Reset
+					</button>
+				</form>
+			);
+		}
+
+		const screen = render(<Form />);
+		const count = screen.getByTestId('submit-count');
+
+		await expect.element(count).toHaveTextContent('0');
+		await userEvent.click(
+			screen.getByRole('button', { name: 'Submit', exact: true }),
+		);
+		await expect.element(count).toHaveTextContent('1');
+		await userEvent.click(
+			screen.getByRole('button', { name: 'Submit via Intent', exact: true }),
+		);
+		await expect.element(count).toHaveTextContent('2');
+		await userEvent.click(
+			screen.getByRole('button', { name: 'Update', exact: true }),
+		);
+		await expect.element(count).toHaveTextContent('2');
+		await userEvent.click(
+			screen.getByRole('button', { name: 'Reset', exact: true }),
+		);
+		await expect.element(count).toHaveTextContent('0');
 	});
 
 	test('extendFormMetadata adds custom properties', async () => {

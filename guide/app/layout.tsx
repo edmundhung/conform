@@ -72,6 +72,10 @@ const menus: { [code: string]: Menu[] } = {
 				},
 				{ title: 'defineIntent', to: '/api/react/future/defineIntent' },
 				{
+					title: 'defineCustomState',
+					to: '/api/react/future/defineCustomState',
+				},
+				{
 					title: 'resolveSubmission',
 					to: '/api/react/future/resolveSubmission',
 				},

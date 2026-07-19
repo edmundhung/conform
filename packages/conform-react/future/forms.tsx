@@ -5,7 +5,7 @@ import {
 	defaultSerialize,
 	FormValue,
 } from '@conform-to/dom/future';
-import { useContext, useMemo, useId, createContext } from 'react';
+import { useContext, useMemo, useId, useState, createContext } from 'react';
 import {
 	focusFirstInvalidField,
 	createIntentDispatcher,
@@ -13,8 +13,14 @@ import {
 } from './dom';
 import { useLatest, useConform } from './hooks';
 import { StandardSchemaV1 } from './standard-schema';
-import { isTouched, getFieldset, getField, getFormMetadata } from './state';
 import {
+	isTouched,
+	getFieldset,
+	getField,
+	getFormMetadata,
+	mergeCustomStateHandlers,
+} from './state';
+import type {
 	FormRef,
 	FormsConfig,
 	FormContext,
@@ -22,6 +28,7 @@ import {
 	FormOptions,
 	FieldMetadata,
 	FormHandle,
+	FormCustomState,
 	InferOutput,
 	InferFormShape,
 	DefaultIntentHandlers,
@@ -30,6 +37,7 @@ import {
 	RequireKey,
 	ValidateResult,
 	FormIntent,
+	CustomStateHandler,
 } from './types';
 import {
 	isStandardSchemaV1,
@@ -50,7 +58,11 @@ export function configureForms<
 	SchemaErrorShape = string[],
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
-	CustomIntentHandlers extends Record<string, IntentHandler<any, any>> = {},
+	GlobalIntentHandlers extends Record<string, IntentHandler<any, any>> = {},
+	GlobalCustomStateHandlers extends Record<
+		string,
+		CustomStateHandler<any, any, BaseErrorShape>
+	> = {},
 >(
 	config: Partial<
 		FormsConfig<
@@ -59,7 +71,8 @@ export function configureForms<
 			SchemaErrorShape,
 			CustomFormMetadata,
 			CustomFieldMetadata,
-			CustomIntentHandlers
+			GlobalIntentHandlers,
+			GlobalCustomStateHandlers
 		>
 	> = {},
 ) {
@@ -81,10 +94,12 @@ export function configureForms<
 		SchemaErrorShape,
 		CustomFormMetadata,
 		CustomFieldMetadata,
-		CustomIntentHandlers
+		GlobalIntentHandlers,
+		GlobalCustomStateHandlers
 	> = {
 		...config,
 		intents: config.intents,
+		customState: config.customState,
 		intentName: config.intentName ?? DEFAULT_INTENT_NAME,
 		shouldValidate: config.shouldValidate ?? 'onSubmit',
 		shouldRevalidate:
@@ -99,21 +114,27 @@ export function configureForms<
 			SchemaErrorShape,
 			CustomFormMetadata,
 			CustomFieldMetadata,
-			CustomIntentHandlers
+			GlobalIntentHandlers,
+			GlobalCustomStateHandlers
 		>['validateSchema'],
 	};
 
 	/**
 	 * React context
 	 */
-	const ReactFormContext = createContext<FormContext<BaseErrorShape>[]>([]);
+	const ReactFormContext = createContext<
+		FormContext<BaseErrorShape, FormCustomState<GlobalCustomStateHandlers>>[]
+	>([]);
 
 	/**
 	 * Provides form context to child components.
 	 * Stacks contexts to support nested forms, with latest context taking priority.
 	 */
 	function FormProvider(props: {
-		context: FormContext<BaseErrorShape>;
+		context: FormContext<
+			BaseErrorShape,
+			FormCustomState<GlobalCustomStateHandlers>
+		>;
 		children: React.ReactNode;
 	}): React.ReactElement {
 		const stack = useContext(ReactFormContext);
@@ -130,7 +151,9 @@ export function configureForms<
 		);
 	}
 
-	function useFormContext(formId?: string): FormContext<BaseErrorShape> {
+	function useFormContext(
+		formId?: string,
+	): FormContext<BaseErrorShape, FormCustomState<GlobalCustomStateHandlers>> {
 		const contexts = useContext(ReactFormContext);
 		const context = formId
 			? contexts.find((context) => formId === context.formId)
@@ -197,7 +220,11 @@ export function configureForms<
 		Schema extends BaseSchema,
 		ErrorShape extends BaseErrorShape,
 		Value = InferOutput<Schema>,
-		IntentHandlers extends Record<string, IntentHandler<any, any>> = {},
+		CustomIntentHandlers extends Record<string, IntentHandler<any, any>> = {},
+		CustomStateHandlers extends Record<
+			string,
+			CustomStateHandler<any, any, ErrorShape>
+		> = {},
 	>(
 		schema: Schema,
 		options: RequireKey<
@@ -207,8 +234,9 @@ export function configureForms<
 				Value,
 				Schema,
 				SchemaErrorShape,
-				IntentHandlers,
-				CustomIntentHandlers
+				CustomIntentHandlers,
+				GlobalIntentHandlers,
+				CustomStateHandlers
 			>,
 			'onValidate'
 		>,
@@ -217,7 +245,8 @@ export function configureForms<
 		ErrorShape,
 		CustomFormMetadata,
 		CustomFieldMetadata,
-		CustomIntentHandlers & IntentHandlers
+		GlobalIntentHandlers & CustomIntentHandlers,
+		FormCustomState<GlobalCustomStateHandlers & CustomStateHandlers>
 	>;
 	function useForm<
 		Schema extends BaseSchema,
@@ -225,7 +254,11 @@ export function configureForms<
 			? SchemaErrorShape
 			: BaseErrorShape,
 		Value = InferOutput<Schema>,
-		IntentHandlers extends Record<string, IntentHandler<any, any>> = {},
+		CustomIntentHandlers extends Record<string, IntentHandler<any, any>> = {},
+		CustomStateHandlers extends Record<
+			string,
+			CustomStateHandler<any, any, ErrorShape>
+		> = {},
 	>(
 		schema: Schema,
 		options: RequireKey<
@@ -235,8 +268,9 @@ export function configureForms<
 				Value,
 				Schema,
 				SchemaErrorShape,
-				IntentHandlers,
-				CustomIntentHandlers
+				CustomIntentHandlers,
+				GlobalIntentHandlers,
+				CustomStateHandlers
 			>,
 			SchemaErrorShape extends BaseErrorShape ? never : 'onValidate'
 		>,
@@ -245,13 +279,18 @@ export function configureForms<
 		ErrorShape,
 		CustomFormMetadata,
 		CustomFieldMetadata,
-		CustomIntentHandlers & IntentHandlers
+		GlobalIntentHandlers & CustomIntentHandlers,
+		FormCustomState<GlobalCustomStateHandlers & CustomStateHandlers>
 	>;
 	function useForm<
 		FormShape extends Record<string, any> = Record<string, any>,
 		ErrorShape extends BaseErrorShape = BaseErrorShape,
 		Value = undefined,
-		IntentHandlers extends Record<string, IntentHandler<any, any>> = {},
+		CustomIntentHandlers extends Record<string, IntentHandler<any, any>> = {},
+		CustomStateHandlers extends Record<
+			string,
+			CustomStateHandler<any, any, ErrorShape>
+		> = {},
 	>(
 		options: RequireKey<
 			FormOptions<
@@ -260,8 +299,9 @@ export function configureForms<
 				Value,
 				undefined,
 				SchemaErrorShape,
-				IntentHandlers,
-				CustomIntentHandlers
+				CustomIntentHandlers,
+				GlobalIntentHandlers,
+				CustomStateHandlers
 			>,
 			'onValidate'
 		>,
@@ -270,7 +310,8 @@ export function configureForms<
 		ErrorShape,
 		CustomFormMetadata,
 		CustomFieldMetadata,
-		CustomIntentHandlers & IntentHandlers
+		GlobalIntentHandlers & CustomIntentHandlers,
+		FormCustomState<GlobalCustomStateHandlers & CustomStateHandlers>
 	>;
 	function useForm<
 		FormShape extends Record<string, any> = Record<string, any>,
@@ -279,18 +320,46 @@ export function configureForms<
 	>(
 		schemaOrOptions:
 			| BaseSchema
-			| FormOptions<FormShape, ErrorShape, Value, undefined, any, any>,
-		maybeOptions?: FormOptions<any, ErrorShape, Value, undefined, any, any>,
+			| FormOptions<
+					FormShape,
+					ErrorShape,
+					Value,
+					undefined,
+					any,
+					any,
+					any,
+					any
+			  >,
+		maybeOptions?: FormOptions<
+			any,
+			ErrorShape,
+			Value,
+			undefined,
+			any,
+			any,
+			any,
+			any
+		>,
 	): FormHandle<
 		Record<string, any>,
 		ErrorShape,
 		CustomFormMetadata,
 		CustomFieldMetadata,
-		Record<string, IntentHandler>
+		Record<string, IntentHandler>,
+		Record<string, unknown>
 	> {
 		// implementation signature is broader than the public overloads above
 		let schema: BaseSchema | undefined;
-		let options: FormOptions<any, ErrorShape, Value, undefined, any, any>;
+		let options: FormOptions<
+			any,
+			ErrorShape,
+			Value,
+			undefined,
+			any,
+			any,
+			any,
+			any
+		>;
 
 		if (globalConfig.isSchema(schemaOrOptions)) {
 			schema = schemaOrOptions;
@@ -307,6 +376,9 @@ export function configureForms<
 			() => resolveSerialize(options.serialize, globalSerialize),
 			[options.serialize],
 		);
+		const [customStateHandlers] = useState(() =>
+			mergeCustomStateHandlers(globalConfig.customState, options.customState),
+		);
 		const fallbackId = useId();
 		const formId = options.id ?? `form-${fallbackId}`;
 		const [state, handleSubmit] = useConform<
@@ -314,13 +386,15 @@ export function configureForms<
 			ErrorShape,
 			Value,
 			any,
-			SchemaErrorShape
+			SchemaErrorShape,
+			GlobalCustomStateHandlers
 		>(formId, {
 			...options,
 			intentHandlers: mergeIntentHandlers(
 				globalIntentHandlers,
 				options.intents,
 			),
+			customStateHandlers,
 			serialize,
 			intentName: globalConfig.intentName,
 			onError: options.onError ?? focusFirstInvalidField,
@@ -361,14 +435,30 @@ export function configureForms<
 						options.onValidate(ctx as any),
 					);
 
-					if (validateResult.syncResult) {
-						validateResult.syncResult.value ??= schemaValue;
+					if (
+						validateResult.syncResult &&
+						typeof schemaValue !== 'undefined' &&
+						typeof validateResult.syncResult.value === 'undefined'
+					) {
+						validateResult.syncResult = {
+							...validateResult.syncResult,
+							value: schemaValue,
+						};
 					}
 
 					if (validateResult.asyncResult) {
 						validateResult.asyncResult = validateResult.asyncResult.then(
 							(result) => {
-								result.value ??= schemaValue;
+								if (
+									typeof schemaValue !== 'undefined' &&
+									typeof result.value === 'undefined'
+								) {
+									return {
+										...result,
+										value: schemaValue,
+									};
+								}
+
 								return result;
 							},
 						);
@@ -387,8 +477,10 @@ export function configureForms<
 				);
 			},
 		});
-		const intent = useIntent<FormShape, CustomIntentHandlers>(formId);
-		const context = useMemo<FormContext<ErrorShape>>(
+		const intent = useIntent<FormShape, GlobalIntentHandlers>(formId);
+		const context = useMemo<
+			FormContext<ErrorShape, FormCustomState<GlobalCustomStateHandlers>>
+		>(
 			() => ({
 				formId,
 				state,
@@ -520,7 +612,12 @@ export function configureForms<
 		options: {
 			formId?: string;
 		} = {},
-	): FormMetadata<BaseErrorShape, CustomFormMetadata, CustomFieldMetadata> {
+	): FormMetadata<
+		BaseErrorShape,
+		CustomFormMetadata,
+		CustomFieldMetadata,
+		FormCustomState<GlobalCustomStateHandlers>
+	> {
 		const context = useFormContext(options.formId);
 		const formMetadata = useMemo(
 			() =>
@@ -534,7 +631,8 @@ export function configureForms<
 		return formMetadata as FormMetadata<
 			BaseErrorShape,
 			CustomFormMetadata,
-			CustomFieldMetadata
+			CustomFieldMetadata,
+			FormCustomState<GlobalCustomStateHandlers>
 		>;
 	}
 
@@ -607,7 +705,7 @@ export function configureForms<
 		formRef: FormRef,
 	): IntentDispatcher<
 		Record<string, any>,
-		DefaultIntentHandlers & CustomIntentHandlers
+		DefaultIntentHandlers & GlobalIntentHandlers
 	>;
 	function useIntent<
 		IntentHandlers extends Record<string, IntentHandler<any, any>>,
@@ -615,11 +713,11 @@ export function configureForms<
 		formRef: FormRef,
 	): IntentDispatcher<
 		Record<string, any>,
-		DefaultIntentHandlers & CustomIntentHandlers & IntentHandlers
+		DefaultIntentHandlers & GlobalIntentHandlers & IntentHandlers
 	>;
 	function useIntent<FormShape extends Record<string, any>>(
 		formRef: FormRef,
-	): IntentDispatcher<FormShape, DefaultIntentHandlers & CustomIntentHandlers>;
+	): IntentDispatcher<FormShape, DefaultIntentHandlers & GlobalIntentHandlers>;
 	function useIntent<
 		FormShape extends Record<string, any>,
 		IntentHandlers extends Record<string, IntentHandler<any, any>>,
@@ -627,7 +725,7 @@ export function configureForms<
 		formRef: FormRef,
 	): IntentDispatcher<
 		FormShape,
-		DefaultIntentHandlers & CustomIntentHandlers & IntentHandlers
+		DefaultIntentHandlers & GlobalIntentHandlers & IntentHandlers
 	>;
 	function useIntent(formRef: FormRef) {
 		return useMemo(
@@ -655,7 +753,7 @@ export function configureForms<
 		intent:
 			| FormIntent<
 					Record<string, any>,
-					DefaultIntentHandlers & CustomIntentHandlers & IntentHandlers
+					DefaultIntentHandlers & GlobalIntentHandlers & IntentHandlers
 			  >
 			| { type: 'submit'; payload: undefined }
 			| undefined;

@@ -14,7 +14,12 @@ import {
 	parseIntent,
 	resolveIntent,
 } from '../future/intent';
-import { FormAction, IntentHandler } from '../future/types';
+import {
+	CustomStateHandler,
+	FormAction,
+	FormCustomState,
+	IntentHandler,
+} from '../future/types';
 import { getApplyStatus, initializeState } from '../future/state';
 import { expect } from 'vitest';
 import { Locator } from 'vitest/browser';
@@ -77,6 +82,10 @@ export function createAction(options: {
 	targetValue?: Record<string, FormValue> | null;
 	error?: Partial<FormError<any>> | null;
 	handlers?: Record<string, IntentHandler<any, any>>;
+	customStateHandlers?: Record<string, CustomStateHandler<any, any, any>>;
+	lastCustomState?: FormCustomState<
+		Record<string, CustomStateHandler<any, any, any>>
+	>;
 }): FormAction<any, any, any> {
 	const formData = new FormData();
 
@@ -103,18 +112,25 @@ export function createAction(options: {
 		reset: options.reset,
 		error: options.error,
 	});
-	const finalResult = applyIntent(result, intent, { handlers });
+	const finalResult =
+		options.type === 'client:async'
+			? result
+			: applyIntent(result, intent, { handlers });
 
 	return {
-		...finalResult,
 		type: options.type,
 		intent,
+		result: finalResult,
 		ctx: {
-			handlers,
+			intentHandlers: handlers,
+			customStateHandlers: options.customStateHandlers,
 			status: getApplyStatus(result.targetValue, finalResult.targetValue),
-			reset(defaultValue?: Record<string, unknown> | null) {
+			reset() {
 				return initializeState({
-					defaultValue: defaultValue ?? options.defaultValue,
+					defaultValue: finalResult.targetValue ?? options.defaultValue,
+					customStateHandlers: options.customStateHandlers,
+					lastCustomState: options.lastCustomState,
+					result: finalResult,
 				});
 			},
 		},

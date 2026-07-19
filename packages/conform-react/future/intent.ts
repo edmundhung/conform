@@ -67,15 +67,37 @@ export function mergeIntentHandlers<
 	};
 }
 
+const undefinedArg = '$$__undefined__$$';
+
+function deserializeIntentArgs(value: string): unknown[] {
+	return JSON.parse(`[${value}]`, (_, value) =>
+		value === undefinedArg ? undefined : value,
+	);
+}
+
 /**
  * Serializes a transport intent to string format.
  */
 export function serializeIntent(intent: TransportIntent): string {
-	if (intent.args.length === 0) {
+	const args = intent.args.slice();
+
+	while (args.length > 0 && args[args.length - 1] === undefined) {
+		args.pop();
+	}
+
+	if (args.length === 0) {
 		return intent.type;
 	}
 
-	return `${intent.type}(${JSON.stringify(intent.args).slice(1, -1)})`;
+	const serializedArgs = JSON.stringify(args, function (this, _, value) {
+		if (value === undefined && Array.isArray(this)) {
+			return undefinedArg;
+		}
+
+		return value;
+	});
+
+	return `${intent.type}(${serializedArgs.slice(1, -1)})`;
 }
 
 /**
@@ -84,6 +106,10 @@ export function serializeIntent(intent: TransportIntent): string {
 export function deserializeIntent(
 	serializedIntent: string,
 ): TransportIntent | undefined {
+	if (serializedIntent === '') {
+		return undefined;
+	}
+
 	let type = serializedIntent;
 	let args: Array<unknown> = [];
 
@@ -99,7 +125,7 @@ export function deserializeIntent(
 
 		if (serializedArgs !== '') {
 			try {
-				args = JSON.parse(`[${serializedArgs}]`);
+				args = deserializeIntentArgs(serializedArgs);
 			} catch {
 				return undefined;
 			}
@@ -123,7 +149,7 @@ export function parseIntent<
 	| FormIntent<Record<string, any>, Handlers>
 	| { type: 'submit'; payload: undefined }
 	| undefined {
-	if (!intentValue) {
+	if (intentValue === null) {
 		return { type: 'submit', payload: undefined };
 	}
 
