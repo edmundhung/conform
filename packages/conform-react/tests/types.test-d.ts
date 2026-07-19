@@ -139,6 +139,22 @@ test('FormOptions', () => {
 	assertType<FormOptions<TestSchema>>({
 		lastResult: null,
 	});
+
+	assertType<FormOptions<TestSchema>>({
+		onValidate({ error }) {
+			return {
+				result: error,
+				pending: Promise.resolve(null),
+			};
+		},
+	});
+
+	assertType<FormOptions<TestSchema>>({
+		// @ts-expect-error staged validation no longer accepts a tuple
+		onValidate({ error }) {
+			return [error, Promise.resolve(null)];
+		},
+	});
 });
 
 test('useForm', () => {

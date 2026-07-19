@@ -91,6 +91,8 @@ Server-side submission result for form state synchronization.
 
 Custom validation handler. Can be skipped when a schema is passed as the first argument, or combined with schema validation to customize validation errors.
 
+Return a validation result when it is available immediately, a promise when it is only available asynchronously, or `{ result, pending }` when an immediate result will be replaced by a complete asynchronous result. Returning `null` represents successful validation, while `undefined` means no validation result was provided.
+
 ### `onError?: ErrorHandler<ErrorShape>`
 
 Error handling callback triggered when validation errors occur. By default, it focuses the first invalid field.

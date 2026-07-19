@@ -1669,6 +1669,67 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 		expect(isDirty(formData, { defaultValue: { date } })).toBe(false);
 	});
 
+	test('clears a previous schema-backed client error with null', async () => {
+		const schema = {
+			'~standard': {
+				version: 1,
+				vendor: 'test',
+				validate(value: unknown) {
+					return { value: value as { title: string } };
+				},
+				types: {} as {
+					input: { title: string };
+					output: { title: string };
+				},
+			},
+		} as const;
+
+		function SchemaForm() {
+			const { form, fields } = useForm(schema, {
+				defaultValue: { title: 'invalid' },
+				onValidate({ payload }) {
+					if (payload.title === 'invalid') {
+						return {
+							formErrors: null,
+							fieldErrors: { title: ['Title is invalid'] },
+						};
+					}
+
+					return null;
+				},
+				onSubmit(event) {
+					event.preventDefault();
+				},
+			});
+
+			return (
+				<form {...form.props}>
+					<input
+						aria-label="Title"
+						name={fields.title.name}
+						defaultValue={fields.title.defaultValue}
+					/>
+					<div data-testid="title-error">
+						{fields.title.errors?.join(', ') ?? 'n/a'}
+					</div>
+					<button>Submit</button>
+				</form>
+			);
+		}
+
+		const screen = render(<SchemaForm />);
+		const title = screen.getByRole('textbox', { name: 'Title' });
+		const error = screen.getByTestId('title-error');
+
+		await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+		await expect.element(error).toHaveTextContent('Title is invalid');
+
+		await userEvent.clear(title);
+		await userEvent.type(title, 'valid');
+		await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+		await expect.element(error).toHaveTextContent('n/a');
+	});
+
 	describe('async validation', () => {
 		beforeAll(() => {
 			vi.useFakeTimers();

@@ -1087,6 +1087,13 @@ export type ValidateResult<ErrorShape, Value> =
 			value?: Value;
 	  };
 
+export type StagedValidateResult<ErrorShape, Value> = {
+	/** The validation result available immediately. */
+	result: ValidateResult<ErrorShape, Value>;
+	/** A complete validation result that replaces the immediate result when resolved. */
+	pending: Promise<ValidateResult<ErrorShape, Value>>;
+};
+
 export type ValidateContext<
 	SchemaValue,
 	SchemaErrorShape,
@@ -1136,10 +1143,7 @@ export type ValidateHandler<
 ) =>
 	| ValidateResult<ErrorShape, Value>
 	| Promise<ValidateResult<ErrorShape, Value>>
-	| [
-			ValidateResult<ErrorShape, Value> | undefined,
-			Promise<ValidateResult<ErrorShape, Value>> | undefined,
-	  ]
+	| StagedValidateResult<ErrorShape, Value>
 	| undefined;
 
 export interface FormInputEvent extends React.FormEvent<HTMLFormElement> {
