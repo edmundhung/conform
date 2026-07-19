@@ -29,6 +29,10 @@ Set to `null` to indicate validation passed with no errors. If you need schema i
 
 The target form value to apply. Use this to update the form or reset it to a specific value when combined with `reset: true`. Pass `null` to apply an empty value.
 
+### `options.value?: Record<string, unknown> | null` (deprecated)
+
+Deprecated alias for `targetValue`. It will be removed in the next minor release. When both options are provided, `targetValue` takes precedence.
+
 ### `options.keepFiles?: boolean`
 
 Controls whether file objects are preserved in the submission payload:

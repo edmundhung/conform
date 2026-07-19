@@ -566,6 +566,8 @@ export function report(
 		keepFiles?: false;
 		error?: null;
 		targetValue?: Record<string, FormValue> | null;
+		/** @deprecated Use `targetValue` instead. This will be removed in the next minor release. */
+		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -576,6 +578,8 @@ export function report(
 		keepFiles: true;
 		error?: null;
 		targetValue?: Record<string, FormValue> | null;
+		/** @deprecated Use `targetValue` instead. This will be removed in the next minor release. */
+		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -586,6 +590,8 @@ export function report<ErrorShape>(
 		keepFiles?: false;
 		error: CustomError<ErrorShape> | null;
 		targetValue?: Record<string, FormValue> | null;
+		/** @deprecated Use `targetValue` instead. This will be removed in the next minor release. */
+		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -599,6 +605,8 @@ export function report<ErrorShape>(
 		keepFiles: true;
 		error: CustomError<ErrorShape> | null;
 		targetValue?: Record<string, FormValue> | null;
+		/** @deprecated Use `targetValue` instead. This will be removed in the next minor release. */
+		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -609,6 +617,8 @@ export function report(
 		keepFiles?: false;
 		error: StandardSchemaError;
 		targetValue?: Record<string, FormValue> | null;
+		/** @deprecated Use `targetValue` instead. This will be removed in the next minor release. */
+		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -622,6 +632,8 @@ export function report(
 		keepFiles: true;
 		error: StandardSchemaError;
 		targetValue?: Record<string, FormValue> | null;
+		/** @deprecated Use `targetValue` instead. This will be removed in the next minor release. */
+		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -632,6 +644,8 @@ export function report<ErrorShape>(
 		keepFiles?: boolean;
 		error?: CustomError<ErrorShape> | null;
 		targetValue?: Record<string, FormValue> | null;
+		/** @deprecated Use `targetValue` instead. This will be removed in the next minor release. */
+		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -655,6 +669,10 @@ export function report<ErrorShape>(
 		 */
 		targetValue?: Record<string, FormValue> | null;
 		/**
+		 * @deprecated Use `targetValue` instead. This will be removed in the next minor release.
+		 */
+		value?: Record<string, FormValue> | null;
+		/**
 		 * Array of field names to hide from the result by setting them to `undefined`.
 		 * Primarily used for sensitive data like passwords that should not be sent back to the client.
 		 */
@@ -675,13 +693,15 @@ export function report<ErrorShape>(
 		error = normalizeFormError(options.error);
 	}
 
+	const targetValueOption =
+		'targetValue' in options ? options.targetValue : options.value;
 	const targetValue =
-		typeof options.targetValue === 'undefined' ||
-		(submission.payload === options.targetValue && !options.reset)
+		typeof targetValueOption === 'undefined' ||
+		(submission.payload === targetValueOption && !options.reset)
 			? undefined
-			: options.targetValue && !options.keepFiles
-				? stripFiles(options.targetValue)
-				: (options.targetValue ?? {});
+			: targetValueOption && !options.keepFiles
+				? stripFiles(targetValueOption)
+				: (targetValueOption ?? {});
 
 	if (options.hideFields) {
 		for (const name of options.hideFields) {

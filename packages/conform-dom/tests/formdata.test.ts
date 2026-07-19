@@ -1306,6 +1306,25 @@ describe('report', () => {
 			error: undefined,
 		});
 
+		// Deprecated value option remains an alias for one minor release
+		const deprecatedValueResult = report(submission, {
+			value: { name: 'Jane', email: 'jane@example.com' },
+		});
+		expect(deprecatedValueResult.targetValue).toEqual({
+			name: 'Jane',
+			email: 'jane@example.com',
+		});
+
+		// targetValue takes precedence while callers migrate
+		const resultWithBothOptions = report(submission, {
+			value: { name: 'Legacy', email: 'legacy@example.com' },
+			targetValue: { name: 'Target', email: 'target@example.com' },
+		});
+		expect(resultWithBothOptions.targetValue).toEqual({
+			name: 'Target',
+			email: 'target@example.com',
+		});
+
 		// Edge case: when target value equals payload reference, should be undefined
 		const resultEqual = report(submission, {
 			targetValue: submission.payload,
