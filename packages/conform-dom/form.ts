@@ -939,7 +939,7 @@ export function createFormContext<
 	function report(result: SubmissionResult<FormError>) {
 		const formElement = getFormElement();
 
-		if (!result.initialValue) {
+		if (result.initialValue === null) {
 			reset();
 			return;
 		}
@@ -965,7 +965,10 @@ export function createFormContext<
 			pendingIntents,
 			isValueUpdated: false,
 			submissionStatus: result.status,
-			value: result.initialValue,
+			value:
+				typeof result.initialValue !== 'undefined'
+					? result.initialValue
+					: meta.value,
 			validated: {
 				...meta.validated,
 				...result.state?.validated,
