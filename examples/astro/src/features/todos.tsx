@@ -79,7 +79,7 @@ export async function submitTodos(formData: FormData) {
 		success: true as const,
 		result: report(submission, {
 			reset: true,
-			value: result.data,
+			targetValue: result.data,
 		}),
 	};
 }

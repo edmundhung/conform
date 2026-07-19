@@ -565,7 +565,7 @@ export function report(
 	options?: {
 		keepFiles?: false;
 		error?: null;
-		value?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -575,7 +575,7 @@ export function report(
 	options: {
 		keepFiles: true;
 		error?: null;
-		value?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -585,7 +585,7 @@ export function report<ErrorShape>(
 	options: {
 		keepFiles?: false;
 		error: CustomError<ErrorShape> | null;
-		value?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -598,7 +598,7 @@ export function report<ErrorShape>(
 	options: {
 		keepFiles: true;
 		error: CustomError<ErrorShape> | null;
-		value?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -608,7 +608,7 @@ export function report(
 	options: {
 		keepFiles?: false;
 		error: StandardSchemaError;
-		value?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -621,7 +621,7 @@ export function report(
 	options: {
 		keepFiles: true;
 		error: StandardSchemaError;
-		value?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -631,7 +631,7 @@ export function report<ErrorShape>(
 	options?: {
 		keepFiles?: boolean;
 		error?: CustomError<ErrorShape> | null;
-		value?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -650,10 +650,10 @@ export function report<ErrorShape>(
 		 */
 		error?: StandardSchemaError | CustomError<ErrorShape> | null;
 		/**
-		 * The form value to set. Use this to update the form or reset it
+		 * The target form value to apply. Use this to update the form or reset it
 		 * to a specific value when combined with `reset: true`.
 		 */
-		value?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		/**
 		 * Array of field names to hide from the result by setting them to `undefined`.
 		 * Primarily used for sensitive data like passwords that should not be sent back to the client.
@@ -676,12 +676,12 @@ export function report<ErrorShape>(
 	}
 
 	const targetValue =
-		typeof options.value === 'undefined' ||
-		(submission.payload === options.value && !options.reset)
+		typeof options.targetValue === 'undefined' ||
+		(submission.payload === options.targetValue && !options.reset)
 			? undefined
-			: options.value && !options.keepFiles
-				? stripFiles(options.value)
-				: (options.value ?? {});
+			: options.targetValue && !options.keepFiles
+				? stripFiles(options.targetValue)
+				: (options.targetValue ?? {});
 
 	if (options.hideFields) {
 		for (const name of options.hideFields) {

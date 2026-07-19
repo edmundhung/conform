@@ -14,6 +14,28 @@ test('resolveSubmission', () => {
 	} satisfies Record<string, IntentHandler>;
 
 	expect(
+		resolveSubmission({
+			intent: null,
+			payload: { email: 'test@example.com' },
+			fields: ['email'],
+		}),
+	).toEqual({
+		intent: { type: 'submit', payload: undefined },
+		targetValue: { email: 'test@example.com' },
+	});
+
+	expect(
+		resolveSubmission({
+			intent: 'reset',
+			payload: { email: 'test@example.com' },
+			fields: ['email'],
+		}),
+	).toEqual({
+		intent: { type: 'reset', payload: undefined },
+		targetValue: undefined,
+	});
+
+	expect(
 		resolveSubmission(
 			{
 				intent: 'copyField("email")',
@@ -29,7 +51,7 @@ test('resolveSubmission', () => {
 			type: 'copyField',
 			payload: 'email',
 		},
-		value: {
+		targetValue: {
 			email: 'test@example.com',
 			confirm: 'email',
 		},
@@ -48,7 +70,7 @@ test('resolveSubmission', () => {
 		),
 	).toEqual({
 		intent: undefined,
-		value: {
+		targetValue: {
 			email: 'test@example.com',
 		},
 	});

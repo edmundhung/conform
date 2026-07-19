@@ -613,8 +613,10 @@ describe('configureForms', () => {
 		});
 
 		assertType<Record<string, FormValue> | undefined>(
-			resolvedConfiguredSubmission.value,
+			resolvedConfiguredSubmission.targetValue,
 		);
+		// @ts-expect-error resolveSubmission no longer returns `value`
+		void resolvedConfiguredSubmission.value;
 
 		if (resolvedConfiguredSubmission.intent?.type === 'goToStep') {
 			assertType<number>(resolvedConfiguredSubmission.intent.payload.step);
@@ -629,7 +631,7 @@ describe('configureForms', () => {
 		});
 
 		assertType<Record<string, FormValue> | undefined>(
-			unresolvedConfiguredSubmission.value,
+			unresolvedConfiguredSubmission.targetValue,
 		);
 
 		const confirm = defineIntent<string>({

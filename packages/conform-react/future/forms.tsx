@@ -757,21 +757,21 @@ export function configureForms<
 			  >
 			| { type: 'submit'; payload: undefined }
 			| undefined;
-		value: Record<string, FormValue> | undefined;
+		targetValue: Record<string, FormValue> | undefined;
 	} {
 		const handlers = mergeIntentHandlers(
 			globalIntentHandlers,
 			options?.handlers,
 		);
 		const intent = parseIntent(submission.intent, { handlers });
-		const value = resolveIntent(submission, {
+		const targetValue = resolveIntent(submission, {
 			handlers,
 			intent,
 		});
 
 		return {
 			intent,
-			value,
+			targetValue,
 		};
 	}
 
