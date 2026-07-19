@@ -185,7 +185,10 @@ test('report', () => {
 	/** Default behavior strips files from the submission payload and target value. */
 	const defaultResult = report(submission);
 	const explicitStripResult = report(submission, { keepFiles: false });
-	const defaultResultWithValue = report(submission, { value: updatedValue });
+	const defaultResultWithValue = report(submission, {
+		targetValue: updatedValue,
+	});
+	const deprecatedValueResult = report(submission, { value: updatedValue });
 
 	expectTypeOf(defaultResult).toEqualTypeOf<
 		SubmissionResult<never, string | number | boolean | null>
@@ -199,11 +202,14 @@ test('report', () => {
 	expectTypeOf(defaultResultWithValue.targetValue).toEqualTypeOf<
 		Record<string, FormValue<string | number | boolean | null>> | undefined
 	>();
+	expectTypeOf(deprecatedValueResult).toEqualTypeOf<
+		SubmissionResult<never, string | number | boolean | null>
+	>();
 
 	/** `keepFiles: true` preserves file values in both payload and target value. */
 	const keepFilesResult = report(submission, {
 		keepFiles: true,
-		value: updatedValue,
+		targetValue: updatedValue,
 	});
 
 	expectTypeOf(keepFilesResult).toEqualTypeOf<

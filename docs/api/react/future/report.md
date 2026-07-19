@@ -25,9 +25,13 @@ Error information to include in the result. Choose one of these shapes:
 
 Set to `null` to indicate validation passed with no errors. If you need schema issues and additional errors together, append additional issue before calling `report()`, or construct an explicit error payload yourself.
 
-### `options.value?: Record<string, unknown> | null`
+### `options.targetValue?: Record<string, unknown> | null`
 
-The form value to set. Use this to update the form or reset it to a specific value when combined with reset: true.
+The target form value to apply. Use this to update the form or reset it to a specific value when combined with `reset: true`. Pass `null` to apply an empty value.
+
+### `options.value?: Record<string, unknown> | null` (deprecated)
+
+Deprecated alias for `targetValue`. It will be removed in the next minor release. When both options are provided, `targetValue` takes precedence.
 
 ### `options.keepFiles?: boolean`
 
@@ -38,7 +42,7 @@ Controls whether file objects are preserved in the submission payload:
 
 ### `options.hideFields?: string[]`
 
-Array of field names to hide from the result by setting them to `undefined` in both the submission payload and value. Primarily used for sensitive data like passwords that should not be sent back to the client.
+Array of field names to hide from the result by setting them to `undefined` in both the submission payload and target value. Primarily used for sensitive data like passwords that should not be sent back to the client.
 
 ```ts
 report(submission, {
@@ -58,7 +62,7 @@ A `SubmissionResult` object containing:
 
 The processed submission object. May have modified payload if some fields were hidden or files are stripped.
 
-### `targetValue?: Record<string, unknown> | null`
+### `targetValue?: Record<string, unknown>`
 
 The form value to apply, if different from the submission payload.
 

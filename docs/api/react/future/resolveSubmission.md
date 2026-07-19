@@ -20,8 +20,8 @@ const schema = z.object({
 export async function action({ request }) {
   const formData = await request.formData();
   const submission = parseSubmission(formData);
-  const { intent, value } = resolveSubmission(submission);
-  const result = schema.safeParse(value);
+  const { intent, targetValue } = resolveSubmission(submission);
+  const result = schema.safeParse(targetValue);
 
   if (!intent) {
     return new Response('Unknown intent', { status: 400 });
@@ -29,7 +29,7 @@ export async function action({ request }) {
 
   if (intent.type !== 'submit' || !result.success) {
     return report(submission, {
-      value,
+      targetValue,
       error: result.success ? null : result.error,
     });
   }
@@ -57,6 +57,6 @@ Optional intent handlers used to extend or override the configured intent handle
 An object with the following properties:
 
 - `intent`, the parsed intent, or `undefined` when the intent type is unknown or invalid
-- `value`, the value to validate or save
+- `targetValue`, the value to validate or save
 
-If Conform cannot resolve the intent, `value` falls back to the original submission payload.
+If Conform cannot resolve the intent, `targetValue` falls back to the original submission payload.

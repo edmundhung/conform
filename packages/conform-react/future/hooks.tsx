@@ -442,7 +442,7 @@ export function useConform<
 				});
 				const submissionResult = report<ErrorShape>(submission, {
 					keepFiles: true,
-					value,
+					targetValue: value,
 				});
 
 				const validateResult =

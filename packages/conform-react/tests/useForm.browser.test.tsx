@@ -1318,7 +1318,7 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 			<Form
 				lastResult={report(parseSubmission(form.getFormData()), {
 					reset: true,
-					value: {
+					targetValue: {
 						title: 'Updated Title',
 						category: 'work',
 						description: 'Updated Description',
@@ -1365,7 +1365,7 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 		screen.rerender(
 			<Form
 				lastResult={report(parseSubmission(form.getFormData()), {
-					value: {
+					targetValue: {
 						title: 'Server Processed Title',
 						category: 'personal',
 						description: 'Server Updated Description',
@@ -1390,7 +1390,7 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 		screen.rerender(
 			<Form
 				lastResult={report(parseSubmission(form.getFormData()), {
-					value: null,
+					targetValue: null,
 				})}
 			/>,
 		);
@@ -1496,7 +1496,7 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 				defaultValue={defaultValue}
 				lastResult={report(parseSubmission(form.getFormData()), {
 					reset: true,
-					value: {
+					targetValue: {
 						title: 'Server Updated Title',
 						description: 'Server Updated Description',
 						confirmed: false,

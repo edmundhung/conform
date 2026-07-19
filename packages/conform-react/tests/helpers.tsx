@@ -68,7 +68,7 @@ export function createResult(
 	const value = resolveIntent(submission, { handlers, intent });
 
 	return report(submission, {
-		value:
+		targetValue:
 			typeof options?.targetValue !== 'undefined' ? options.targetValue : value,
 		error: options?.error,
 	});
@@ -103,7 +103,7 @@ export function createAction(options: {
 	const intent = parseIntent(submission.intent, { handlers });
 	const value = resolveIntent(submission, { handlers, intent: intent });
 	const result = report(submission, {
-		value:
+		targetValue:
 			options.targetValue !== undefined
 				? options.targetValue
 				: options.reset
