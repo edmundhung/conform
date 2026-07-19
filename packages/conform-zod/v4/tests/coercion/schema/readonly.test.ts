@@ -9,6 +9,7 @@ import {
 	date,
 	bigint,
 	file,
+	array,
 	optional,
 	readonly,
 } from 'zod-v4/mini';
@@ -150,6 +151,32 @@ describe('coercion', () => {
 					g: undefined,
 					h: undefined,
 					i: { value: 7 },
+				},
+			});
+		});
+
+		test('should materialize missing collections wrapped with readonly', () => {
+			const schema = z.object({
+				list: z.array(z.string()).readonly(),
+				nested: z.object({ value: z.string().optional() }).readonly(),
+			});
+			const schemaWithMini = object({
+				list: readonly(array(string())),
+				nested: readonly(object({ value: optional(string()) })),
+			});
+
+			expect(getResult(coerceFormValue(schema).safeParse({}))).toEqual({
+				success: true,
+				data: {
+					list: [],
+					nested: {},
+				},
+			});
+			expect(getResult(coerceFormValue(schemaWithMini).safeParse({}))).toEqual({
+				success: true,
+				data: {
+					list: [],
+					nested: {},
 				},
 			});
 		});

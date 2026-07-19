@@ -234,7 +234,8 @@ function materializesMissingValue(type: $ZodType): boolean {
 		def.type === 'default' ||
 		def.type === 'prefault' ||
 		def.type === 'catch' ||
-		def.type === 'nullable'
+		def.type === 'nullable' ||
+		def.type === 'readonly'
 	) {
 		return materializesMissingValue(
 			(def as unknown as { innerType: $ZodType }).innerType,
