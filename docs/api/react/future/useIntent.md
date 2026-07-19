@@ -324,12 +324,12 @@ function Example() {
         },
       );
 
-      return [
+      return {
         // Synchronous validation result
-        error,
+        result: error,
         // Asynchronous validation result
-        errorPromise,
-      ];
+        pending: errorPromise,
+      };
     },
   });
 

@@ -464,7 +464,14 @@ export function configureForms<
 						);
 					}
 
-					return [validateResult.syncResult, validateResult.asyncResult];
+					if (validateResult.syncResult && validateResult.asyncResult) {
+						return {
+							result: validateResult.syncResult,
+							pending: validateResult.asyncResult,
+						};
+					}
+
+					return validateResult.syncResult ?? validateResult.asyncResult;
 				}
 
 				return (

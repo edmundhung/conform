@@ -365,7 +365,7 @@ describe.each(testCases)(
 		});
 
 		test('array intents with sync validation and async onValidate', async () => {
-			// Test that onInvalid works when onValidate returns [syncResult, asyncPromise]
+			// Test that onInvalid works when onValidate returns a staged result
 			// The sync result provides array errors, async adds other checks
 			const screen = render(
 				<Form
@@ -400,7 +400,10 @@ describe.each(testCases)(
 							fieldErrors: syncError.fieldErrors,
 						});
 
-						return [syncError, asyncResult];
+						return {
+							result: syncError,
+							pending: asyncResult,
+						};
 					}}
 				/>,
 			);

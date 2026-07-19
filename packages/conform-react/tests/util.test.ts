@@ -173,22 +173,45 @@ test('normalizeValidateResult', () => {
 	});
 });
 
-test('resolveValidateResult', () => {
+test('resolveValidateResult', async () => {
+	const unresolved = resolveValidateResult(undefined);
+	expect(unresolved.syncResult).toBeUndefined();
+	expect(unresolved.asyncResult).toBeUndefined();
+
 	// Test Promise result
 	const promiseResult = Promise.resolve(null);
 	const resolved1 = resolveValidateResult(promiseResult);
 	expect(resolved1.syncResult).toBeUndefined();
 	expect(resolved1.asyncResult).toBeInstanceOf(Promise);
 
-	// Test Array result [sync, async]
+	// Test staged result
 	const syncError: FormError<string[]> = {
 		formErrors: ['Sync error'],
 		fieldErrors: {},
 	};
 	const asyncPromise = Promise.resolve(null);
-	const resolved2 = resolveValidateResult([syncError, asyncPromise]);
+	const resolved2 = resolveValidateResult({
+		result: syncError,
+		pending: asyncPromise,
+	});
 	expect(resolved2.syncResult).toEqual({ error: syncError });
 	expect(resolved2.asyncResult).toBeInstanceOf(Promise);
+
+	// Test explicit synchronous success
+	const resolvedNull = resolveValidateResult(null);
+	expect(resolvedNull.syncResult).toEqual({ error: null });
+	expect(resolvedNull.asyncResult).toBeUndefined();
+
+	// Test explicit synchronous success in a staged result
+	const resolvedStagedNull = resolveValidateResult({
+		result: null,
+		pending: Promise.resolve(null),
+	});
+	expect(resolvedStagedNull.syncResult).toEqual({ error: null });
+	expect(resolvedStagedNull.asyncResult).toBeInstanceOf(Promise);
+	await expect(resolvedStagedNull.asyncResult).resolves.toEqual({
+		error: null,
+	});
 
 	// Test direct result
 	const directError: FormError<string[]> = {

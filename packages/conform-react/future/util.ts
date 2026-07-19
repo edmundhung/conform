@@ -154,7 +154,7 @@ export function normalizeValidateResult<ErrorShape, Value>(
 /**
  * Handles different validation result formats:
  * - Promise: async validation only
- * - Array: [syncResult, asyncPromise]
+ * - Staged result: immediate result with a pending result
  * - Object: sync validation only
  */
 export function resolveValidateResult<ErrorShape, Value>(
@@ -165,15 +165,18 @@ export function resolveValidateResult<ErrorShape, Value>(
 
 	if (result instanceof Promise) {
 		asyncResult = result;
-	} else if (Array.isArray(result)) {
-		syncResult = result[0];
-		asyncResult = result[1];
+	} else if (result && 'result' in result && 'pending' in result) {
+		syncResult = result.result;
+		asyncResult = result.pending;
 	} else {
 		syncResult = result;
 	}
 
 	return {
-		syncResult: syncResult ? normalizeValidateResult(syncResult) : undefined,
+		syncResult:
+			typeof syncResult === 'undefined'
+				? undefined
+				: normalizeValidateResult(syncResult),
 		asyncResult: asyncResult
 			? asyncResult.then(normalizeValidateResult)
 			: undefined,

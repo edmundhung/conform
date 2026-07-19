@@ -251,6 +251,41 @@ function DynamicForm() {
 
 ## Tips
 
+### Staged validation for slow async checks
+
+Staged validation lets `onValidate` apply the known validation result immediately while a slower asynchronous check continues. Return `{ result, pending }` to provide both stages:
+
+```tsx
+const schema = z.object({
+  email: z.string().email('Email is invalid'),
+});
+
+const { form } = useForm(schema, {
+  onValidate({ schemaValue, error }) {
+    if (error.fieldErrors.email) {
+      return error;
+    }
+
+    return {
+      result: error,
+      pending: isEmailAvailable(schemaValue.email).then((available) =>
+        available
+          ? error
+          : {
+              formErrors: error.formErrors,
+              fieldErrors: {
+                ...error.fieldErrors,
+                email: ['Email is already used'],
+              },
+            },
+      ),
+    };
+  },
+});
+```
+
+`result` is applied immediately. The `pending` promise replaces rather than merges with `result`, so it should resolve to a full validation result that includes any errors already present in `result`.
+
 ### Field access patterns
 
 Choose the appropriate pattern based on your needs:
