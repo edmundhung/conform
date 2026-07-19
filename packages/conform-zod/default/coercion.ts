@@ -354,6 +354,15 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 			...def,
 			type: enableTypeCoercion(def.type, options),
 		});
+	} else if (def.typeName === 'ZodReadonly') {
+		const constr = type.constructor as new (
+			definition: typeof def,
+		) => ZodTypeAny;
+
+		schema = new constr({
+			...def,
+			innerType: enableTypeCoercion(def.innerType, options),
+		});
 	} else if (def.typeName === 'ZodTuple') {
 		schema = new ZodTuple({
 			...def,

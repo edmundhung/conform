@@ -234,7 +234,8 @@ function materializesMissingValue(type: $ZodType): boolean {
 		def.type === 'default' ||
 		def.type === 'prefault' ||
 		def.type === 'catch' ||
-		def.type === 'nullable'
+		def.type === 'nullable' ||
+		def.type === 'readonly'
 	) {
 		return materializesMissingValue(
 			(def as unknown as { innerType: $ZodType }).innerType,
@@ -463,6 +464,11 @@ function coerceType(type: $ZodType, options: CoerceTypeOptions): $ZodType {
 			items: def.items.map((item: $ZodType) => coerceType(item, options)),
 		});
 	} else if (def.type === 'nullable') {
+		schema = new constr({
+			...def,
+			innerType: coerceType(def.innerType, options),
+		});
+	} else if (def.type === 'readonly') {
 		schema = new constr({
 			...def,
 			innerType: coerceType(def.innerType, options),

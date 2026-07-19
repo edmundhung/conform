@@ -57,6 +57,8 @@ export function getZodConstraint(
 			}
 		} else if (def.typeName === 'ZodEffects') {
 			updateConstraint(def.schema, data, name);
+		} else if (def.typeName === 'ZodReadonly') {
+			updateConstraint(def.innerType, data, name);
 		} else if (def.typeName === 'ZodPipeline') {
 			// FIXME: What to do with .pipe()?
 			updateConstraint(def.out, data, name);
