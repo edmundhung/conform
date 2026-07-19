@@ -13,7 +13,6 @@ import {
 	any,
 	ZodCatch,
 	ZodBranded,
-	ZodReadonly,
 	ZodDefault,
 } from 'zod';
 import type {
@@ -356,7 +355,11 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 			type: enableTypeCoercion(def.type, options),
 		});
 	} else if (def.typeName === 'ZodReadonly') {
-		schema = new ZodReadonly({
+		const constr = type.constructor as new (
+			definition: typeof def,
+		) => ZodTypeAny;
+
+		schema = new constr({
 			...def,
 			innerType: enableTypeCoercion(def.innerType, options),
 		});
