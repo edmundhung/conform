@@ -91,8 +91,6 @@ Server-side submission result for form state synchronization.
 
 Custom validation handler. Can be skipped when a schema is passed as the first argument, or combined with schema validation to customize validation errors.
 
-Return a validation result when it is available immediately, a promise when it is only available asynchronously, or `{ result, pending }` when an immediate result will be replaced by a complete asynchronous result. Returning `null` represents successful validation, while `undefined` means no validation result was provided.
-
 ### `onError?: ErrorHandler<ErrorShape>`
 
 Error handling callback triggered when validation errors occur. By default, it focuses the first invalid field.
@@ -252,6 +250,41 @@ function DynamicForm() {
 ```
 
 ## Tips
+
+### Staged validation for slow async checks
+
+Staged validation lets `onValidate` apply the known validation result immediately while a slower asynchronous check continues. Return `{ result, pending }` to provide both stages:
+
+```tsx
+const schema = z.object({
+  email: z.string().email('Email is invalid'),
+});
+
+const { form } = useForm(schema, {
+  onValidate({ schemaValue, error }) {
+    if (error.fieldErrors.email) {
+      return error;
+    }
+
+    return {
+      result: error,
+      pending: isEmailAvailable(schemaValue.email).then((available) =>
+        available
+          ? error
+          : {
+              formErrors: error.formErrors,
+              fieldErrors: {
+                ...error.fieldErrors,
+                email: ['Email is already used'],
+              },
+            },
+      ),
+    };
+  },
+});
+```
+
+`result` is applied immediately. The `pending` promise replaces rather than merges with `result`, so it should resolve to a full validation result that includes any errors already present in `result`.
 
 ### Field access patterns
 

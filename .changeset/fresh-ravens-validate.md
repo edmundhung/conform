@@ -2,21 +2,39 @@
 '@conform-to/react': minor
 ---
 
-Refine the experimental future validation-result contract.
+Formalized staged validation for the future `useForm()` API.
 
-Returning staged validation from `onValidate` has a breaking change. Replace the positional tuple with a descriptive object:
+Staged validation lets `onValidate` flush the known validation result immediately while a slower asynchronous check continues:
 
-```diff
--return [
--  error,
--  validateRemotely(),
--];
-+return {
-+  result: error,
-+  pending: validateRemotely(),
-+};
+```tsx
+const schema = z.object({
+  email: z.string().email('Email is invalid'),
+});
+
+const { form } = useForm(schema, {
+  onValidate({ schemaValue, error }) {
+    if (error.fieldErrors.email) {
+      return error;
+    }
+
+    return {
+      result: error,
+      pending: isEmailAvailable(schemaValue.email).then((available) =>
+        available
+          ? error
+          : {
+              formErrors: error.formErrors,
+              fieldErrors: {
+                ...error.fieldErrors,
+                email: ['Email is already used'],
+              },
+            },
+      ),
+    };
+  },
+});
 ```
 
-The `pending` promise must resolve to the complete later validation result that replaces `result`.
+The `pending` promise replaces rather than merges with `result`, so it should resolve to a full validation result that includes any errors already present in `result`.
 
-This also fixes synchronous `null` handling. `null` now consistently means that validation completed successfully and clears any previous client error; only `undefined` means no synchronous validation result was provided.
+This also fixed schema-backed validation where returning `null` from `onValidate` could leave a previous client error displayed.
