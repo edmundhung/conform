@@ -15,14 +15,14 @@ function App() {
 
 				<ul>
 					<li>
-						<Link to="login">Basic form with schema validation</Link>
+						<Link to="/login">Basic form with schema validation</Link>
 					</li>
 					<li>
-						<Link to="signup">Async validation</Link> (
-						<Link to="signup-async-schema">with async schema</Link>)
+						<Link to="/signup">Async validation</Link> (
+						<Link to="/signup-async-schema">with async schema</Link>)
 					</li>
 					<li>
-						<Link to="todos">Dynamic form with data persistence</Link>
+						<Link to="/todos">Dynamic form with data persistence</Link>
 					</li>
 				</ul>
 

@@ -18,7 +18,7 @@ export default function Login() {
 	const { form, fields } = useForm({
 		shouldValidate: 'onBlur',
 		onValidate({ payload, error }) {
-			const { email, password } = payload;
+			const { email, password, remember } = payload;
 
 			if (!email) {
 				error.fieldErrors.email = ['Email is required'];
@@ -30,7 +30,7 @@ export default function Login() {
 				error.fieldErrors.password = ['Password is required'];
 			}
 
-			return { error, value: { email, password } };
+			return { error, value: { email, password, remember } };
 		},
 		async onSubmit(event, { value, update }) {
 			event.preventDefault();
@@ -54,8 +54,9 @@ export default function Login() {
 		<form method="post" {...form.props}>
 			<div className="form-error">{form.errors}</div>
 			<div>
-				<label>Email</label>
+				<label htmlFor={fields.email.id}>Email</label>
 				<input
+					id={fields.email.id}
 					type="email"
 					className={!fields.email.valid ? 'error' : ''}
 					name={fields.email.name}
@@ -64,8 +65,9 @@ export default function Login() {
 				<div>{fields.email.errors}</div>
 			</div>
 			<div>
-				<label>Password</label>
+				<label htmlFor={fields.password.id}>Password</label>
 				<input
+					id={fields.password.id}
 					type="password"
 					className={!fields.password.valid ? 'error' : ''}
 					name={fields.password.name}
@@ -73,16 +75,15 @@ export default function Login() {
 				/>
 				<div>{fields.password.errors}</div>
 			</div>
-			<label>
-				<div>
-					<span>Remember me</span>
-					<input
-						type="checkbox"
-						name={fields.remember.name}
-						defaultChecked={fields.remember.defaultChecked}
-					/>
-				</div>
-			</label>
+			<div>
+				<label htmlFor={fields.remember.id}>Remember me</label>
+				<input
+					id={fields.remember.id}
+					type="checkbox"
+					name={fields.remember.name}
+					defaultChecked={fields.remember.defaultChecked}
+				/>
+			</div>
 			<hr />
 			<button>Login</button>
 		</form>
