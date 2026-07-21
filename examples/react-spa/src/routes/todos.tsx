@@ -1,6 +1,5 @@
-import { coerceFormValue } from '@conform-to/zod/v3/future';
+import { coerceFormValue } from '@conform-to/zod/v4/future';
 import { z } from 'zod';
-import { useState } from 'react';
 import { isDirty, useForm, useFormData } from '@conform-to/react/future';
 
 const taskSchema = coerceFormValue(
@@ -30,16 +29,11 @@ async function handleSave(value: z.infer<typeof todosSchema>) {
 }
 
 export default function Todos() {
-	const [defaultValue, setDefaultValue] = useState<z.infer<
-		typeof todosSchema
-	> | null>(null);
 	const { form, fields, intent } = useForm(todosSchema, {
-		defaultValue,
 		async onSubmit(event, { value, update }) {
 			event.preventDefault();
 
 			const error = await handleSave(value);
-			setDefaultValue(value);
 
 			if (error) {
 				update({
@@ -50,27 +44,29 @@ export default function Todos() {
 			} else {
 				update({
 					reset: true,
+					value,
 				});
 			}
 		},
 	});
 	const dirty = useFormData(
 		form.id,
-		(formData) => isDirty(formData, { defaultValue }) ?? false,
+		(formData) =>
+			isDirty(formData, { defaultValue: form.defaultValue }) ?? false,
 	);
 	const tasks = fields.tasks.getFieldList();
 
 	return (
 		<form method="post" {...form.props}>
-			<div>
-				<label>Title</label>
+			<label>
+				<div>Title</div>
 				<input
 					className={!fields.title.valid ? 'error' : ''}
 					name={fields.title.name}
 					defaultValue={fields.title.defaultValue ?? ''}
 				/>
 				<div>{fields.title.errors}</div>
-			</div>
+			</label>
 			<hr />
 			<div className="form-error">{fields.tasks.errors}</div>
 			{tasks.map((task, index) => {
@@ -78,15 +74,15 @@ export default function Todos() {
 
 				return (
 					<fieldset key={task.key}>
-						<div>
-							<label>Task #{index + 1}</label>
+						<label>
+							<div>Task #{index + 1}</div>
 							<input
 								className={!taskFields.content.valid ? 'error' : ''}
 								name={taskFields.content.name}
 								defaultValue={taskFields.content.defaultValue}
 							/>
 							<div>{taskFields.content.errors}</div>
-						</div>
+						</label>
 						<div>
 							<label>
 								<span>Completed</span>
@@ -144,7 +140,10 @@ export default function Todos() {
 			</button>
 			<hr />
 			<button disabled={!dirty}>Save</button>
-			<button type="button" onClick={() => intent.reset()}>
+			<button
+				type="button"
+				onClick={() => intent.reset({ defaultValue: form.defaultValue })}
+			>
 				Reset
 			</button>
 		</form>

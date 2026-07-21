@@ -18,7 +18,7 @@ export default function Login() {
 	const { form, fields } = useForm({
 		shouldValidate: 'onBlur',
 		onValidate({ payload, error }) {
-			const { email, password } = payload;
+			const { email, password, remember } = payload;
 
 			if (!email) {
 				error.fieldErrors.email = ['Email is required'];
@@ -30,7 +30,7 @@ export default function Login() {
 				error.fieldErrors.password = ['Password is required'];
 			}
 
-			return { error, value: { email, password } };
+			return { error, value: { email, password, remember } };
 		},
 		async onSubmit(event, { value, update }) {
 			event.preventDefault();
@@ -53,8 +53,8 @@ export default function Login() {
 	return (
 		<form method="post" {...form.props}>
 			<div className="form-error">{form.errors}</div>
-			<div>
-				<label>Email</label>
+			<label>
+				<div>Email</div>
 				<input
 					type="email"
 					className={!fields.email.valid ? 'error' : ''}
@@ -62,9 +62,9 @@ export default function Login() {
 					defaultValue={fields.email.defaultValue}
 				/>
 				<div>{fields.email.errors}</div>
-			</div>
-			<div>
-				<label>Password</label>
+			</label>
+			<label>
+				<div>Password</div>
 				<input
 					type="password"
 					className={!fields.password.valid ? 'error' : ''}
@@ -72,7 +72,7 @@ export default function Login() {
 					defaultValue={fields.password.defaultValue}
 				/>
 				<div>{fields.password.errors}</div>
-			</div>
+			</label>
 			<label>
 				<div>
 					<span>Remember me</span>
