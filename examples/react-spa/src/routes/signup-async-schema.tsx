@@ -91,36 +91,39 @@ export default function SignupAsyncSchema() {
 	return (
 		<form {...form.props} method="post">
 			<div className="form-error">{form.errors}</div>
-			<label>
-				<div>Username</div>
+			<div>
+				<label htmlFor={fields.username.id}>Username</label>
 				<input
+					id={fields.username.id}
 					type="text"
 					className={!fields.username.valid ? 'error' : ''}
 					name={fields.username.name}
 					defaultValue={fields.username.defaultValue}
 				/>
 				<div>{fields.username.errors}</div>
-			</label>
-			<label>
-				<div>Password</div>
+			</div>
+			<div>
+				<label htmlFor={fields.password.id}>Password</label>
 				<input
+					id={fields.password.id}
 					type="password"
 					className={!fields.password.valid ? 'error' : ''}
 					name={fields.password.name}
 					defaultValue={fields.password.defaultValue}
 				/>
 				<div>{fields.password.errors}</div>
-			</label>
-			<label>
-				<div>Confirm Password</div>
+			</div>
+			<div>
+				<label htmlFor={fields.confirmPassword.id}>Confirm Password</label>
 				<input
+					id={fields.confirmPassword.id}
 					type="password"
 					className={!fields.confirmPassword.valid ? 'error' : ''}
 					name={fields.confirmPassword.name}
 					defaultValue={fields.confirmPassword.defaultValue}
 				/>
 				<div>{fields.confirmPassword.errors}</div>
-			</label>
+			</div>
 			<hr />
 			<button>Signup</button>
 		</form>

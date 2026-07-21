@@ -53,36 +53,37 @@ export default function Login() {
 	return (
 		<form method="post" {...form.props}>
 			<div className="form-error">{form.errors}</div>
-			<label>
-				<div>Email</div>
+			<div>
+				<label htmlFor={fields.email.id}>Email</label>
 				<input
+					id={fields.email.id}
 					type="email"
 					className={!fields.email.valid ? 'error' : ''}
 					name={fields.email.name}
 					defaultValue={fields.email.defaultValue}
 				/>
 				<div>{fields.email.errors}</div>
-			</label>
-			<label>
-				<div>Password</div>
+			</div>
+			<div>
+				<label htmlFor={fields.password.id}>Password</label>
 				<input
+					id={fields.password.id}
 					type="password"
 					className={!fields.password.valid ? 'error' : ''}
 					name={fields.password.name}
 					defaultValue={fields.password.defaultValue}
 				/>
 				<div>{fields.password.errors}</div>
-			</label>
-			<label>
-				<div>
-					<span>Remember me</span>
-					<input
-						type="checkbox"
-						name={fields.remember.name}
-						defaultChecked={fields.remember.defaultChecked}
-					/>
-				</div>
-			</label>
+			</div>
+			<div>
+				<label htmlFor={fields.remember.id}>Remember me</label>
+				<input
+					id={fields.remember.id}
+					type="checkbox"
+					name={fields.remember.name}
+					defaultChecked={fields.remember.defaultChecked}
+				/>
+			</div>
 			<hr />
 			<button>Login</button>
 		</form>

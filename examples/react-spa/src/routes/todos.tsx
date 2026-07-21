@@ -58,15 +58,16 @@ export default function Todos() {
 
 	return (
 		<form method="post" {...form.props}>
-			<label>
-				<div>Title</div>
+			<div>
+				<label htmlFor={fields.title.id}>Title</label>
 				<input
+					id={fields.title.id}
 					className={!fields.title.valid ? 'error' : ''}
 					name={fields.title.name}
 					defaultValue={fields.title.defaultValue ?? ''}
 				/>
 				<div>{fields.title.errors}</div>
-			</label>
+			</div>
 			<hr />
 			<div className="form-error">{fields.tasks.errors}</div>
 			{tasks.map((task, index) => {
@@ -74,25 +75,25 @@ export default function Todos() {
 
 				return (
 					<fieldset key={task.key}>
-						<label>
-							<div>Task #{index + 1}</div>
+						<div>
+							<label htmlFor={taskFields.content.id}>Task #{index + 1}</label>
 							<input
+								id={taskFields.content.id}
 								className={!taskFields.content.valid ? 'error' : ''}
 								name={taskFields.content.name}
 								defaultValue={taskFields.content.defaultValue}
 							/>
 							<div>{taskFields.content.errors}</div>
-						</label>
+						</div>
 						<div>
-							<label>
-								<span>Completed</span>
-								<input
-									type="checkbox"
-									className={!taskFields.completed.valid ? 'error' : ''}
-									name={taskFields.completed.name}
-									defaultChecked={taskFields.completed.defaultChecked}
-								/>
-							</label>
+							<label htmlFor={taskFields.completed.id}>Completed</label>
+							<input
+								id={taskFields.completed.id}
+								type="checkbox"
+								className={!taskFields.completed.valid ? 'error' : ''}
+								name={taskFields.completed.name}
+								defaultChecked={taskFields.completed.defaultChecked}
+							/>
 						</div>
 						<button
 							type="button"
