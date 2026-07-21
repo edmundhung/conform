@@ -1,14 +1,14 @@
 import { useForm, parseSubmission, report } from '@conform-to/react/future';
-import { coerceFormValue, formatResult } from '@conform-to/zod/v3/future';
+import { coerceFormValue, formatResult } from '@conform-to/zod/v4/future';
 import { Form, redirect } from 'react-router';
 import { z } from 'zod';
-import type { Route } from './+types/signup';
+import type { Route } from './+types/signup-server-validation';
 
 const schema = coerceFormValue(
 	z
 		.object({
 			username: z
-				.string({ required_error: 'Username is required' })
+				.string({ error: 'Username is required' })
 				.regex(
 					/^[a-zA-Z0-9]+$/,
 					'Invalid username: only letters or numbers are allowed',
@@ -17,9 +17,9 @@ const schema = coerceFormValue(
 		.and(
 			z
 				.object({
-					password: z.string({ required_error: 'Password is required' }),
+					password: z.string({ error: 'Password is required' }),
 					confirmPassword: z.string({
-						required_error: 'Confirm password is required',
+						error: 'Confirm password is required',
 					}),
 				})
 				.refine((data) => data.password === data.confirmPassword, {

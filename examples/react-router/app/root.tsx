@@ -58,6 +58,9 @@ export default function App() {
 				<li>
 					<Link to="todos">Dynamic form with data persistence</Link>
 				</li>
+				<li>
+					<Link to="file-upload">File upload</Link>
+				</li>
 			</ul>
 
 			<hr />

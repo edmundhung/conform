@@ -4,7 +4,7 @@ import {
 	memoize,
 	report,
 } from '@conform-to/react/future';
-import { coerceFormValue } from '@conform-to/zod/v3/future';
+import { coerceFormValue } from '@conform-to/zod/v4/future';
 import { useMemo } from 'react';
 import { Form, redirect } from 'react-router';
 import { z } from 'zod';
@@ -14,7 +14,7 @@ const schema = coerceFormValue(
 	z
 		.object({
 			username: z
-				.string({ required_error: 'Username is required' })
+				.string({ error: 'Username is required' })
 				.regex(
 					/^[a-zA-Z0-9]+$/,
 					'Invalid username: only letters or numbers are allowed',
@@ -23,9 +23,9 @@ const schema = coerceFormValue(
 		.and(
 			z
 				.object({
-					password: z.string({ required_error: 'Password is required' }),
+					password: z.string({ error: 'Password is required' }),
 					confirmPassword: z.string({
-						required_error: 'Confirm password is required',
+						error: 'Confirm password is required',
 					}),
 				})
 				.refine((data) => data.password === data.confirmPassword, {

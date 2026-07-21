@@ -1,15 +1,13 @@
 import { useForm, parseSubmission, report } from '@conform-to/react/future';
-import { coerceFormValue } from '@conform-to/zod/v3/future';
+import { coerceFormValue } from '@conform-to/zod/v4/future';
 import { redirect, useFetcher } from 'react-router';
 import { z } from 'zod';
 import type { Route } from './+types/login-fetcher';
 
 const schema = coerceFormValue(
 	z.object({
-		email: z
-			.string({ required_error: 'Email is required' })
-			.email('Email is invalid'),
-		password: z.string({ required_error: 'Password is required' }),
+		email: z.string({ error: 'Email is required' }).email('Email is invalid'),
+		password: z.string({ error: 'Password is required' }),
 		remember: z.boolean().default(false),
 	}),
 );
@@ -29,6 +27,18 @@ export async function action({ request }: Route.ActionArgs) {
 		};
 	}
 
+	if (result.data.password !== 'password123') {
+		return {
+			result: report(submission, {
+				error: {
+					fieldErrors: {
+						password: ['Password is incorrect'],
+					},
+				},
+			}),
+		};
+	}
+
 	throw redirect(`/?value=${JSON.stringify(submission.payload)}`);
 }
 
@@ -39,6 +49,7 @@ export default function LoginWithFetcher() {
 		// Sync the result of last submission
 		lastResult: fetcher.data?.result,
 		shouldValidate: 'onBlur',
+		shouldRevalidate: 'onInput',
 	});
 
 	return (

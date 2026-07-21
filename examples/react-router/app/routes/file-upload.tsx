@@ -2,12 +2,12 @@ import { parseSubmission, report, useForm } from '@conform-to/react/future';
 import { z } from 'zod';
 import { Form, redirect } from 'react-router';
 import type { Route } from './+types/file-upload';
-import { coerceFormValue } from '@conform-to/zod/v3/future';
+import { coerceFormValue } from '@conform-to/zod/v4/future';
 
 const schema = coerceFormValue(
 	z.object({
 		title: z.string().min(1, 'Title is required'),
-		file: z.instanceof(File, { message: 'File is required' }),
+		file: z.file({ error: 'File is required' }),
 	}),
 );
 
@@ -26,7 +26,16 @@ export async function action({ request }: Route.ActionArgs) {
 		};
 	}
 
-	throw redirect(`/?value=${JSON.stringify(submission.payload)}`);
+	throw redirect(
+		`/?value=${JSON.stringify({
+			title: result.data.title,
+			file: {
+				name: result.data.file.name,
+				size: result.data.file.size,
+				type: result.data.file.type,
+			},
+		})}`,
+	);
 }
 
 export default function Login({ actionData }: Route.ComponentProps) {

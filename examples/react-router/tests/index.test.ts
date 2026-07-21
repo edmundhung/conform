@@ -49,6 +49,54 @@ test.describe('react-router', () => {
 					remember: 'on',
 				});
 			});
+
+			if (name === 'login-fetcher') {
+				test('server validation', async ({ page }) => {
+					const form = await getForm(page);
+
+					await form.email.fill('test@example.com');
+					await form.password.fill('wrong-password');
+					await form.submitButton.click();
+
+					await expect(form.password).toHaveAccessibleDescription(
+						'Password is incorrect',
+					);
+
+					await form.password.fill('password123');
+					await expect(form.password).toHaveAccessibleDescription('');
+					await form.submitButton.click();
+
+					await expect.poll(form.submittedValue).toMatchObject({
+						email: 'test@example.com',
+						password: 'password123',
+					});
+				});
+			}
+
+			if (name === 'login') {
+				test('server validation without JavaScript', async ({ browser }) => {
+					const page = await browser.newPage({ javaScriptEnabled: false });
+					const form = await getForm(page);
+
+					await form.submitButton.click();
+					await expect(form.email).toHaveAccessibleDescription(
+						'Email is required',
+					);
+					await expect(form.password).toHaveAccessibleDescription(
+						'Password is required',
+					);
+
+					await form.email.fill('progressive@example.com');
+					await form.password.fill('password123');
+					await form.submitButton.click();
+
+					await expect.poll(form.submittedValue).toMatchObject({
+						email: 'progressive@example.com',
+						password: 'password123',
+					});
+					await page.close();
+				});
+			}
 		});
 	}
 
@@ -105,6 +153,21 @@ test.describe('react-router', () => {
 					confirmPassword: 'secret',
 				});
 			});
+
+			if (name === 'signup-server-validation') {
+				test('server validation', async ({ page }) => {
+					const form = await getForm(page);
+
+					await form.username.fill('taken');
+					await form.password.fill('secret');
+					await form.confirmPassword.fill('secret');
+					await form.submitButton.click();
+
+					await expect(form.username).toHaveAccessibleDescription(
+						'Username is already used. How about "example"?',
+					);
+				});
+			}
 		});
 	}
 
@@ -176,6 +239,40 @@ test.describe('react-router', () => {
 			await expect(form.title).toHaveValue('My Todo List');
 			await expect(page.getByLabel('Task #1')).toHaveValue('Task C');
 			await expect(page.getByLabel('Task #2')).toHaveValue('Task B');
+		});
+	});
+
+	test.describe('file-upload', () => {
+		async function getForm(page: Page) {
+			await page.goto('/file-upload');
+
+			return {
+				submitButton: page.getByRole('button', { name: 'Submit' }),
+				submittedValue: () => page.locator('pre').innerText().then(JSON.parse),
+				title: page.getByLabel('Title'),
+				file: page.getByLabel('File'),
+			};
+		}
+
+		test('submit', async ({ page }) => {
+			const form = await getForm(page);
+
+			await form.title.fill('Attachment');
+			await form.file.setInputFiles({
+				name: 'example.txt',
+				mimeType: 'text/plain',
+				buffer: Buffer.from('React Router v8 upload'),
+			});
+			await form.submitButton.click();
+
+			await expect.poll(form.submittedValue).toEqual({
+				title: 'Attachment',
+				file: {
+					name: 'example.txt',
+					size: 22,
+					type: 'text/plain',
+				},
+			});
 		});
 	});
 });
