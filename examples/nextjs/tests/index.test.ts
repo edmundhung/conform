@@ -249,7 +249,9 @@ test.describe('nextjs', () => {
 				await expect(form.saveButton).toBeEnabled();
 				await form.saveButton.click();
 
-				await expect(form.title).not.toHaveAccessibleDescription('');
+				await expect(form.title).toHaveAccessibleDescription(
+					'Invalid input: expected string, received undefined',
+				);
 				await expect(form.saveButton).toBeEnabled();
 			});
 		});
