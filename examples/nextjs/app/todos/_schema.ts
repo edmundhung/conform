@@ -1,4 +1,4 @@
-import { coerceFormValue } from '@conform-to/zod/v3/future';
+import { coerceFormValue } from '@conform-to/zod/v4/future';
 import { z } from 'zod';
 
 export const taskSchema = z.object({

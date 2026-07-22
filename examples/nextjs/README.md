@@ -1,9 +1,10 @@
-# NextJS Example
+# Next.js Example
 
-This example demonstrates the following features:
+This Next.js 16 App Router example demonstrates:
 
-- [Basic form with manual validation](./app/login/)
-- [Async validation](./app/signup/) ([with async schema](./app/signup-async-schema/))
-- [Dynamic form with data persistence](./app/todos/)
+- [Manual login validation](./app/login/)
+- [Signup with asynchronous validation](./app/signup/)
+- [Signup with an asynchronous Zod 4 schema](./app/signup-async-schema/)
+- [Dynamic todos with persistence, dirty-state tracking, and list intents](./app/todos/)
 
-Try it out on [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/nextjs).
+Try it on [StackBlitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/nextjs).

@@ -20,7 +20,7 @@ export async function createTodos(_: unknown, formData: FormData) {
 	}
 
 	await updateTodos(result.data, storeId);
-	await revalidatePath('/todos');
+	revalidatePath('/todos');
 
 	return report(submission, {
 		reset: true,

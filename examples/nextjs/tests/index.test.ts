@@ -49,6 +49,33 @@ test.describe('nextjs', () => {
 				remember: 'on',
 			});
 		});
+
+		test.describe('without JavaScript', () => {
+			test.use({ javaScriptEnabled: false });
+
+			test('submit', async ({ page }) => {
+				const form = await getForm(page);
+
+				await form.submitButton.click();
+				await expect(form.email).toHaveAccessibleDescription(
+					'Email is required',
+				);
+				await expect(form.password).toHaveAccessibleDescription(
+					'Password is required',
+				);
+
+				await form.email.fill('progressive@example.com');
+				await form.password.fill('password123');
+				await form.remember.check();
+				await form.submitButton.click();
+
+				await expect.poll(form.submittedValue).toMatchObject({
+					email: 'progressive@example.com',
+					password: 'password123',
+					remember: 'on',
+				});
+			});
+		});
 	});
 
 	for (const { name, path } of [
@@ -108,6 +135,36 @@ test.describe('nextjs', () => {
 					});
 				}
 			});
+
+			test.describe('without JavaScript', () => {
+				test.use({ javaScriptEnabled: false });
+
+				test('submit', async ({ page }) => {
+					const form = await getForm(page);
+
+					await form.submitButton.click();
+					await expect(form.username).toHaveAccessibleDescription(
+						'Username is required',
+					);
+					await expect(form.password).toHaveAccessibleDescription(
+						'Password is required',
+					);
+					await expect(form.confirmPassword).toHaveAccessibleDescription(
+						'Confirm password is required',
+					);
+
+					await form.username.fill('example');
+					await form.password.fill('secret');
+					await form.confirmPassword.fill('secret');
+					await form.submitButton.click();
+
+					await expect.poll(form.submittedValue).toMatchObject({
+						username: 'example',
+						password: 'secret',
+						confirmPassword: 'secret',
+					});
+				});
+			});
 		});
 	}
 
@@ -127,6 +184,7 @@ test.describe('nextjs', () => {
 
 		test('submit', async ({ page }) => {
 			const form = await getForm(page);
+			await expect(form.saveButton).toBeDisabled();
 
 			// Insert 3 tasks
 			await form.addTaskButton.click();
@@ -179,6 +237,21 @@ test.describe('nextjs', () => {
 			await expect(form.title).toHaveValue('My Todo List');
 			await expect(page.getByLabel('Task #1')).toHaveValue('Task C');
 			await expect(page.getByLabel('Task #2')).toHaveValue('Task B');
+		});
+
+		test.describe('without JavaScript', () => {
+			test.use({ javaScriptEnabled: false });
+
+			test('submit', async ({ page }) => {
+				const form = await getForm(page);
+
+				// The server fallback keeps the native submit button available before hydration.
+				await expect(form.saveButton).toBeEnabled();
+				await form.saveButton.click();
+
+				await expect(form.title).not.toHaveAccessibleDescription('');
+				await expect(form.saveButton).toBeEnabled();
+			});
 		});
 	});
 });
