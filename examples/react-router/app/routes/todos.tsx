@@ -5,7 +5,7 @@ import {
 	useForm,
 	useFormData,
 } from '@conform-to/react/future';
-import { coerceFormValue } from '@conform-to/zod/v3/future';
+import { coerceFormValue } from '@conform-to/zod/v4/future';
 import { Form } from 'react-router';
 import { z } from 'zod';
 import { createInMemoryStore } from '~/store';
@@ -24,8 +24,7 @@ const todosSchema = z.object({
 const schema = coerceFormValue(todosSchema);
 const todos = createInMemoryStore<z.infer<typeof schema>>();
 
-export async function loader({ request }: Route.LoaderArgs) {
-	const url = new URL(request.url);
+export async function loader({ url }: Route.LoaderArgs) {
 	const id = url.searchParams.get('id') ?? undefined;
 
 	return {
