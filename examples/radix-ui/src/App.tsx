@@ -1,4 +1,4 @@
-import { coerceFormValue } from '@conform-to/zod/v3/future';
+import { coerceFormValue } from '@conform-to/zod/v4/future';
 import { useState } from 'react';
 import { z } from 'zod';
 import {
@@ -73,18 +73,28 @@ export default function App() {
 						<ExampleCheckbox
 							{...fields.isTermsAgreed.checkboxProps}
 							// Equivalent to:
+							// id={fields.isTermsAgreed.id}
 							// name={fields.isTermsAgreed.name}
 							// value="on"
 							// defaultChecked={fields.isTermsAgreed.defaultChecked}
+							// aria-invalid={fields.isTermsAgreed.ariaInvalid}
+							// aria-describedby={fields.isTermsAgreed.ariaDescribedBy}
 						/>
-						<label>Accept terms and conditions.</label>
+						<label htmlFor={fields.isTermsAgreed.id}>
+							Accept terms and conditions.
+						</label>
 					</div>
-					<span className="text-red-500">{fields.isTermsAgreed.errors}</span>
+					<span
+						id={fields.isTermsAgreed.errorId}
+						className="text-red-500 min-h-6"
+					>
+						{fields.isTermsAgreed.errors}
+					</span>
 				</div>
 				<div className="flex flex-col gap-2">
 					<h2 className="font-medium">Radio Group</h2>
 					<div className="flex flex-col gap-2">
-						Car type:
+						<span id={`${fields.carType.id}-label`}>Car type:</span>
 						<ExampleRadioGroup
 							items={[
 								{ value: 'sedan', label: 'Sedan' },
@@ -94,15 +104,21 @@ export default function App() {
 							]}
 							{...fields.carType.radioGroupProps}
 							// Equivalent to:
+							// id={fields.carType.id}
 							// name={fields.carType.name}
 							// defaultValue={fields.carType.defaultValue}
+							// aria-invalid={fields.carType.ariaInvalid}
+							// aria-describedby={fields.carType.ariaDescribedBy}
+							// aria-labelledby={`${fields.carType.id}-label`}
 						/>
-						<span className="text-red-500">{fields.carType.errors}</span>
+						<span id={fields.carType.errorId} className="text-red-500 min-h-6">
+							{fields.carType.errors}
+						</span>
 					</div>
 				</div>
 				<div className="flex flex-col gap-2 items-start">
-					<h2 className="text-medium">Select</h2>
-					<label>Country</label>
+					<h2 className="font-medium">Select</h2>
+					<label htmlFor={fields.userCountry.id}>Country</label>
 					<ExampleSelect
 						placeholder="Select a country 🗺"
 						items={[
@@ -112,23 +128,40 @@ export default function App() {
 						]}
 						{...fields.userCountry.selectProps}
 						// Equivalent to:
+						// id={fields.userCountry.id}
 						// name={fields.userCountry.name}
 						// defaultValue={fields.userCountry.defaultValue}
+						// aria-invalid={fields.userCountry.ariaInvalid}
+						// aria-describedby={fields.userCountry.ariaDescribedBy}
 					/>
-					<span className="text-red-500">{fields.userCountry.errors}</span>
+					<span
+						id={fields.userCountry.errorId}
+						className="text-red-500 min-h-6"
+					>
+						{fields.userCountry.errors}
+					</span>
 				</div>
 				<div className="flex flex-col gap-2">
 					<h2 className="font-medium">Slider</h2>
 					<div className="flex flex-col gap-2">
-						Estimated kilometers per year:
+						<span id={`${fields.estimatedKilometersPerYear.id}-label`}>
+							Estimated kilometers per year:
+						</span>
 						<ExampleSlider
 							max={10_000}
 							{...fields.estimatedKilometersPerYear.sliderProps}
 							// Equivalent to:
+							// id={fields.estimatedKilometersPerYear.id}
 							// name={fields.estimatedKilometersPerYear.name}
 							// defaultValue={fields.estimatedKilometersPerYear.defaultValue}
+							// aria-invalid={fields.estimatedKilometersPerYear.ariaInvalid}
+							// aria-describedby={fields.estimatedKilometersPerYear.ariaDescribedBy}
+							// aria-labelledby={`${fields.estimatedKilometersPerYear.id}-label`}
 						/>
-						<span className="text-red-500">
+						<span
+							id={fields.estimatedKilometersPerYear.errorId}
+							className="text-red-500 min-h-6"
+						>
 							{fields.estimatedKilometersPerYear.errors}
 						</span>
 					</div>
@@ -139,18 +172,25 @@ export default function App() {
 						<ExampleSwitch
 							{...fields.insurance.switchProps}
 							// Equivalent to:
+							// id={fields.insurance.id}
 							// name={fields.insurance.name}
 							// value="on"
 							// defaultChecked={fields.insurance.defaultChecked}
+							// aria-invalid={fields.insurance.ariaInvalid}
+							// aria-describedby={fields.insurance.ariaDescribedBy}
 						/>
-						<label>Insurance</label>
+						<label htmlFor={fields.insurance.id}>Insurance</label>
 					</div>
-					<span className="text-red-500">{fields.insurance.errors}</span>
+					<span id={fields.insurance.errorId} className="text-red-500 min-h-6">
+						{fields.insurance.errors}
+					</span>
 				</div>
 				<div className="flex flex-col gap-2">
 					<h2 className="font-medium">Toggle group</h2>
 					<div className="flex flex-col gap-2">
-						Desired contract type:
+						<span id={`${fields.desiredContractType.id}-label`}>
+							Desired contract type:
+						</span>
 						<ExampleToggleGroup
 							items={[
 								{ value: 'full', label: 'Full' },
@@ -159,10 +199,17 @@ export default function App() {
 							]}
 							{...fields.desiredContractType.toggleGroupProps}
 							// Equivalent to:
+							// id={fields.desiredContractType.id}
 							// name={fields.desiredContractType.name}
 							// defaultValue={fields.desiredContractType.defaultValue}
+							// aria-invalid={fields.desiredContractType.ariaInvalid}
+							// aria-describedby={fields.desiredContractType.ariaDescribedBy}
+							// aria-labelledby={`${fields.desiredContractType.id}-label`}
 						/>
-						<span className="text-red-500">
+						<span
+							id={fields.desiredContractType.errorId}
+							className="text-red-500 min-h-6"
+						>
 							{fields.desiredContractType.errors}
 						</span>
 					</div>

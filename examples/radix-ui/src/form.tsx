@@ -13,22 +13,28 @@ import {
 	RadioGroup as RadixRadioGroup,
 } from 'radix-ui';
 import clsx from 'clsx';
-import { type ElementRef, useRef } from 'react';
+import { type ComponentRef, useRef } from 'react';
 
 export type ExampleSelectProps = {
+	id: string;
 	name: string;
 	items: Array<{ name: string; value: string }>;
 	placeholder?: string;
 	defaultValue?: string;
+	'aria-describedby'?: string;
+	'aria-invalid'?: boolean;
 };
 
 export function ExampleSelect({
+	id,
 	name,
 	items,
 	placeholder,
 	defaultValue,
+	'aria-describedby': ariaDescribedBy,
+	'aria-invalid': ariaInvalid,
 }: ExampleSelectProps) {
-	const selectRef = useRef<ElementRef<typeof RadixSelect.Trigger>>(null);
+	const selectRef = useRef<ComponentRef<typeof RadixSelect.Trigger>>(null);
 	const control = useControl({
 		defaultValue,
 		onFocus() {
@@ -49,6 +55,9 @@ export function ExampleSelect({
 				}}
 			>
 				<RadixSelect.Trigger
+					id={id}
+					aria-describedby={ariaDescribedBy}
+					aria-invalid={ariaInvalid}
 					ref={selectRef}
 					className="w-1/2 inline-flex items-center justify-between rounded-md px-4 py-2 gap-1 bg-white border hover:bg-neutral-500/30 focus:ring-2 focus:ring-neutral-500 data-[placeholder]:text-neutral-400 outline-none"
 				>
@@ -62,7 +71,7 @@ export function ExampleSelect({
 						position="popper"
 						side="bottom"
 						sideOffset={5}
-						className="overflow-hidden bg-white rounded-md shadow-md w-[--radix-select-trigger-width]"
+						className="overflow-hidden bg-white rounded-md shadow-md w-(--radix-select-trigger-width)"
 					>
 						<RadixSelect.ScrollUpButton className="flex items-center justify-center h-6 bg-white text-neutral-700 cursor-default">
 							<ChevronUpIcon />
@@ -97,21 +106,34 @@ export function ExampleSelect({
 }
 
 export type ExampleToggleGroupProps = {
+	id: string;
 	name: string;
 	items: Array<{ label: string; value: string }>;
 	defaultValue?: string;
+	'aria-describedby'?: string;
+	'aria-invalid'?: boolean;
+	'aria-labelledby'?: string;
 };
 
 export function ExampleToggleGroup({
+	id,
 	name,
 	items,
 	defaultValue,
+	'aria-describedby': ariaDescribedBy,
+	'aria-invalid': ariaInvalid,
+	'aria-labelledby': ariaLabelledBy,
 }: ExampleToggleGroupProps) {
-	const toggleGroupRef = useRef<ElementRef<typeof RadixToggleGroup.Root>>(null);
+	const toggleGroupRef =
+		useRef<ComponentRef<typeof RadixToggleGroup.Root>>(null);
 	const control = useControl({
 		defaultValue,
 		onFocus() {
-			toggleGroupRef.current?.focus();
+			const item =
+				toggleGroupRef.current?.querySelector<HTMLElement>(
+					'[data-state="on"]',
+				) ?? toggleGroupRef.current?.querySelector<HTMLElement>('button');
+			item?.focus();
 		},
 	});
 
@@ -119,6 +141,10 @@ export function ExampleToggleGroup({
 		<>
 			<input ref={control.register} name={name} hidden />
 			<RadixToggleGroup.Root
+				id={id}
+				aria-describedby={ariaDescribedBy}
+				aria-invalid={ariaInvalid}
+				aria-labelledby={ariaLabelledBy}
 				type="single"
 				value={control.value}
 				ref={toggleGroupRef}
@@ -126,7 +152,12 @@ export function ExampleToggleGroup({
 					'flex flex-row items-center p-1 gap-0 bg-neutral-200 rounded-lg max-w-md'
 				}
 				onValueChange={(value) => control.change(value)}
-				onBlur={() => control.blur()}
+				onBlur={(event) => {
+					// Ignore blur events when focus moves between items in the group.
+					if (!event.currentTarget.contains(event.relatedTarget)) {
+						control.blur();
+					}
+				}}
 			>
 				{items.map((item) => (
 					<RadixToggleGroup.Item
@@ -144,17 +175,23 @@ export function ExampleToggleGroup({
 }
 
 export type ExampleSwitchProps = {
+	id: string;
 	name: string;
 	value?: string;
 	defaultChecked?: boolean;
+	'aria-describedby'?: string;
+	'aria-invalid'?: boolean;
 };
 
 export function ExampleSwitch({
+	id,
 	name,
 	value,
 	defaultChecked,
+	'aria-describedby': ariaDescribedBy,
+	'aria-invalid': ariaInvalid,
 }: ExampleSwitchProps) {
-	const switchRef = useRef<ElementRef<typeof RadixSwitch.Root>>(null);
+	const switchRef = useRef<ComponentRef<typeof RadixSwitch.Root>>(null);
 	const control = useControl({
 		defaultChecked,
 		value,
@@ -167,6 +204,9 @@ export function ExampleSwitch({
 		<>
 			<input type="checkbox" ref={control.register} name={name} hidden />
 			<RadixSwitch.Root
+				id={id}
+				aria-describedby={ariaDescribedBy}
+				aria-invalid={ariaInvalid}
 				ref={switchRef}
 				checked={control.checked}
 				onCheckedChange={(checked) => control.change(checked)}
@@ -180,17 +220,25 @@ export function ExampleSwitch({
 }
 
 export type ExampleSliderProps = {
+	id: string;
 	name: string;
 	max?: number;
 	defaultValue?: string;
+	'aria-describedby'?: string;
+	'aria-invalid'?: boolean;
+	'aria-labelledby'?: string;
 };
 
 export function ExampleSlider({
+	id,
 	name,
 	max = 100,
 	defaultValue,
+	'aria-describedby': ariaDescribedBy,
+	'aria-invalid': ariaInvalid,
+	'aria-labelledby': ariaLabelledBy,
 }: ExampleSliderProps) {
-	const thumbRef = useRef<ElementRef<typeof RadixSlider.Thumb>>(null);
+	const thumbRef = useRef<ComponentRef<typeof RadixSlider.Thumb>>(null);
 	const control = useControl({
 		defaultValue,
 		onFocus() {
@@ -215,6 +263,10 @@ export function ExampleSlider({
 					<RadixSlider.Range className="absolute bg-neutral-700/40 rounded-full h-full" />
 				</RadixSlider.Track>
 				<RadixSlider.Thumb
+					id={id}
+					aria-describedby={ariaDescribedBy}
+					aria-invalid={ariaInvalid}
+					aria-labelledby={ariaLabelledBy}
 					ref={thumbRef}
 					className="block size-5 shadow-md rounded-full bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-500 border"
 				/>
@@ -225,21 +277,34 @@ export function ExampleSlider({
 }
 
 export type ExampleRadioGroupProps = {
+	id: string;
 	name: string;
 	items: Array<{ value: string; label: string }>;
 	defaultValue?: string;
+	'aria-describedby'?: string;
+	'aria-invalid'?: boolean;
+	'aria-labelledby'?: string;
 };
 
 export function ExampleRadioGroup({
+	id,
 	name,
 	items,
 	defaultValue,
+	'aria-describedby': ariaDescribedBy,
+	'aria-invalid': ariaInvalid,
+	'aria-labelledby': ariaLabelledBy,
 }: ExampleRadioGroupProps) {
-	const radioGroupRef = useRef<ElementRef<typeof RadixRadioGroup.Root>>(null);
+	const radioGroupRef = useRef<ComponentRef<typeof RadixRadioGroup.Root>>(null);
 	const control = useControl({
 		defaultValue,
 		onFocus() {
-			radioGroupRef.current?.focus();
+			const item =
+				radioGroupRef.current?.querySelector<HTMLElement>(
+					'[data-state="checked"]',
+				) ??
+				radioGroupRef.current?.querySelector<HTMLElement>('[role="radio"]');
+			item?.focus();
 		},
 	});
 
@@ -247,17 +312,28 @@ export function ExampleRadioGroup({
 		<>
 			<input ref={control.register} name={name} hidden />
 			<RadixRadioGroup.Root
+				id={id}
+				aria-describedby={ariaDescribedBy}
+				aria-invalid={ariaInvalid}
+				aria-labelledby={ariaLabelledBy}
 				ref={radioGroupRef}
 				className="flex items-center gap-4"
 				value={control.value ?? ''}
 				onValueChange={(value) => control.change(value)}
-				onBlur={() => control.blur()}
+				onBlur={(event) => {
+					// Ignore blur events when focus moves between items in the group.
+					if (!event.currentTarget.contains(event.relatedTarget)) {
+						control.blur();
+					}
+				}}
 			>
 				{items.map((item) => {
+					const itemId = `${id}-${item.value}`;
+
 					return (
 						<div className="flex items-center gap-2" key={item.value}>
 							<RadixRadioGroup.Item
-								id={item.value}
+								id={itemId}
 								value={item.value}
 								className={clsx(
 									'size-5 rounded-full outline-none cursor-default',
@@ -268,7 +344,7 @@ export function ExampleRadioGroup({
 							>
 								<RadixRadioGroup.Indicator className="flex items-center justify-center w-full h-full relative after:content-[''] after:block after:size-2.5 after:rounded-full after:bg-neutral-700" />
 							</RadixRadioGroup.Item>
-							<label htmlFor={item.value}>{item.label}</label>
+							<label htmlFor={itemId}>{item.label}</label>
 						</div>
 					);
 				})}
@@ -278,17 +354,23 @@ export function ExampleRadioGroup({
 }
 
 export type ExampleCheckboxProps = {
+	id: string;
 	name: string;
 	value?: string;
 	defaultChecked?: boolean;
+	'aria-describedby'?: string;
+	'aria-invalid'?: boolean;
 };
 
 export function ExampleCheckbox({
+	id,
 	name,
 	value,
 	defaultChecked,
+	'aria-describedby': ariaDescribedBy,
+	'aria-invalid': ariaInvalid,
 }: ExampleCheckboxProps) {
-	const checkboxRef = useRef<ElementRef<typeof RadixCheckbox.Root>>(null);
+	const checkboxRef = useRef<ComponentRef<typeof RadixCheckbox.Root>>(null);
 	const control = useControl({
 		defaultChecked,
 		value,
@@ -301,6 +383,9 @@ export function ExampleCheckbox({
 		<>
 			<input type="checkbox" ref={control.register} name={name} hidden />
 			<RadixCheckbox.Root
+				id={id}
+				aria-describedby={ariaDescribedBy}
+				aria-invalid={ariaInvalid}
 				ref={checkboxRef}
 				checked={control.checked}
 				onCheckedChange={(checked) =>

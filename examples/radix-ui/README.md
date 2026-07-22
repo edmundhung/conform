@@ -2,24 +2,26 @@
 
 [Radix UI](https://www.radix-ui.com/) is a headless UI library, offering flexible, unstyled primitives for creating customizable and accessible components, allowing developers to manage the visual layer independently.
 
-This example demonstrates how to integrate Conform with Radix UI using custom metadata. We leverage [Vite](https://vitejs.dev/) and [Tailwind CSS](https://tailwindcss.com/) for styling.
+This example demonstrates how to integrate Conform with Radix UI 1.6 using custom metadata. We leverage [Vite](https://vitejs.dev/) and [Tailwind CSS](https://tailwindcss.com/) for styling.
 
 ## Understanding the Integration
 
-The main application ([`App.tsx`](./src/App.tsx)) uses explicit prop assignment for educational purposes, making it easy to see how field metadata maps to Radix UI component props:
+Each component in [`form.tsx`](./src/form.tsx) uses `useControl` to synchronize a Radix UI primitive with a named hidden input. The components can be connected to Conform by passing field metadata explicitly:
 
 ```tsx
 <ExampleSelect
-  name={fields.category.name}
-  defaultValue={fields.category.defaultValue}
+  items={countries}
+  id={fields.userCountry.id}
+  name={fields.userCountry.name}
+  defaultValue={fields.userCountry.defaultValue}
+  aria-invalid={fields.userCountry.ariaInvalid}
+  aria-describedby={fields.userCountry.ariaDescribedBy}
 />
 ```
 
-While this is clear and straightforward for learning, it becomes repetitive in production applications.
-
 ## Custom Metadata
 
-The example also showcases metadata customization for a more DRY approach. Check [`forms.ts`](./src/forms.ts) to see how custom metadata is configured using `configureForms`:
+To avoid repeating that mapping at every call site, [`forms.ts`](./src/forms.ts) uses `configureForms` to provide custom metadata for each component:
 
 ```tsx
 import { configureForms } from '@conform-to/react/future';
@@ -29,8 +31,11 @@ const result = configureForms({
     return {
       get selectProps() {
         return {
+          id: metadata.id,
           name: metadata.name,
           defaultValue: metadata.defaultValue,
+          'aria-invalid': metadata.ariaInvalid,
+          'aria-describedby': metadata.ariaDescribedBy,
         } satisfies Partial<React.ComponentProps<typeof ExampleSelect>>;
       },
       // ... other component props
@@ -41,30 +46,11 @@ const result = configureForms({
 export const useForm = result.useForm;
 ```
 
-Then use the custom metadata with full type safety:
+The main application can then spread those props with full type safety. Its nearby comments preserve the explicit mapping shown above:
 
 ```tsx
-<ExampleSelect {...fields.category.selectProps} />
+<ExampleSelect {...fields.userCountry.selectProps} />
 ```
-
-## Required packages
-
-- @radix-ui/react-checkbox
-- @radix-ui/react-icons
-- @radix-ui/react-radio-group
-- @radix-ui/react-select
-- @radix-ui/react-slider
-- @radix-ui/react-switch
-- @radix-ui/react-toggle-group
-
-**Integration required**
-
-- Checkbox
-- Radio group
-- Select
-- Slider
-- Switch
-- Toggle group
 
 ## Demo
 
