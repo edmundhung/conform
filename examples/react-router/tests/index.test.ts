@@ -257,18 +257,18 @@ test.describe('react-router', () => {
 		test('submit', async ({ page }) => {
 			const form = await getForm(page);
 
-			await form.title.fill('Attachment');
+			await form.title.fill('Attachment & notes #1');
 			await form.file.setInputFiles({
-				name: 'example.txt',
+				name: 'example & #1.txt',
 				mimeType: 'text/plain',
 				buffer: Buffer.from('React Router v8 upload'),
 			});
 			await form.submitButton.click();
 
 			await expect.poll(form.submittedValue).toEqual({
-				title: 'Attachment',
+				title: 'Attachment & notes #1',
 				file: {
-					name: 'example.txt',
+					name: 'example & #1.txt',
 					size: 22,
 					type: 'text/plain',
 				},

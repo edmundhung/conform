@@ -27,14 +27,16 @@ export async function action({ request }: Route.ActionArgs) {
 	}
 
 	throw redirect(
-		`/?value=${JSON.stringify({
-			title: result.data.title,
-			file: {
-				name: result.data.file.name,
-				size: result.data.file.size,
-				type: result.data.file.type,
-			},
-		})}`,
+		`/?value=${encodeURIComponent(
+			JSON.stringify({
+				title: result.data.title,
+				file: {
+					name: result.data.file.name,
+					size: result.data.file.size,
+					type: result.data.file.type,
+				},
+			}),
+		)}`,
 	);
 }
 
