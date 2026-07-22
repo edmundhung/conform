@@ -19,14 +19,18 @@ export function TodoForm({
 		shouldValidate: 'onBlur',
 		defaultValue,
 	});
-	const dirty = useFormData(form.id, (formData) =>
-		isDirty(formData, {
-			defaultValue,
-			skipEntry(name) {
-				// We need to skip NextJS internal fields and the store id when checking for dirty state
-				return name.startsWith('$ACTION_') || name === 'id';
-			},
-		}),
+	const dirty = useFormData(
+		form.id,
+		(formData) =>
+			isDirty(formData, {
+				defaultValue,
+				skipEntry(name) {
+					// We need to skip Next.js internal fields and the store id when checking for dirty state
+					return name.startsWith('$ACTION_') || name === 'id';
+				},
+			}),
+		// Keep the native submit button available before hydration and when JavaScript is disabled.
+		{ fallback: true },
 	);
 	const tasks = fields.tasks.getFieldList();
 

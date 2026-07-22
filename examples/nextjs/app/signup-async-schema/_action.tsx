@@ -4,10 +4,7 @@ import { redirect } from 'next/navigation';
 import { parseSubmission, report } from '@conform-to/react/future';
 import { createSignupSchema } from '../signup/_schema';
 
-export async function signupAsyncSchema(
-	prevState: unknown,
-	formData: FormData,
-) {
+export async function signupAsyncSchema(_: unknown, formData: FormData) {
 	const schema = createSignupSchema({
 		async isUsernameUnique(username) {
 			await new Promise((resolve) => {

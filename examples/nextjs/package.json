@@ -5,22 +5,32 @@
 		"dev": "next dev",
 		"build": "next build",
 		"start": "next start",
-		"lint": "next lint",
+		"lint": "eslint",
 		"test": "playwright test"
 	},
 	"dependencies": {
 		"@conform-to/react": "1.20.0",
 		"@conform-to/zod": "1.20.0",
-		"react": "^19.1.1",
-		"react-dom": "^19.1.1",
-		"next": "15.5.18",
-		"zod": "^3.25.75"
+		"next": "16.2.10",
+		"react": "19.2.7",
+		"react-dom": "19.2.7",
+		"zod": "^4.4.3"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.49.1",
-		"typescript": "^5.8.3",
 		"@types/node": "^20",
-		"@types/react": "^19.1.12",
-		"@types/react-dom": "^19.1.9"
+		"@types/react": "^19",
+		"@types/react-dom": "^19",
+		"eslint": "^9",
+		"eslint-config-next": "16.2.10",
+		"typescript": "^5"
+	},
+	"dependenciesMeta": {
+		"@conform-to/react": {
+			"injected": true
+		},
+		"@conform-to/zod": {
+			"injected": true
+		}
 	}
 }

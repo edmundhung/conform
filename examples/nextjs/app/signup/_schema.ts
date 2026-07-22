@@ -1,4 +1,4 @@
-import { coerceFormValue } from '@conform-to/zod/v3/future';
+import { coerceFormValue } from '@conform-to/zod/v4/future';
 import { memoize } from '@conform-to/react/future';
 import { z } from 'zod';
 
@@ -7,7 +7,7 @@ export const signupSchema = coerceFormValue(
 	z
 		.object({
 			username: z
-				.string({ required_error: 'Username is required' })
+				.string({ error: 'Username is required' })
 				.regex(
 					/^[a-zA-Z0-9]+$/,
 					'Invalid username: only letters or numbers are allowed',
@@ -16,9 +16,9 @@ export const signupSchema = coerceFormValue(
 		.and(
 			z
 				.object({
-					password: z.string({ required_error: 'Password is required' }),
+					password: z.string({ error: 'Password is required' }),
 					confirmPassword: z.string({
-						required_error: 'Confirm password is required',
+						error: 'Confirm password is required',
 					}),
 				})
 				.refine((data) => data.password === data.confirmPassword, {
@@ -38,7 +38,7 @@ export function createSignupSchema(checks: {
 		z
 			.object({
 				username: z
-					.string({ required_error: 'Username is required' })
+					.string({ error: 'Username is required' })
 					.regex(
 						/^[a-zA-Z0-9]+$/,
 						'Invalid username: only letters or numbers are allowed',
@@ -50,9 +50,9 @@ export function createSignupSchema(checks: {
 			.and(
 				z
 					.object({
-						password: z.string({ required_error: 'Password is required' }),
+						password: z.string({ error: 'Password is required' }),
 						confirmPassword: z.string({
-							required_error: 'Confirm password is required',
+							error: 'Confirm password is required',
 						}),
 					})
 					.refine((data) => data.password === data.confirmPassword, {
