@@ -1,19 +1,13 @@
-import {
-	configureForms,
-	type FieldMetadata as BaseFieldMetadata,
-	type FormMetadata as BaseFormMetadata,
-	type Fieldset as BaseFieldset,
-	type InferBaseErrorShape,
-	type InferCustomFieldMetadata,
-	type InferCustomFormMetadata,
-} from '@conform-to/react/future';
-import { getConstraints } from '@conform-to/zod/v3/future';
+import { configureForms } from '@conform-to/react/future';
+import { getConstraints } from '@conform-to/zod/v4/future';
+import type { InputProps, SelectProps, TextareaProps } from '@headlessui/react';
 import type {
-	ExampleListBox,
+	ExampleCheckbox,
 	ExampleCombobox,
-	ExampleSwitch,
+	ExampleListBox,
 	ExampleRadioGroup,
-} from './form';
+	ExampleSwitch,
+} from './components';
 
 const forms = configureForms({
 	getConstraints,
@@ -21,49 +15,80 @@ const forms = configureForms({
 	shouldRevalidate: 'onInput',
 	extendFieldMetadata(metadata) {
 		return {
+			get inputProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					required: metadata.required,
+					invalid: metadata.invalid,
+				} satisfies Partial<InputProps>;
+			},
+			get textareaProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					required: metadata.required,
+					invalid: metadata.invalid,
+				} satisfies Partial<TextareaProps>;
+			},
+			get selectProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					required: metadata.required,
+					invalid: metadata.invalid,
+				} satisfies Partial<SelectProps>;
+			},
 			get listBoxProps() {
 				return {
+					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultOptions,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': metadata.ariaDescribedBy,
 				} satisfies Partial<React.ComponentProps<typeof ExampleListBox>>;
 			},
 			get comboboxProps() {
 				return {
+					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': metadata.ariaDescribedBy,
 				} satisfies Partial<React.ComponentProps<typeof ExampleCombobox>>;
 			},
 			get switchProps() {
 				return {
+					id: metadata.id,
 					name: metadata.name,
 					defaultChecked: metadata.defaultChecked,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': metadata.ariaDescribedBy,
 				} satisfies Partial<React.ComponentProps<typeof ExampleSwitch>>;
+			},
+			get checkboxProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultChecked: metadata.defaultChecked,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': metadata.ariaDescribedBy,
+				} satisfies Partial<React.ComponentProps<typeof ExampleCheckbox>>;
 			},
 			get radioGroupProps() {
 				return {
+					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-errormessage': metadata.ariaDescribedBy,
 				} satisfies Partial<React.ComponentProps<typeof ExampleRadioGroup>>;
 			},
 		};
 	},
 });
-
-type BaseErrorShape = InferBaseErrorShape<typeof forms.config>;
-type CustomFormMetadata = InferCustomFormMetadata<typeof forms.config>;
-type CustomFieldMetadata = InferCustomFieldMetadata<typeof forms.config>;
-
-export type FormMetadata<ErrorShape extends BaseErrorShape = BaseErrorShape> =
-	BaseFormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
-
-export type FieldMetadata<
-	FieldShape,
-	ErrorShape extends BaseErrorShape = BaseErrorShape,
-> = BaseFieldMetadata<FieldShape, ErrorShape, CustomFieldMetadata>;
-
-export type Fieldset<
-	FieldShape,
-	ErrorShape extends BaseErrorShape = BaseErrorShape,
-> = BaseFieldset<FieldShape, ErrorShape, CustomFieldMetadata>;
 
 export const useForm = forms.useForm;

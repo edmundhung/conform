@@ -1,37 +1,43 @@
 {
-	"name": "headless-u-example",
+	"name": "headless-ui-example",
 	"private": true,
+	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite",
 		"build": "tsc -b && vite build",
-		"lint": "eslint .",
+		"test": "playwright test",
+		"lint": "oxlint",
+		"typecheck": "tsc -b",
 		"preview": "vite preview"
 	},
 	"dependencies": {
 		"@conform-to/react": "^1.20.0",
 		"@conform-to/zod": "^1.20.0",
-		"@headlessui/react": "^1.7.13",
-		"@heroicons/react": "^2.0.18",
-		"react": "^18.2.0",
-		"react-dom": "^18.2.0",
-		"zod": "^3.25.75"
+		"@headlessui/react": "^2.2.10",
+		"@heroicons/react": "^2.2.0",
+		"react": "^19.2.7",
+		"react-dom": "^19.2.7",
+		"zod": "^4.4.3"
+	},
+	"dependenciesMeta": {
+		"@conform-to/react": {
+			"injected": true
+		},
+		"@conform-to/zod": {
+			"injected": true
+		}
 	},
 	"devDependencies": {
-		"@eslint/js": "^9.17.0",
-		"@headlessui/tailwindcss": "^0.1.2",
-		"@tailwindcss/forms": "^0.5.3",
-		"@types/react": "^18.3.18",
-		"@types/react-dom": "^18.3.5",
-		"@vitejs/plugin-react": "^5.2.0",
-		"autoprefixer": "^10.4.21",
-		"eslint": "^9.17.0",
-		"eslint-plugin-react-hooks": "^5.0.0",
-		"eslint-plugin-react-refresh": "^0.4.16",
-		"globals": "^15.14.0",
-		"tailwindcss": "^3.2.7",
-		"typescript": "^5.8.3",
-		"typescript-eslint": "^8.18.2",
-		"vite": "^7.3.3"
+		"@playwright/test": "^1.49.1",
+		"@tailwindcss/vite": "^4.3.3",
+		"@types/node": "^24.13.3",
+		"@types/react": "^19.2.17",
+		"@types/react-dom": "^19.2.3",
+		"@vitejs/plugin-react": "^6.0.3",
+		"oxlint": "^1.74.0",
+		"tailwindcss": "^4.3.3",
+		"typescript": "~6.0.2",
+		"vite": "^8.1.5"
 	}
 }
