@@ -180,71 +180,61 @@ importers:
     dependencies:
       '@conform-to/react':
         specifier: ^1.20.0
-        version: link:../../packages/conform-react
+        version: file:packages/conform-react(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@conform-to/zod':
         specifier: ^1.20.0
-        version: link:../../packages/conform-zod
+        version: file:packages/conform-zod(zod@4.4.3)
       '@headlessui/react':
-        specifier: ^1.7.13
-        version: 1.7.19(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^2.2.10
+        version: 2.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@heroicons/react':
-        specifier: ^2.0.18
-        version: 2.1.3(react@18.3.1)
+        specifier: ^2.2.0
+        version: 2.2.0(react@19.2.7)
       react:
-        specifier: ^18.2.0
-        version: 18.3.1
+        specifier: ^19.2.7
+        version: 19.2.7
       react-dom:
-        specifier: ^18.2.0
-        version: 18.3.1(react@18.3.1)
+        specifier: ^19.2.7
+        version: 19.2.7(react@19.2.7)
       zod:
-        specifier: ^3.25.75
-        version: 3.25.76
+        specifier: ^4.4.3
+        version: 4.4.3
+    dependenciesMeta:
+      '@conform-to/react':
+        injected: true
+      '@conform-to/zod':
+        injected: true
     devDependencies:
-      '@eslint/js':
-        specifier: ^9.17.0
-        version: 9.27.0
-      '@headlessui/tailwindcss':
-        specifier: ^0.1.2
-        version: 0.1.3(tailwindcss@3.4.3)
-      '@tailwindcss/forms':
-        specifier: ^0.5.3
-        version: 0.5.7(tailwindcss@3.4.3)
+      '@playwright/test':
+        specifier: ^1.49.1
+        version: 1.49.1
+      '@tailwindcss/vite':
+        specifier: ^4.3.3
+        version: 4.3.3(vite@8.1.5(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.8.3))
+      '@types/node':
+        specifier: ^24.13.3
+        version: 24.13.3
       '@types/react':
-        specifier: ^18.3.18
-        version: 18.3.23
+        specifier: ^19.2.17
+        version: 19.2.17
       '@types/react-dom':
-        specifier: ^18.3.5
-        version: 18.3.7(@types/react@18.3.23)
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.17)
       '@vitejs/plugin-react':
-        specifier: ^5.2.0
-        version: 5.2.0(vite@7.3.3(@types/node@25.5.0)(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.8.3))
-      autoprefixer:
-        specifier: ^10.4.21
-        version: 10.4.21(postcss@8.5.19)
-      eslint:
-        specifier: ^9.17.0
-        version: 9.27.0(jiti@2.7.0)
-      eslint-plugin-react-hooks:
-        specifier: ^5.0.0
-        version: 5.2.0(eslint@9.27.0(jiti@2.7.0))
-      eslint-plugin-react-refresh:
-        specifier: ^0.4.16
-        version: 0.4.20(eslint@9.27.0(jiti@2.7.0))
-      globals:
-        specifier: ^15.14.0
-        version: 15.15.0
+        specifier: ^6.0.3
+        version: 6.0.3(vite@8.1.5(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.8.3))
+      oxlint:
+        specifier: ^1.74.0
+        version: 1.74.0
       tailwindcss:
-        specifier: ^3.2.7
-        version: 3.4.3
+        specifier: ^4.3.3
+        version: 4.3.3
       typescript:
-        specifier: ^5.8.3
-        version: 5.8.3
-      typescript-eslint:
-        specifier: ^8.18.2
-        version: 8.33.0(eslint@9.27.0(jiti@2.7.0))(typescript@5.8.3)
+        specifier: ~6.0.2
+        version: 6.0.3
       vite:
-        specifier: ^7.3.3
-        version: 7.3.3(@types/node@25.5.0)(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.8.3)
+        specifier: ^8.1.5
+        version: 8.1.5(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.8.3)
 
   examples/material-ui:
     dependencies:
@@ -3630,8 +3620,14 @@ packages:
   '@floating-ui/core@1.5.2':
     resolution: {integrity: sha512-Ii3MrfY/GAIN3OhXNzpCKaLxHQfJF9qvwq/kEJYdqDxeIHa01K8sldugal6TmeeXl+WMvhv9cnVzUTaFFJF09A==}
 
+  '@floating-ui/core@1.8.0':
+    resolution: {integrity: sha512-0CIZ5itps/8x7BG8dEIhs53BvCUH2PCoogtakwRTut+Arm58sJooJ0AuZhLw2HJYIR5cMLNPBSS728sPho2khQ==}
+
   '@floating-ui/dom@1.5.3':
     resolution: {integrity: sha512-ClAbQnEqJAKCJOEbbLo5IUlZHkNszqhuxS4fHAVxRPXPya6Ysf2G8KypnYcOTpx6I8xcgF9bbHb6g/2KpbV8qA==}
+
+  '@floating-ui/dom@1.8.0':
+    resolution: {integrity: sha512-yXSrzeHZBTZadLOlfyhCkJHNeLJnHRnRInwdZ40L7ZiaAtrBwoYlsDrX3v5zB1Utk7CLfzcOVnVVWoXEky7Ceg==}
 
   '@floating-ui/react-dom@2.0.4':
     resolution: {integrity: sha512-CF8k2rgKeh/49UrnIBs4BdxPUV6vize/Db1d/YbCLyp9GiVZ0BEwf5AiDSxJRCr6yOkGqTFHtmrULxkEfYZ7dQ==}
@@ -3639,8 +3635,23 @@ packages:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
+  '@floating-ui/react-dom@2.1.9':
+    resolution: {integrity: sha512-JDjEFGCpImxDCA7JJKviA0M9+RtmJdj0m/NVU5IMgBK+AmZouAQQ7/+2GLH0GXXY0YMw9oXPB8hKdbPYg5QLYg==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+
+  '@floating-ui/react@0.26.28':
+    resolution: {integrity: sha512-yORQuuAtVpiRjpMhdc0wJj06b9JFjrYF4qp96j++v2NBpbi6SEGF7donUJ3TMieerQ6qVkAv1tgr7L4r5roTqw==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+
   '@floating-ui/utils@0.1.6':
     resolution: {integrity: sha512-OfX7E2oUDYxtBvsuS4e/jSn4Q9Qb6DzgeYtsAdkPZ47znpoNsMgZw0+tVijiv3uGNR6dgNlty6r9rzIzHjtd/A==}
+
+  '@floating-ui/utils@0.2.12':
+    resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
 
   '@formatjs/ecma402-abstract@2.3.4':
     resolution: {integrity: sha512-qrycXDeaORzIqNhBOx0btnhpD1c+/qFIHAN9znofuMJX6QBwtbrmlpWfD4oiUUD2vJUOIYFA/gYtg2KAMGG7sA==}
@@ -3667,11 +3678,12 @@ packages:
       react: ^16 || ^17 || ^18
       react-dom: ^16 || ^17 || ^18
 
-  '@headlessui/tailwindcss@0.1.3':
-    resolution: {integrity: sha512-3aMdDyYZx9A15euRehpppSyQnb2gIw2s/Uccn2ELIoLQ9oDy0+9oRygNWNjXCD5Dt+w1pxo7C+XoiYvGcqA4Kg==}
+  '@headlessui/react@2.2.10':
+    resolution: {integrity: sha512-5pVLNK9wlpxTUTy9GpgbX/SdcRh+HBnPktjM2wbiLTH4p+2EPHBO1aoSryUCuKUIItdDWO9ITlhUL8UnUN/oIA==}
     engines: {node: '>=10'}
     peerDependencies:
-      tailwindcss: ^3.0
+      react: ^18 || ^19 || ^19.0.0-rc
+      react-dom: ^18 || ^19 || ^19.0.0-rc
 
   '@headlessui/tailwindcss@0.2.0':
     resolution: {integrity: sha512-fpL830Fln1SykOCboExsWr3JIVeQKieLJ3XytLe/tt1A0XzqUthOftDmjcCYLW62w7mQI7wXcoPXr3tZ9QfGxw==}
@@ -3683,6 +3695,11 @@ packages:
     resolution: {integrity: sha512-fEcPfo4oN345SoqdlCDdSa4ivjaKbk0jTd+oubcgNxnNgAfzysfwWfQUr+51wigiWHQQRiZNd1Ao0M5Y3M2EGg==}
     peerDependencies:
       react: '>= 16'
+
+  '@heroicons/react@2.2.0':
+    resolution: {integrity: sha512-LMcepvRaS9LYHJGsF0zzmgKCUim/X3N/DQKc4jepAXJ7l8QxJ1PmxJzqplF2Z3FE4PqBAIGyJAQ/w4B5dsqbtQ==}
+    peerDependencies:
+      react: '>= 16 || ^19.0.0-rc'
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -7151,11 +7168,20 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
 
+  '@tanstack/react-virtual@3.14.7':
+    resolution: {integrity: sha512-11uSrj77IDijNBqizD4lY4y1laMyRrqMLSxjnWy5CvWkCjyRDW+gGmxYq0lwQKVas/sq7zyzYWXbL/BvBzR32g==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   '@tanstack/react-virtual@3.5.0':
     resolution: {integrity: sha512-rtvo7KwuIvqK9zb0VZ5IL7fiJAEnG+0EiFZz8FUOs+2mhGqdGmjKIaT1XU7Zq0eFqL0jonLlhbayJI/J2SA/Bw==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+
+  '@tanstack/virtual-core@3.17.5':
+    resolution: {integrity: sha512-AXfBC3sq6PuYSwyxYORqqgHCNjPGAvKJvZuBBJ1klhztWBB5cgqgwsq8+fNfaQJG7/K4xYBja9S90QFn2zmQAg==}
 
   '@tanstack/virtual-core@3.5.0':
     resolution: {integrity: sha512-KnPRCkQTyqhanNC0K63GBG3wA8I+D1fQuVnAvcBF8f13akOKeQp1gSbu6f77zCxhEk727iV5oQnbHLYzHrECLg==}
@@ -12741,6 +12767,9 @@ packages:
     engines: {node: '>=16'}
     hasBin: true
 
+  tabbable@6.5.0:
+    resolution: {integrity: sha512-wieBHXygIm7OyQOu5hQlkk62/WyCFYGlWg7L6/ZCUZwx0o398Zkn4pVmMyfYhfMG8kGrj/Krt8eIk6UKC6VzwA==}
+
   tailwind-merge@2.2.1:
     resolution: {integrity: sha512-o+2GTLkthfa5YUt4JxPfzMIpQzZ3adD1vLVkvKE1Twl9UAhGsEbIZhHHZVRttyW177S8PDJI3bTQNaebyofK3Q==}
 
@@ -16761,10 +16790,19 @@ snapshots:
     dependencies:
       '@floating-ui/utils': 0.1.6
 
+  '@floating-ui/core@1.8.0':
+    dependencies:
+      '@floating-ui/utils': 0.2.12
+
   '@floating-ui/dom@1.5.3':
     dependencies:
       '@floating-ui/core': 1.5.2
       '@floating-ui/utils': 0.1.6
+
+  '@floating-ui/dom@1.8.0':
+    dependencies:
+      '@floating-ui/core': 1.8.0
+      '@floating-ui/utils': 0.2.12
 
   '@floating-ui/react-dom@2.0.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -16778,7 +16816,23 @@ snapshots:
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
 
+  '@floating-ui/react-dom@2.1.9(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+    dependencies:
+      '@floating-ui/dom': 1.8.0
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
+
+  '@floating-ui/react@0.26.28(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+    dependencies:
+      '@floating-ui/react-dom': 2.1.9(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@floating-ui/utils': 0.2.12
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
+      tabbable: 6.5.0
+
   '@floating-ui/utils@0.1.6': {}
+
+  '@floating-ui/utils@0.2.12': {}
 
   '@formatjs/ecma402-abstract@2.3.4':
     dependencies:
@@ -16815,9 +16869,15 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@headlessui/tailwindcss@0.1.3(tailwindcss@3.4.3)':
+  '@headlessui/react@2.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
-      tailwindcss: 3.4.3
+      '@floating-ui/react': 0.26.28(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@react-aria/focus': 3.20.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@react-aria/interactions': 3.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@tanstack/react-virtual': 3.14.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
+      use-sync-external-store: 1.5.0(react@19.2.7)
 
   '@headlessui/tailwindcss@0.2.0(tailwindcss@3.4.3)':
     dependencies:
@@ -16826,6 +16886,10 @@ snapshots:
   '@heroicons/react@2.1.3(react@18.3.1)':
     dependencies:
       react: 18.3.1
+
+  '@heroicons/react@2.2.0(react@19.2.7)':
+    dependencies:
+      react: 19.2.7
 
   '@humanfs/core@0.19.1': {}
 
@@ -18969,6 +19033,16 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
+  '@react-aria/focus@3.20.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+    dependencies:
+      '@react-aria/interactions': 3.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@react-aria/utils': 3.29.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@react-types/shared': 3.29.1(react@19.2.7)
+      '@swc/helpers': 0.5.15
+      clsx: 2.1.1
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
+
   '@react-aria/form@3.0.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@react-aria/interactions': 3.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -19035,6 +19109,16 @@ snapshots:
       '@swc/helpers': 0.5.15
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  '@react-aria/interactions@3.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+    dependencies:
+      '@react-aria/ssr': 3.9.8(react@19.2.7)
+      '@react-aria/utils': 3.29.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@react-stately/flags': 3.1.1
+      '@react-types/shared': 3.29.1(react@19.2.7)
+      '@swc/helpers': 0.5.15
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
 
   '@react-aria/label@3.7.18(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -19248,6 +19332,11 @@ snapshots:
       '@swc/helpers': 0.5.15
       react: 18.3.1
 
+  '@react-aria/ssr@3.9.8(react@19.2.7)':
+    dependencies:
+      '@swc/helpers': 0.5.15
+      react: 19.2.7
+
   '@react-aria/switch@3.7.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@react-aria/toggle': 3.11.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -19388,6 +19477,17 @@ snapshots:
       clsx: 2.1.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  '@react-aria/utils@3.29.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+    dependencies:
+      '@react-aria/ssr': 3.9.8(react@19.2.7)
+      '@react-stately/flags': 3.1.1
+      '@react-stately/utils': 3.10.6(react@19.2.7)
+      '@react-types/shared': 3.29.1(react@19.2.7)
+      '@swc/helpers': 0.5.15
+      clsx: 2.1.1
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
 
   '@react-aria/virtualizer@4.1.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -19725,6 +19825,11 @@ snapshots:
       '@swc/helpers': 0.5.15
       react: 18.3.1
 
+  '@react-stately/utils@3.10.6(react@19.2.7)':
+    dependencies:
+      '@swc/helpers': 0.5.15
+      react: 19.2.7
+
   '@react-stately/virtualizer@4.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@react-aria/utils': 3.29.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -19852,6 +19957,10 @@ snapshots:
   '@react-types/shared@3.29.1(react@18.3.1)':
     dependencies:
       react: 18.3.1
+
+  '@react-types/shared@3.29.1(react@19.2.7)':
+    dependencies:
+      react: 19.2.7
 
   '@react-types/slider@3.7.11(react@18.3.1)':
     dependencies:
@@ -20597,11 +20706,19 @@ snapshots:
       tailwindcss: 4.3.3
       vite: 8.1.5(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.8.3)
 
+  '@tanstack/react-virtual@3.14.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+    dependencies:
+      '@tanstack/virtual-core': 3.17.5
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
+
   '@tanstack/react-virtual@3.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@tanstack/virtual-core': 3.5.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  '@tanstack/virtual-core@3.17.5': {}
 
   '@tanstack/virtual-core@3.5.0': {}
 
@@ -21794,16 +21911,6 @@ snapshots:
       normalize-range: 0.1.2
       picocolors: 1.1.1
       postcss: 8.5.10
-      postcss-value-parser: 4.2.0
-
-  autoprefixer@10.4.21(postcss@8.5.19):
-    dependencies:
-      browserslist: 4.25.0
-      caniuse-lite: 1.0.30001720
-      fraction.js: 4.3.7
-      normalize-range: 0.1.2
-      picocolors: 1.1.1
-      postcss: 8.5.19
       postcss-value-parser: 4.2.0
 
   available-typed-arrays@1.0.5: {}
@@ -28132,6 +28239,8 @@ snapshots:
       picocolors: 1.1.1
       sax: 1.6.0
 
+  tabbable@6.5.0: {}
+
   tailwind-merge@2.2.1:
     dependencies:
       '@babel/runtime': 7.23.9
@@ -28701,6 +28810,10 @@ snapshots:
   use-sync-external-store@1.5.0(react@18.3.1):
     dependencies:
       react: 18.3.1
+
+  use-sync-external-store@1.5.0(react@19.2.7):
+    dependencies:
+      react: 19.2.7
 
   util-deprecate@1.0.2: {}
 

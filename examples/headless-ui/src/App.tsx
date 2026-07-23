@@ -1,20 +1,35 @@
-import { coerceFormValue } from '@conform-to/zod/v3/future';
+import { coerceFormValue } from '@conform-to/zod/v4/future';
+import {
+	Description,
+	Field,
+	Fieldset,
+	Input,
+	Label,
+	Legend,
+	Select,
+	Textarea,
+} from '@headlessui/react';
 import { useState } from 'react';
 import { z } from 'zod';
 import {
-	ExampleListBox,
+	ExampleCheckbox,
 	ExampleCombobox,
-	ExampleSwitch,
+	ExampleListBox,
 	ExampleRadioGroup,
-} from './form';
+	ExampleSwitch,
+} from './components';
 import { useForm } from './forms';
 
 const schema = coerceFormValue(
 	z.object({
 		owner: z.array(z.string()).min(1),
-		assignee: z.string(),
-		enabled: z.boolean(),
-		color: z.string(),
+		assignee: z.string().min(1),
+		enabled: z.boolean().optional().default(false),
+		color: z.string().min(1),
+		project: z.string().min(1),
+		notes: z.string().optional(),
+		priority: z.enum(['low', 'normal', 'high']),
+		notifications: z.boolean().optional().default(false),
 	}),
 );
 
@@ -39,28 +54,31 @@ export default function App() {
 			assignee: searchParams.get('assignee'),
 			enabled: searchParams.get('enabled'),
 			color: searchParams.get('color'),
+			project: searchParams.get('project'),
+			notes: searchParams.get('notes'),
+			priority: searchParams.get('priority') ?? 'normal',
+			notifications: searchParams.get('notifications'),
 		},
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 
-			// Demo only - This emulates a GET request with the form data populated in the URL.
+			// Demo only: emulate a GET request by storing the submitted FormData in the URL.
 			const url = new URL(document.URL);
-			const searchParams = new URLSearchParams(
+			const nextSearchParams = new URLSearchParams(
 				Array.from(formData).filter(
-					// Skip the file as it is not serializable
 					(entry): entry is [string, string] => typeof entry[1] === 'string',
 				),
 			);
-			url.search = searchParams.toString();
+			url.search = nextSearchParams.toString();
 			window.history.pushState(null, '', url);
 
-			setSearchParams(searchParams);
+			setSearchParams(nextSearchParams);
 			setSubmittedValue(value);
 		},
 	});
 
 	return (
-		<main className="max-w-lg mx-auto py-8 px-4">
+		<main className="mx-auto max-w-xl px-4 py-8">
 			<form
 				className="space-y-8 divide-y divide-gray-200"
 				{...form.props}
@@ -68,88 +86,237 @@ export default function App() {
 			>
 				<div className="space-y-8">
 					<div>
-						<h3 className="text-lg font-medium leading-6 text-gray-900">
+						<h1 className="text-lg font-medium text-gray-900">
 							Headless UI Example
-						</h3>
+						</h1>
 						<p className="mt-4 text-gray-500">
-							This example shows you how to integrate Conform with Headless UI.
-							When the form is submitted, the search params will be updated with
-							the form data and is set as the default value of the form.
+							This example integrates Conform with Headless UI v2 using custom
+							metadata and useControl. Saving updates the URL and sets the
+							values that Discard changes restores.
 						</p>
 					</div>
 
-					<div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-						<div className="sm:col-span-6">
-							<label className="block text-sm font-medium text-gray-700">
-								Owner (List box)
-							</label>
-							<div className="mt-1">
-								<ExampleListBox
-									options={options}
-									{...fields.owner.listBoxProps}
-									// Equivalent to:
-									// name={fields.owner.name}
-									// defaultValue={fields.owner.defaultOptions}
-								/>
-							</div>
-							<p className="mt-2 text-sm text-red-500">{fields.owner.errors}</p>
-						</div>
+					<Fieldset className="space-y-6">
+						<Legend className="text-base font-semibold text-gray-900">
+							Headless UI controls
+						</Legend>
 
-						<div className="sm:col-span-6">
-							<label className="block text-sm font-medium text-gray-700">
+						<Field>
+							<Label
+								htmlFor={fields.owner.id}
+								className="block text-sm font-medium text-gray-700"
+							>
+								Owner (Listbox)
+							</Label>
+							<ExampleListBox
+								options={options}
+								{...fields.owner.listBoxProps}
+								// Equivalent to:
+								// id={fields.owner.id}
+								// name={fields.owner.name}
+								// defaultValue={fields.owner.defaultOptions}
+								// aria-invalid={fields.owner.ariaInvalid}
+								// aria-describedby={fields.owner.ariaDescribedBy}
+							/>
+							<Description
+								id={fields.owner.errorId}
+								className="mt-2 text-sm text-red-600"
+							>
+								{fields.owner.errors}
+							</Description>
+						</Field>
+
+						<Field>
+							<Label
+								htmlFor={fields.assignee.id}
+								className="block text-sm font-medium text-gray-700"
+							>
 								Assigned to (Combobox)
-							</label>
-							<div className="mt-1">
-								<ExampleCombobox
-									options={options}
-									{...fields.assignee.comboboxProps}
-									// Equivalent to:
-									// name={fields.assignee.name}
-									// defaultValue={fields.assignee.defaultValue}
-								/>
-							</div>
-							<p className="mt-2 text-sm text-red-500">
+							</Label>
+							<ExampleCombobox
+								options={options}
+								{...fields.assignee.comboboxProps}
+								// Equivalent to:
+								// id={fields.assignee.id}
+								// name={fields.assignee.name}
+								// defaultValue={fields.assignee.defaultValue}
+								// aria-invalid={fields.assignee.ariaInvalid}
+								// aria-describedby={fields.assignee.ariaDescribedBy}
+							/>
+							<Description
+								id={fields.assignee.errorId}
+								className="mt-2 text-sm text-red-600"
+							>
 								{fields.assignee.errors}
-							</p>
-						</div>
+							</Description>
+						</Field>
 
-						<div className="sm:col-span-6">
-							<label className="block text-sm font-medium text-gray-700">
+						<Field>
+							<Label
+								htmlFor={fields.enabled.id}
+								className="block text-sm font-medium text-gray-700"
+							>
 								Enabled (Switch)
-							</label>
+							</Label>
 							<div className="mt-1">
 								<ExampleSwitch
 									{...fields.enabled.switchProps}
 									// Equivalent to:
+									// id={fields.enabled.id}
 									// name={fields.enabled.name}
 									// defaultChecked={fields.enabled.defaultChecked}
+									// aria-invalid={fields.enabled.ariaInvalid}
+									// aria-describedby={fields.enabled.ariaDescribedBy}
 								/>
 							</div>
-							<p className="mt-2 text-sm text-red-500">
+							<Description
+								id={fields.enabled.errorId}
+								className="mt-2 text-sm text-red-600"
+							>
 								{fields.enabled.errors}
+							</Description>
+						</Field>
+
+						<Field className="flex items-start gap-3">
+							<ExampleCheckbox
+								{...fields.notifications.checkboxProps}
+								// Equivalent to:
+								// id={fields.notifications.id}
+								// name={fields.notifications.name}
+								// defaultChecked={fields.notifications.defaultChecked}
+								// aria-invalid={fields.notifications.ariaInvalid}
+								// aria-describedby={fields.notifications.ariaDescribedBy}
+							/>
+							<div>
+								<Label
+									htmlFor={fields.notifications.id}
+									className="text-sm font-medium text-gray-700"
+								>
+									Send notifications (Checkbox)
+								</Label>
+								<Description
+									id={fields.notifications.errorId}
+									className="mt-2 text-sm text-red-600"
+								>
+									{fields.notifications.errors}
+								</Description>
+							</div>
+						</Field>
+
+						<div>
+							<p className="block text-sm font-medium text-gray-700">
+								Color (RadioGroup)
+							</p>
+							<ExampleRadioGroup
+								aria-label="Color (RadioGroup)"
+								{...fields.color.radioGroupProps}
+								// Equivalent to:
+								// id={fields.color.id}
+								// name={fields.color.name}
+								// defaultValue={fields.color.defaultValue}
+								// aria-invalid={fields.color.ariaInvalid}
+								// aria-errormessage={fields.color.ariaDescribedBy}
+							/>
+							<p
+								id={fields.color.errorId}
+								className="mt-2 text-sm text-red-600"
+							>
+								{fields.color.errors}
 							</p>
 						</div>
+						<Field>
+							<Label
+								htmlFor={fields.project.id}
+								className="block text-sm font-medium text-gray-700"
+							>
+								Project name
+							</Label>
+							<Description
+								id={fields.project.descriptionId}
+								className="text-sm text-gray-500"
+							>
+								A short name used in the submitted FormData.
+							</Description>
+							<Input
+								{...fields.project.inputProps}
+								// Equivalent to:
+								// id={fields.project.id}
+								// name={fields.project.name}
+								// defaultValue={fields.project.defaultValue}
+								// required={fields.project.required}
+								// invalid={fields.project.invalid}
+								className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm data-focus:border-indigo-500 data-focus:ring-1 data-focus:ring-indigo-500 data-focus:outline-none sm:text-sm"
+							/>
+							<Description
+								id={fields.project.errorId}
+								className="mt-2 text-sm text-red-600"
+							>
+								{fields.project.errors}
+							</Description>
+						</Field>
 
-						<div className="sm:col-span-6">
-							<label className="block text-sm font-medium text-gray-700">
-								Color (Radio Group)
-							</label>
-							<div className="mt-1">
-								<ExampleRadioGroup
-									{...fields.color.radioGroupProps}
-									// Equivalent to:
-									// name={fields.color.name}
-									// defaultValue={fields.color.defaultValue}
-								/>
-							</div>
-							<p className="mt-2 text-sm text-red-500">{fields.color.errors}</p>
-						</div>
-					</div>
+						<Field>
+							<Label
+								htmlFor={fields.notes.id}
+								className="block text-sm font-medium text-gray-700"
+							>
+								Notes
+							</Label>
+							<Textarea
+								{...fields.notes.textareaProps}
+								// Equivalent to:
+								// id={fields.notes.id}
+								// name={fields.notes.name}
+								// defaultValue={fields.notes.defaultValue}
+								// required={fields.notes.required}
+								// invalid={fields.notes.invalid}
+								rows={3}
+								className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm data-focus:border-indigo-500 data-focus:ring-1 data-focus:ring-indigo-500 data-focus:outline-none sm:text-sm"
+							/>
+							<Description
+								id={fields.notes.errorId}
+								className="mt-2 text-sm text-red-600"
+							>
+								{fields.notes.errors}
+							</Description>
+						</Field>
+
+						<Field>
+							<Label
+								htmlFor={fields.priority.id}
+								className="block text-sm font-medium text-gray-700"
+							>
+								Priority
+							</Label>
+							<Select
+								{...fields.priority.selectProps}
+								// Equivalent to:
+								// id={fields.priority.id}
+								// name={fields.priority.name}
+								// defaultValue={fields.priority.defaultValue}
+								// required={fields.priority.required}
+								// invalid={fields.priority.invalid}
+								className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm data-focus:border-indigo-500 data-focus:ring-1 data-focus:ring-indigo-500 data-focus:outline-none sm:text-sm"
+							>
+								<option value="low">Low</option>
+								<option value="normal">Normal</option>
+								<option value="high">High</option>
+							</Select>
+							<Description
+								id={fields.priority.errorId}
+								className="mt-2 text-sm text-red-600"
+							>
+								{fields.priority.errors}
+							</Description>
+						</Field>
+					</Fieldset>
 
 					{submittedValue ? (
 						<div className="text-sm">
-							<h4 className="mb-2">Value submitted</h4>
-							<pre>{JSON.stringify(submittedValue, null, 2)}</pre>
+							<h2 className="mb-2 font-medium">Value submitted</h2>
+							<pre data-testid="submitted-value">
+								{JSON.stringify(submittedValue, null, 2)}
+							</pre>
 						</div>
 					) : null}
 				</div>
@@ -158,16 +325,16 @@ export default function App() {
 					<div className="flex justify-end">
 						<button
 							type="button"
-							className="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+							className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
 							onClick={() => intent.reset()}
 						>
-							Reset
+							Discard changes
 						</button>
 						<button
 							type="submit"
-							className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+							className="ml-3 inline-flex justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
 						>
-							Save
+							Save to URL
 						</button>
 					</div>
 				</div>
