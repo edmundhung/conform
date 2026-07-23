@@ -71,8 +71,10 @@ test.describe('headless-ui', () => {
 			const form = await getForm(page);
 
 			await form.assignee.focus();
-			await form.comboboxButton.focus();
+			await form.comboboxButton.click();
+			await expect(form.assignee).toBeFocused();
 			await expect(form.assignee).not.toHaveAttribute('aria-invalid', 'true');
+			await page.keyboard.press('Escape');
 			await form.heading.click();
 
 			await expect(form.assignee).toHaveAttribute('aria-invalid', 'true');
