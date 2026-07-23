@@ -160,7 +160,14 @@ export function ExampleCombobox({
 				defaultValue={defaultValue}
 				hidden
 			/>
-			<div className="relative mt-1">
+			<div
+				className="relative mt-1"
+				onBlur={(event) => {
+					if (!event.currentTarget.contains(event.relatedTarget)) {
+						control.blur();
+					}
+				}}
+			>
 				<ComboboxInput
 					ref={inputRef}
 					id={id}
@@ -168,7 +175,6 @@ export function ExampleCombobox({
 					{...validationProps}
 					className="w-full rounded-md border border-gray-300 bg-white py-2 pr-10 pl-3 shadow-sm data-focus:border-indigo-500 data-focus:ring-1 data-focus:ring-indigo-500 data-focus:outline-none sm:text-sm"
 					onChange={(event) => setQuery(event.target.value)}
-					onBlur={() => control.blur()}
 					displayValue={(value: string | null) =>
 						options.find((option) => option.value === value)?.label ?? ''
 					}

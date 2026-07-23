@@ -41,11 +41,13 @@ test.describe('headless-ui', () => {
 			await page.goto('/');
 
 			const container = page.locator('form');
+			const assignee = container.getByLabel('Assigned to (Combobox)');
 
 			return {
 				container,
 				heading: page.getByRole('heading', { name: 'Headless UI Example' }),
-				assignee: container.getByLabel('Assigned to (Combobox)'),
+				assignee,
+				comboboxButton: assignee.locator('..').getByRole('button'),
 				formData: () =>
 					container.evaluate((form) =>
 						Array.from(new FormData(form as HTMLFormElement).entries()).map(
@@ -69,6 +71,8 @@ test.describe('headless-ui', () => {
 			const form = await getForm(page);
 
 			await form.assignee.focus();
+			await form.comboboxButton.focus();
+			await expect(form.assignee).not.toHaveAttribute('aria-invalid', 'true');
 			await form.heading.click();
 
 			await expect(form.assignee).toHaveAttribute('aria-invalid', 'true');

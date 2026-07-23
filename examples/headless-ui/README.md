@@ -89,7 +89,7 @@ const control = useControl({
 
 ## Match Headless UI Interaction Boundaries
 
-Blur events bubble through Listbox and RadioGroup when focus moves between their internal elements. Notify Conform only when focus leaves the whole component:
+Blur events bubble through Listbox, Combobox, and RadioGroup when focus moves between their internal elements. Notify Conform only when focus leaves the whole component:
 
 ```tsx
 <RadioGroup
@@ -103,7 +103,7 @@ Blur events bubble through Listbox and RadioGroup when focus moves between their
 </RadioGroup>
 ```
 
-Combobox forwards blur from its input, while Switch and Checkbox can forward their blur events directly.
+Switch and Checkbox can forward their blur events directly.
 
 ## Apply ARIA Attributes to the Accessible Control
 
