@@ -4,7 +4,7 @@ packages:
   - 'guide'
   - 'playground'
 
-minimumReleaseAge: 4320
+minimumReleaseAge: 2880
 
 allowBuilds:
   deasync: true

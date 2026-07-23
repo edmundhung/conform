@@ -7,7 +7,7 @@ import {
 	type InferCustomFieldMetadata,
 	type InferCustomFormMetadata,
 } from '@conform-to/react/future';
-import { getConstraints } from '@conform-to/zod/v3/future';
+import { getConstraints } from '@conform-to/zod/v4/future';
 import type {
 	ExampleSelect,
 	ExampleToggleGroup,
@@ -25,40 +25,61 @@ const forms = configureForms({
 		return {
 			get selectProps() {
 				return {
+					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': metadata.ariaDescribedBy,
 				} satisfies Partial<React.ComponentProps<typeof ExampleSelect>>;
 			},
 			get toggleGroupProps() {
 				return {
+					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-labelledby': `${metadata.id}-label`,
 				} satisfies Partial<React.ComponentProps<typeof ExampleToggleGroup>>;
 			},
 			get switchProps() {
 				return {
+					id: metadata.id,
 					name: metadata.name,
 					value: 'on',
 					defaultChecked: metadata.defaultChecked,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': metadata.ariaDescribedBy,
 				} satisfies Partial<React.ComponentProps<typeof ExampleSwitch>>;
 			},
 			get sliderProps() {
 				return {
+					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-labelledby': `${metadata.id}-label`,
 				} satisfies Partial<React.ComponentProps<typeof ExampleSlider>>;
 			},
 			get radioGroupProps() {
 				return {
+					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-labelledby': `${metadata.id}-label`,
 				} satisfies Partial<React.ComponentProps<typeof ExampleRadioGroup>>;
 			},
 			get checkboxProps() {
 				return {
+					id: metadata.id,
 					name: metadata.name,
 					value: 'on',
 					defaultChecked: metadata.defaultChecked,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': metadata.ariaDescribedBy,
 				} satisfies Partial<React.ComponentProps<typeof ExampleCheckbox>>;
 			},
 		};
