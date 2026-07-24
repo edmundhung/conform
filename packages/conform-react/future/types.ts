@@ -478,17 +478,19 @@ export type InferFormShape<Schema> =
  * For StandardSchemaV1 schemas (zod, valibot, etc.), uses StandardSchemaV1.InferOutput.
  * For other schemas, uses CustomSchemaTypes if augmented.
  */
-export type InferOutput<Schema> = Schema extends StandardSchemaV1
-	? StandardSchemaV1.InferOutput<Schema>
-	: CustomSchemaTypes<Schema> extends { output: infer T }
-		? T
-		: undefined;
+export type InferOutput<Schema> = Schema extends undefined
+	? undefined
+	: Schema extends StandardSchemaV1
+		? StandardSchemaV1.InferOutput<Schema>
+		: CustomSchemaTypes<Schema> extends { output: infer T }
+			? T
+			: unknown;
 
 export type FormOptions<
 	FormShape extends Record<string, any> = Record<string, any>,
 	ErrorShape = any,
 	Value = undefined,
-	Schema = unknown,
+	Schema = undefined,
 	SchemaErrorShape = ErrorShape,
 	CustomIntentHandlers extends Record<string, IntentHandler<any, any>> = {},
 	GlobalIntentHandlers extends Record<string, IntentHandler<any, any>> = {},
