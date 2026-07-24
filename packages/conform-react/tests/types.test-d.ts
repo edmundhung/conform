@@ -141,11 +141,21 @@ test('FormOptions', () => {
 	});
 
 	assertType<FormOptions<TestSchema>>({
-		onValidate({ error }) {
+		onValidate({ error, schemaValue }) {
+			expectTypeOf(schemaValue).toEqualTypeOf<undefined>();
+
 			return {
 				result: error,
 				pending: Promise.resolve(null),
 			};
+		},
+	});
+
+	assertType<FormOptions<TestSchema, any, undefined, object>>({
+		onValidate({ schemaValue }) {
+			expectTypeOf(schemaValue).toEqualTypeOf<unknown>();
+
+			return undefined;
 		},
 	});
 
