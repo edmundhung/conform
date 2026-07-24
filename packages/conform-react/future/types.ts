@@ -482,7 +482,7 @@ export type InferOutput<Schema> = Schema extends StandardSchemaV1
 	? StandardSchemaV1.InferOutput<Schema>
 	: CustomSchemaTypes<Schema> extends { output: infer T }
 		? T
-		: undefined;
+		: unknown;
 
 export type FormOptions<
 	FormShape extends Record<string, any> = Record<string, any>,
