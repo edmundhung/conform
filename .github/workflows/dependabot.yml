@@ -54,10 +54,11 @@ jobs:
         run: |
           if ! pull_requests="$(
             gh pr list \
+              --app dependabot \
               --state open \
               --limit 100 \
-              --json author,headRefOid,number \
-              --jq '.[] | select(.author.login == "app/dependabot") | [.number, .headRefOid] | @tsv'
+              --json headRefOid,number \
+              --jq '.[] | [.number, .headRefOid] | @tsv'
           )"; then
             echo "Unable to list open Dependabot PRs" >&2
             exit 1
