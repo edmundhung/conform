@@ -65,7 +65,7 @@
 		"@babel/preset-env": "^7.20.2",
 		"@babel/preset-typescript": "^7.20.2",
 		"@rollup/plugin-babel": "^5.3.1",
-		"@rollup/plugin-node-resolve": "^13.3.0",
+		"@rollup/plugin-node-resolve": "^16.0.3",
 		"@vitest/browser-playwright": "^4.1.5",
 		"playwright": "^1.49.1",
 		"rollup-plugin-copy": "^3.4.0",
