@@ -1,0 +1,95 @@
+name: Dependabot
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+jobs:
+  auto-merge:
+    name: Approve and enable auto-merge
+    if: github.event_name == 'pull_request_target' && github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@21025c705c08248db411dc16f3619e6b5f9ea21a # v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Approve patch and minor updates
+        if: >-
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr review --approve "$PR_URL"
+      - name: Enable auto-merge for patch and minor updates
+        if: >-
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --squash "$PR_URL"
+
+  retry-package-age:
+    name: Retry package age failures
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Rerun blocked Dependabot previews
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! pull_requests="$(
+            gh pr list \
+              --app dependabot \
+              --state open \
+              --limit 100 \
+              --json headRefOid,number \
+              --jq '.[] | [.number, .headRefOid] | @tsv'
+          )"; then
+            echo "Unable to list open Dependabot PRs" >&2
+            exit 1
+          fi
+          if [[ -z "$pull_requests" ]]; then
+            exit 0
+          fi
+
+          while IFS=$'\t' read -r number head_sha; do
+            run_id="$(
+              gh run list \
+                --workflow preview.yml \
+                --commit "$head_sha" \
+                --event pull_request \
+                --status failure \
+                --limit 1 \
+                --json databaseId \
+                --jq '.[0].databaseId // empty'
+            )"
+            if [[ -z "$run_id" ]]; then
+              continue
+            fi
+
+            if ! failed_log="$(gh run view "$run_id" --log-failed)"; then
+              echo "Unable to read failed logs for PR #$number"
+              continue
+            fi
+            if [[ "$failed_log" != *ERR_PNPM_NO_MATURE_MATCHING_VERSION* ]]; then
+              continue
+            fi
+
+            gh run rerun "$run_id" --failed
+            echo "Rerunning Preview for Dependabot PR #$number"
+          done <<< "$pull_requests"
