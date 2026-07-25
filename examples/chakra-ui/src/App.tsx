@@ -1,45 +1,67 @@
-import { coerceFormValue } from '@conform-to/zod/v3/future';
+import { coerceFormValue } from '@conform-to/zod/v4/future';
 import {
-	Stack,
-	FormControl,
-	FormLabel,
-	FormErrorMessage,
-	Input,
-	Select,
 	Button,
 	Container,
-	Checkbox,
-	Radio,
-	Textarea,
-	Switch,
+	Field,
+	Fieldset,
 	Heading,
+	Input,
+	NativeSelect,
+	RadioGroup,
+	Stack,
 	Text,
+	Textarea,
 } from '@chakra-ui/react';
+import { z } from 'zod';
+import { useState } from 'react';
 import {
+	ExampleCheckbox,
 	ExampleEditable,
+	ExampleFileUpload,
 	ExampleNumberInput,
 	ExamplePinInput,
 	ExampleRadioGroup,
 	ExampleSlider,
+	ExampleSwitch,
+	ExampleTagsInput,
 } from './form';
-import { z } from 'zod';
-import { useState } from 'react';
 import { useForm } from './forms';
 
 const schema = coerceFormValue(
 	z.object({
-		email: z.string(),
-		language: z.string(),
-		description: z.string(),
-		quantity: z.number(),
-		pin: z.string().min(4).max(4),
-		title: z.string(),
-		subscribe: z.boolean(),
-		enabled: z.boolean(),
-		progress: z.number().min(3).max(7),
-		active: z.string(),
+		email: z
+			.string({ error: 'Email is required' })
+			.email('Enter a valid email address'),
+		language: z.enum(['english', 'german', 'japanese'], {
+			error: 'Choose a language',
+		}),
+		description: z.string({ error: 'Description is required' }).min(1),
+		quantity: z.number({ error: 'Quantity is required' }).min(1),
+		pin: z
+			.string({ error: 'PIN is required' })
+			.length(4, 'PIN must contain 4 characters'),
+		title: z.string({ error: 'Title is required' }).min(1),
+		subscribe: z.literal(true, { error: 'Newsletter consent is required' }),
+		enabled: z.literal(true, { error: 'Enable this setting' }),
+		progress: z.number({ error: 'Progress is required' }).min(3).max(7),
+		active: z.enum(['yes', 'no'], { error: 'Choose an active state' }),
+		tags: z
+			.array(z.string(), { error: 'Add at least one topic' })
+			.min(1, 'Add at least one topic'),
+		attachment: z.file({ error: 'Choose a file' }),
 	}),
 );
+
+function stringifySubmittedValue(value: z.output<typeof schema>) {
+	return JSON.stringify(
+		value,
+		(_key, item) =>
+			item instanceof File
+				? { name: item.name, size: item.size, type: item.type }
+				: item,
+		2,
+	);
+}
 
 export default function App() {
 	const [submittedValue, setSubmittedValue] = useState<z.output<
@@ -48,7 +70,10 @@ export default function App() {
 	const [searchParams, setSearchParams] = useState(
 		() => new URLSearchParams(window.location.search),
 	);
+	const defaultValueKey = searchParams.toString();
 	const { form, fields, intent } = useForm(schema, {
+		// The URL is the source of the form's defaults in this client-only example.
+		key: defaultValueKey,
 		defaultValue: {
 			email: searchParams.get('email'),
 			language: searchParams.get('language'),
@@ -60,173 +85,296 @@ export default function App() {
 			enabled: searchParams.get('enabled'),
 			progress: searchParams.get('progress'),
 			active: searchParams.get('active'),
+			tags: searchParams.getAll('tags'),
 		},
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 
 			// Demo only - This emulates a GET request with the form data populated in the URL.
 			const url = new URL(document.URL);
-			const searchParams = new URLSearchParams(
+			const nextSearchParams = new URLSearchParams(
 				Array.from(formData).filter(
-					// Skip the file as it is not serializable
+					// Skip files because they cannot be represented in URL search params.
 					(entry): entry is [string, string] => typeof entry[1] === 'string',
 				),
 			);
-			url.search = searchParams.toString();
+			url.search = nextSearchParams.toString();
 			window.history.pushState(null, '', url);
 
-			setSearchParams(searchParams);
+			setSearchParams(nextSearchParams);
 			setSubmittedValue(value);
 		},
 	});
 
 	return (
-		<Container maxW="container.sm" paddingY={8}>
-			<form {...form.props}>
-				<Stack direction="column" spacing={8}>
+		<Container maxW="2xl" py={8}>
+			{/* Chakra's uncontrolled controls need a fresh instance for new defaults. */}
+			<form key={defaultValueKey} {...form.props}>
+				<Stack gap={8}>
 					<header>
 						<Heading mb={4}>Chakra UI Example</Heading>
 						<Text>
-							This example shows you how to integrate Chakra UI with Conform.
-							When the form is submitted, the search params will be updated with
-							the form data and is set as the default value of the form.
+							This example shows how to integrate Chakra UI with Conform. When
+							the form is submitted, serializable form data is written to the
+							URL and becomes the form&apos;s new default value.
 						</Text>
 					</header>
 
-					<FormControl isInvalid={!fields.email.valid}>
-						<FormLabel>Email (Input)</FormLabel>
+					<Field.Root invalid={!fields.email.valid} required>
+						<Field.Label htmlFor={fields.email.id}>Email (Input)</Field.Label>
 						<Input
 							type="email"
 							{...fields.email.inputProps}
 							// Equivalent to:
+							// id={fields.email.id}
 							// name={fields.email.name}
 							// defaultValue={fields.email.defaultValue}
 							// required={fields.email.required}
+							// aria-invalid={fields.email.ariaInvalid}
+							// aria-describedby={fields.email.ariaDescribedBy}
 						/>
-						<FormErrorMessage>{fields.email.errors}</FormErrorMessage>
-					</FormControl>
+						<Field.ErrorText id={fields.email.errorId}>
+							{fields.email.errors}
+						</Field.ErrorText>
+					</Field.Root>
 
-					<FormControl isInvalid={!fields.language.valid}>
-						<FormLabel>Language (Select)</FormLabel>
-						<Select
-							placeholder="Select option"
-							{...fields.language.selectProps}
-							// Equivalent to:
-							// name={fields.language.name}
-							// defaultValue={fields.language.defaultValue}
-							// required={fields.language.required}
-						>
-							<option value="english">English</option>
-							<option value="german">German</option>
-							<option value="japanese">Japanese</option>
-						</Select>
-						<FormErrorMessage>{fields.language.errors}</FormErrorMessage>
-					</FormControl>
+					<Field.Root invalid={!fields.language.valid} required>
+						<Field.Label htmlFor={fields.language.id}>
+							Language (NativeSelect)
+						</Field.Label>
+						<NativeSelect.Root invalid={!fields.language.valid}>
+							<NativeSelect.Field
+								placeholder="Select option"
+								{...fields.language.selectProps}
+								// Equivalent to:
+								// id={fields.language.id}
+								// name={fields.language.name}
+								// defaultValue={fields.language.defaultValue}
+								// aria-invalid={fields.language.ariaInvalid}
+								// aria-describedby={fields.language.ariaDescribedBy}
+							>
+								<option value="english">English</option>
+								<option value="german">German</option>
+								<option value="japanese">Japanese</option>
+							</NativeSelect.Field>
+							<NativeSelect.Indicator />
+						</NativeSelect.Root>
+						<Field.ErrorText id={fields.language.errorId}>
+							{fields.language.errors}
+						</Field.ErrorText>
+					</Field.Root>
 
-					<FormControl isInvalid={!fields.description.valid}>
-						<FormLabel>Description (Textarea)</FormLabel>
+					<Field.Root invalid={!fields.description.valid} required>
+						<Field.Label htmlFor={fields.description.id}>
+							Description (Textarea)
+						</Field.Label>
 						<Textarea
 							{...fields.description.textareaProps}
 							// Equivalent to:
+							// id={fields.description.id}
 							// name={fields.description.name}
 							// defaultValue={fields.description.defaultValue}
 							// required={fields.description.required}
+							// aria-invalid={fields.description.ariaInvalid}
+							// aria-describedby={fields.description.ariaDescribedBy}
 						/>
-						<FormErrorMessage>{fields.description.errors}</FormErrorMessage>
-					</FormControl>
+						<Field.ErrorText id={fields.description.errorId}>
+							{fields.description.errors}
+						</Field.ErrorText>
+					</Field.Root>
 
-					<FormControl isInvalid={!fields.quantity.valid}>
-						<FormLabel>Quantity (NumberInput)</FormLabel>
+					<Field.Root invalid={!fields.quantity.valid} required>
+						<Field.Label htmlFor={fields.quantity.id}>
+							Quantity (NumberInput)
+						</Field.Label>
 						<ExampleNumberInput
 							{...fields.quantity.numberInputProps}
 							// Equivalent to:
+							// id={fields.quantity.id}
 							// name={fields.quantity.name}
 							// defaultValue={fields.quantity.defaultValue}
+							// required={fields.quantity.required}
+							// invalid={!fields.quantity.valid}
+							// aria-describedby={fields.quantity.ariaDescribedBy}
 						/>
-						<FormErrorMessage>{fields.quantity.errors}</FormErrorMessage>
-					</FormControl>
+						<Field.ErrorText id={fields.quantity.errorId}>
+							{fields.quantity.errors}
+						</Field.ErrorText>
+					</Field.Root>
 
-					<FormControl isInvalid={!fields.pin.valid}>
-						<FormLabel>PIN (PinInput)</FormLabel>
+					<Field.Root invalid={!fields.pin.valid} required>
+						<Field.Label htmlFor={fields.pin.id}>PIN (PinInput)</Field.Label>
 						<ExamplePinInput
 							{...fields.pin.pinInputProps}
 							// Equivalent to:
+							// id={fields.pin.id}
 							// name={fields.pin.name}
 							// defaultValue={fields.pin.defaultValue}
+							// required={fields.pin.required}
+							// invalid={!fields.pin.valid}
+							// aria-describedby={fields.pin.ariaDescribedBy}
 						/>
-						<FormErrorMessage>{fields.pin.errors}</FormErrorMessage>
-					</FormControl>
+						<Field.ErrorText id={fields.pin.errorId}>
+							{fields.pin.errors}
+						</Field.ErrorText>
+					</Field.Root>
 
-					<FormControl isInvalid={!fields.title.valid}>
-						<FormLabel>Title (Editable)</FormLabel>
+					<Field.Root invalid={!fields.title.valid} required>
+						<Field.Label htmlFor={fields.title.id}>
+							Title (Editable)
+						</Field.Label>
 						<ExampleEditable
 							{...fields.title.editableProps}
 							// Equivalent to:
+							// id={fields.title.id}
 							// name={fields.title.name}
 							// defaultValue={fields.title.defaultValue}
+							// required={fields.title.required}
+							// invalid={!fields.title.valid}
+							// aria-describedby={fields.title.ariaDescribedBy}
 						/>
-						<FormErrorMessage>{fields.title.errors}</FormErrorMessage>
-					</FormControl>
+						<Field.ErrorText id={fields.title.errorId}>
+							{fields.title.errors}
+						</Field.ErrorText>
+					</Field.Root>
 
-					<FormControl isInvalid={!fields.subscribe.valid}>
-						<FormLabel>Subscribe (Checkbox)</FormLabel>
-						<Checkbox
+					<Field.Root invalid={!fields.subscribe.valid} required>
+						<Field.Label htmlFor={fields.subscribe.id}>
+							Subscribe (Checkbox)
+						</Field.Label>
+						<ExampleCheckbox
 							{...fields.subscribe.checkboxProps}
 							// Equivalent to:
+							// id={fields.subscribe.id}
 							// name={fields.subscribe.name}
 							// value="on"
 							// defaultChecked={fields.subscribe.defaultChecked}
 							// required={fields.subscribe.required}
+							// invalid={!fields.subscribe.valid}
+							// aria-describedby={fields.subscribe.ariaDescribedBy}
 						>
 							Newsletter
-						</Checkbox>
-						<FormErrorMessage>{fields.subscribe.errors}</FormErrorMessage>
-					</FormControl>
+						</ExampleCheckbox>
+						<Field.ErrorText id={fields.subscribe.errorId}>
+							{fields.subscribe.errors}
+						</Field.ErrorText>
+					</Field.Root>
 
-					<FormControl isInvalid={!fields.enabled.valid}>
-						<FormLabel>Enabled (Switch)</FormLabel>
-						<Switch
+					<Field.Root invalid={!fields.enabled.valid} required>
+						<Field.Label htmlFor={fields.enabled.id}>
+							Enabled (Switch)
+						</Field.Label>
+						<ExampleSwitch
 							{...fields.enabled.switchProps}
 							// Equivalent to:
+							// id={fields.enabled.id}
 							// name={fields.enabled.name}
 							// value="on"
 							// defaultChecked={fields.enabled.defaultChecked}
 							// required={fields.enabled.required}
-						/>
-						<FormErrorMessage>{fields.enabled.errors}</FormErrorMessage>
-					</FormControl>
+							// invalid={!fields.enabled.valid}
+							// aria-describedby={fields.enabled.ariaDescribedBy}
+						>
+							On
+						</ExampleSwitch>
+						<Field.ErrorText id={fields.enabled.errorId}>
+							{fields.enabled.errors}
+						</Field.ErrorText>
+					</Field.Root>
 
-					<FormControl isInvalid={!fields.progress.valid}>
-						<FormLabel>Progress (Slider)</FormLabel>
+					<Field.Root invalid={!fields.progress.valid} required>
+						<Field.Label htmlFor={fields.progress.id}>
+							Progress (Slider)
+						</Field.Label>
 						<ExampleSlider
 							{...fields.progress.sliderProps}
 							// Equivalent to:
+							// id={fields.progress.id}
 							// name={fields.progress.name}
 							// defaultValue={fields.progress.defaultValue}
+							// required={fields.progress.required}
+							// invalid={!fields.progress.valid}
+							// aria-describedby={fields.progress.ariaDescribedBy}
 						/>
-						<FormErrorMessage>{fields.progress.errors}</FormErrorMessage>
-					</FormControl>
+						<Field.ErrorText id={fields.progress.errorId}>
+							{fields.progress.errors}
+						</Field.ErrorText>
+					</Field.Root>
 
-					<FormControl isInvalid={!fields.active.valid}>
-						<FormLabel>Active (Radio)</FormLabel>
+					<Fieldset.Root invalid={!fields.active.valid}>
+						<Fieldset.Legend id={`${fields.active.id}-legend`}>
+							Active (RadioGroup)
+						</Fieldset.Legend>
 						<ExampleRadioGroup
 							{...fields.active.radioGroupProps}
+							aria-labelledby={`${fields.active.id}-legend`}
 							// Equivalent to:
+							// id={fields.active.id}
 							// name={fields.active.name}
 							// defaultValue={fields.active.defaultValue}
+							// required={fields.active.required}
+							// invalid={!fields.active.valid}
+							// aria-describedby={fields.active.ariaDescribedBy}
 						>
-							<Stack spacing={5} direction="row">
-								<Radio value="yes">Yes</Radio>
-								<Radio value="no">No</Radio>
+							<Stack gap={5} direction="row">
+								<RadioGroup.Item value="yes">
+									<RadioGroup.ItemHiddenInput />
+									<RadioGroup.ItemIndicator />
+									<RadioGroup.ItemText>Yes</RadioGroup.ItemText>
+								</RadioGroup.Item>
+								<RadioGroup.Item value="no">
+									<RadioGroup.ItemHiddenInput />
+									<RadioGroup.ItemIndicator />
+									<RadioGroup.ItemText>No</RadioGroup.ItemText>
+								</RadioGroup.Item>
 							</Stack>
 						</ExampleRadioGroup>
-						<FormErrorMessage>{fields.active.errors}</FormErrorMessage>
-					</FormControl>
+						<Fieldset.ErrorText id={fields.active.errorId}>
+							{fields.active.errors}
+						</Fieldset.ErrorText>
+					</Fieldset.Root>
+
+					<Field.Root invalid={!fields.tags.valid} required>
+						<Field.Label htmlFor={fields.tags.id}>
+							Topics (TagsInput)
+						</Field.Label>
+						<ExampleTagsInput
+							{...fields.tags.tagsInputProps}
+							// Equivalent to:
+							// id={fields.tags.id}
+							// name={fields.tags.name}
+							// defaultValue={fields.tags.defaultOptions}
+							// required={fields.tags.required}
+							// invalid={!fields.tags.valid}
+							// aria-describedby={fields.tags.ariaDescribedBy}
+						/>
+						<Field.ErrorText id={fields.tags.errorId}>
+							{fields.tags.errors}
+						</Field.ErrorText>
+					</Field.Root>
+
+					<Field.Root invalid={!fields.attachment.valid} required>
+						<Field.Label htmlFor={fields.attachment.id}>
+							Attachment (FileUpload)
+						</Field.Label>
+						<ExampleFileUpload
+							{...fields.attachment.fileUploadProps}
+							// Equivalent to:
+							// id={fields.attachment.id}
+							// name={fields.attachment.name}
+							// required={fields.attachment.required}
+							// invalid={!fields.attachment.valid}
+							// aria-describedby={fields.attachment.ariaDescribedBy}
+						/>
+						<Field.ErrorText id={fields.attachment.errorId}>
+							{fields.attachment.errors}
+						</Field.ErrorText>
+					</Field.Root>
 
 					{submittedValue ? (
 						<div>
 							<Text mb={2}>Value submitted</Text>
-							<pre>{JSON.stringify(submittedValue, null, 2)}</pre>
+							<pre>{stringifySubmittedValue(submittedValue)}</pre>
 						</div>
 					) : null}
 
@@ -238,9 +386,7 @@ export default function App() {
 						>
 							Reset
 						</Button>
-						<Button type="submit" variant="solid">
-							Submit
-						</Button>
+						<Button type="submit">Submit</Button>
 					</Stack>
 				</Stack>
 			</form>
