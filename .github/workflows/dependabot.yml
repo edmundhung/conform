@@ -52,6 +52,20 @@ jobs:
           GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          if ! pull_requests="$(
+            gh pr list \
+              --state open \
+              --limit 100 \
+              --json author,headRefOid,number \
+              --jq '.[] | select(.author.login == "app/dependabot") | [.number, .headRefOid] | @tsv'
+          )"; then
+            echo "Unable to list open Dependabot PRs" >&2
+            exit 1
+          fi
+          if [[ -z "$pull_requests" ]]; then
+            exit 0
+          fi
+
           while IFS=$'\t' read -r number head_sha; do
             run_id="$(
               gh run list \
@@ -77,10 +91,4 @@ jobs:
 
             gh run rerun "$run_id" --failed
             echo "Rerunning Preview for Dependabot PR #$number"
-          done < <(
-            gh pr list \
-              --state open \
-              --limit 100 \
-              --json author,headRefOid,number \
-              --jq '.[] | select(.author.login == "app/dependabot") | [.number, .headRefOid] | @tsv'
-          )
+          done <<< "$pull_requests"
