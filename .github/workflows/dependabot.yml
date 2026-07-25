@@ -49,6 +49,7 @@ jobs:
     steps:
       - name: Rerun blocked Dependabot previews
         env:
+          GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           while IFS=$'\t' read -r number head_sha; do
