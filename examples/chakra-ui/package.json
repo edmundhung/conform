@@ -5,31 +5,36 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "tsc -b && vite build",
-		"lint": "eslint .",
+		"test": "playwright test",
+		"lint": "oxlint",
+		"typecheck": "tsc -b",
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"@chakra-ui/react": "^2.4.2",
+		"@chakra-ui/react": "^3.36.1",
 		"@conform-to/react": "^1.20.0",
 		"@conform-to/zod": "^1.20.0",
-		"@emotion/react": "^11.10.5",
-		"@emotion/styled": "^11.10.5",
-		"framer-motion": "^7.6.19",
-		"react": "^18.2.0",
-		"react-dom": "^18.2.0",
-		"zod": "^3.25.75"
+		"@emotion/react": "^11.14.0",
+		"react": "^19.2.7",
+		"react-dom": "^19.2.7",
+		"zod": "^4.4.3"
 	},
 	"devDependencies": {
-		"@eslint/js": "^9.17.0",
-		"@types/react": "^18.3.18",
-		"@types/react-dom": "^18.3.5",
-		"@vitejs/plugin-react": "^5.2.0",
-		"eslint": "^9.17.0",
-		"eslint-plugin-react-hooks": "^5.0.0",
-		"eslint-plugin-react-refresh": "^0.4.16",
-		"globals": "^15.14.0",
-		"typescript": "^5.8.3",
-		"typescript-eslint": "^8.18.2",
-		"vite": "^7.3.3"
+		"@playwright/test": "^1.49.1",
+		"@types/node": "^24.13.3",
+		"@types/react": "^19.2.17",
+		"@types/react-dom": "^19.2.3",
+		"@vitejs/plugin-react": "^6.0.3",
+		"oxlint": "^1.74.0",
+		"typescript": "~6.0.2",
+		"vite": "^8.1.5"
+	},
+	"dependenciesMeta": {
+		"@conform-to/react": {
+			"injected": true
+		},
+		"@conform-to/zod": {
+			"injected": true
+		}
 	}
 }

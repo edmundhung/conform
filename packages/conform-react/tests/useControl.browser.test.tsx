@@ -4,7 +4,8 @@ import { render } from 'vitest-browser-react';
 import { Locator, userEvent } from 'vitest/browser';
 import { BaseControl, useControl, useForm } from '../future';
 import { createFileList } from '@conform-to/dom';
-import type { FormValue } from '@conform-to/dom/future';
+import type { FormValue, SubmissionResult } from '@conform-to/dom/future';
+import { parseSubmission, report } from '@conform-to/dom/future';
 import { useEffect } from 'react';
 
 describe('future export: useControl', () => {
@@ -1244,6 +1245,175 @@ describe('future export: useControl', () => {
 		});
 	});
 
+	it('applies a structural change after an internal reset', async () => {
+		function TestForm() {
+			const { form, fields, intent } = useForm({
+				defaultValue: { items: ['one'] },
+				onValidate({ error }) {
+					return error;
+				},
+				onSubmit(event) {
+					event.preventDefault();
+				},
+			});
+			const items = useControl({
+				defaultValue: fields.items.defaultPayload,
+				parse: (payload) => payload,
+			});
+
+			return (
+				<form {...form.props}>
+					<BaseControl
+						type="fieldset"
+						name={fields.items.name}
+						ref={items.register}
+						defaultValue={items.defaultValue}
+					/>
+					<button type="button" onClick={() => items.change(['one', 'two'])}>
+						Change items
+					</button>
+					<button type="button" onClick={() => intent.reset()}>
+						Reset items
+					</button>
+					<output aria-label="Items state">
+						{JSON.stringify(items.payload)}
+					</output>
+				</form>
+			);
+		}
+
+		const screen = render(<TestForm />);
+		const formElement = screen.container.querySelector('form');
+		const state = screen.getByLabelText('Items state');
+		const changeButton = screen.getByText('Change items');
+
+		await expect.element(state).toHaveTextContent(JSON.stringify(['one']));
+
+		await userEvent.click(changeButton);
+		await expect
+			.element(state)
+			.toHaveTextContent(JSON.stringify(['one', 'two']));
+
+		await userEvent.click(screen.getByText('Reset items'));
+		await expect.element(state).toHaveTextContent(JSON.stringify(['one']));
+
+		await userEvent.click(changeButton);
+		await expect
+			.element(state)
+			.toHaveTextContent(JSON.stringify(['one', 'two']));
+		await expect.element(formElement).toHaveFormValues({
+			'items[0]': 'one',
+			'items[1]': 'two',
+		});
+	});
+
+	it('syncs a structural default from a server target value', async () => {
+		function TestForm(props: { lastResult?: SubmissionResult<string[]> }) {
+			const { form, fields } = useForm({
+				defaultValue: {
+					address: { street: '123 Main St' },
+				},
+				lastResult: props.lastResult,
+				onValidate({ error }) {
+					return error;
+				},
+				onSubmit(event) {
+					event.preventDefault();
+				},
+			});
+			const address = useControl({
+				defaultValue: fields.address.defaultPayload,
+				parse: (payload) => payload,
+			});
+
+			return (
+				<form {...form.props}>
+					<BaseControl
+						type="fieldset"
+						name={fields.address.name}
+						ref={address.register}
+						defaultValue={address.defaultValue}
+					/>
+					<button
+						type="button"
+						onClick={() =>
+							address.change({
+								street: 'User draft',
+								city: 'Drafttown',
+							})
+						}
+					>
+						Change address
+					</button>
+					<output aria-label="Address state">
+						{JSON.stringify({
+							payload: address.payload,
+							defaultValue: address.defaultValue,
+						})}
+					</output>
+				</form>
+			);
+		}
+
+		const screen = render(<TestForm />);
+		const formElement = screen.container.querySelector('form');
+		const state = screen.getByLabelText('Address state');
+
+		await expect.element(state).toHaveTextContent(
+			JSON.stringify({
+				payload: { street: '123 Main St' },
+				defaultValue: { street: '123 Main St' },
+			}),
+		);
+
+		await userEvent.click(screen.getByText('Change address'));
+
+		await expect.element(state).toHaveTextContent(
+			JSON.stringify({
+				payload: { street: 'User draft', city: 'Drafttown' },
+				defaultValue: { street: 'User draft', city: 'Drafttown' },
+			}),
+		);
+
+		const formData = new FormData();
+		formData.append('address.street', '456 Elm St');
+		formData.append('address.city', 'Othertown');
+		formData.append('address.contacts[0]', 'Jane');
+		const lastResult = report(parseSubmission(formData), {
+			targetValue: {
+				address: {
+					street: '456 Elm St',
+					city: 'Othertown',
+					contacts: ['Jane'],
+				},
+			},
+		});
+
+		// Server results do not dispatch the internal update event. The new option
+		// must still replace the structural override and add the contacts input.
+		screen.rerender(<TestForm lastResult={lastResult} />);
+
+		await expect.element(state).toHaveTextContent(
+			JSON.stringify({
+				payload: {
+					street: '456 Elm St',
+					city: 'Othertown',
+					contacts: ['Jane'],
+				},
+				defaultValue: {
+					street: '456 Elm St',
+					city: 'Othertown',
+					contacts: ['Jane'],
+				},
+			}),
+		);
+		await expect.element(formElement).toHaveFormValues({
+			'address.street': '456 Elm St',
+			'address.city': 'Othertown',
+			'address.contacts[0]': 'Jane',
+		});
+	});
+
 	it('supports resetting the input after initialized with a different default value', async () => {
 		const changeHandler = vi.fn();
 
@@ -1285,6 +1455,213 @@ describe('future export: useControl', () => {
 
 		// onChange should have fired
 		expect(changeHandler).toHaveBeenCalled();
+	});
+
+	it('syncs defaults for standard controls when form defaults change', async () => {
+		function TestForm(props: {
+			formKey: string;
+			defaults: { title: string; enabled: string | undefined; tags: string[] };
+			lastResult?: SubmissionResult<string[]>;
+		}) {
+			const { form, fields, intent } = useForm({
+				key: props.formKey,
+				defaultValue: props.defaults,
+				lastResult: props.lastResult,
+				onValidate({ error }) {
+					return error;
+				},
+				onSubmit(event) {
+					event.preventDefault();
+				},
+			});
+			const title = useControl({ defaultValue: fields.title.defaultValue });
+			const enabled = useControl({
+				defaultChecked: fields.enabled.defaultChecked,
+				value: 'on',
+			});
+			const tags = useControl({ defaultValue: fields.tags.defaultOptions });
+
+			return (
+				<form {...form.props}>
+					<input name="title" ref={title.register} hidden />
+					<input type="checkbox" name="enabled" ref={enabled.register} hidden />
+					<select name="tags" ref={tags.register} multiple hidden>
+						<option value="a">A</option>
+						<option value="b">B</option>
+						<option value="c">C</option>
+					</select>
+					<button
+						type="button"
+						onClick={() => {
+							title.change('Changed');
+							enabled.change(false);
+							tags.change(['c']);
+						}}
+					>
+						Change
+					</button>
+					<button type="button" onClick={() => intent.reset()}>
+						Reset
+					</button>
+					<button
+						type="button"
+						onClick={() =>
+							intent.update({ name: fields.title.name, value: 'Updated' })
+						}
+					>
+						Update title
+					</button>
+					<output aria-label="Title state">
+						{JSON.stringify({
+							value: title.value,
+							defaultValue: title.defaultValue,
+						})}
+					</output>
+					<output aria-label="Enabled state">
+						{JSON.stringify({
+							checked: enabled.checked,
+							defaultValue: enabled.defaultValue,
+						})}
+					</output>
+					<output aria-label="Tags state">
+						{JSON.stringify({
+							options: tags.options,
+							defaultValue: tags.defaultValue,
+						})}
+					</output>
+				</form>
+			);
+		}
+
+		const screen = render(
+			<TestForm
+				formKey="first"
+				defaults={{ title: 'First', enabled: undefined, tags: ['a'] }}
+			/>,
+		);
+		const titleState = screen.getByLabelText('Title state');
+		const enabledState = screen.getByLabelText('Enabled state');
+		const tagsState = screen.getByLabelText('Tags state');
+
+		async function expectState(expected: {
+			title: { value: string; defaultValue: string };
+			enabled: { checked: boolean; defaultValue: string | null };
+			tags: { options: string[]; defaultValue: string[] };
+		}) {
+			await expect
+				.element(titleState)
+				.toHaveTextContent(JSON.stringify(expected.title));
+			await expect
+				.element(enabledState)
+				.toHaveTextContent(JSON.stringify(expected.enabled));
+			await expect
+				.element(tagsState)
+				.toHaveTextContent(JSON.stringify(expected.tags));
+		}
+
+		await expectState({
+			title: { value: 'First', defaultValue: 'First' },
+			enabled: { checked: false, defaultValue: null },
+			tags: { options: ['a'], defaultValue: ['a'] },
+		});
+
+		screen.rerender(
+			<TestForm
+				formKey="second"
+				defaults={{ title: 'Second', enabled: 'on', tags: ['b'] }}
+			/>,
+		);
+
+		await expectState({
+			title: { value: 'Second', defaultValue: 'Second' },
+			enabled: { checked: true, defaultValue: 'on' },
+			tags: { options: ['b'], defaultValue: ['b'] },
+		});
+
+		await userEvent.click(screen.getByText('Change'));
+
+		await expectState({
+			title: { value: 'Changed', defaultValue: 'Second' },
+			enabled: { checked: false, defaultValue: 'on' },
+			tags: { options: ['c'], defaultValue: ['b'] },
+		});
+
+		await userEvent.click(screen.getByText('Reset'));
+
+		await expectState({
+			title: { value: 'Second', defaultValue: 'Second' },
+			enabled: { checked: true, defaultValue: 'on' },
+			tags: { options: ['b'], defaultValue: ['b'] },
+		});
+
+		await userEvent.click(screen.getByText('Update title'));
+
+		await expectState({
+			title: { value: 'Updated', defaultValue: 'Updated' },
+			enabled: { checked: true, defaultValue: 'on' },
+			tags: { options: ['b'], defaultValue: ['b'] },
+		});
+
+		await userEvent.click(screen.getByText('Change'));
+
+		const formElement = screen.container.querySelector('form');
+		const lastResult = report(
+			parseSubmission(new FormData(formElement ?? undefined)),
+			{
+				error: {
+					fieldErrors: {
+						title: ['Invalid title'],
+					},
+				},
+			},
+		);
+
+		screen.rerender(
+			<TestForm
+				formKey="second"
+				defaults={{ title: 'Second', enabled: 'on', tags: ['b'] }}
+				lastResult={lastResult}
+			/>,
+		);
+
+		await expectState({
+			title: { value: 'Changed', defaultValue: 'Changed' },
+			enabled: { checked: false, defaultValue: null },
+			tags: { options: ['c'], defaultValue: ['c'] },
+		});
+	});
+
+	it('does not add a render when a standard default option changes', async () => {
+		const renderHandler = vi.fn();
+
+		function DefaultValueProbe(props: { defaultValue: string }) {
+			renderHandler();
+			const control = useControl({ defaultValue: props.defaultValue });
+
+			return (
+				<output aria-label="Control state">
+					{JSON.stringify({
+						value: control.value,
+						defaultValue: control.defaultValue,
+					})}
+				</output>
+			);
+		}
+
+		const screen = render(<DefaultValueProbe defaultValue="First" />);
+		const state = screen.getByLabelText('Control state');
+
+		await expect
+			.element(state)
+			.toHaveTextContent('{"value":"First","defaultValue":"First"}');
+		const initialRenderCount = renderHandler.mock.calls.length;
+
+		screen.rerender(<DefaultValueProbe defaultValue="Second" />);
+
+		await expect
+			.element(state)
+			.toHaveTextContent('{"value":"Second","defaultValue":"Second"}');
+		expect(renderHandler).toHaveBeenCalledTimes(initialRenderCount + 1);
 	});
 
 	it('seeds control state from defaults on first client render', async () => {

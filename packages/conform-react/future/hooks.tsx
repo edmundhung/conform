@@ -598,24 +598,51 @@ export function useControl(options: ControlOptions = {}): Control<any> {
 		}),
 		[],
 	);
-	const [defaultValue, setDefaultValue] = useState(() =>
-		deriveDefaultPayload(options),
+	const optionDefaultValue = deriveDefaultPayload(options);
+	const [structuralOverride, setStructuralOverride] = useState<{
+		value: unknown;
+		defaultValue: unknown;
+	} | null>(null);
+	const hasInternalUpdateSinceChangeRef = useRef(false);
+	const isStructuralControl = isGlobalInstance(
+		inputRef.current,
+		'HTMLFieldSetElement',
 	);
-	const pendingDefaultValueSyncRef = useRef(false);
 
 	/**
-	 * Keep defaultValue in sync with external option updates during render.
-	 * This is required for structural controls where hidden descendants must be
-	 * rendered in the same cycle as form state updates (e.g. update intents).
+	 * A fieldset has no value property. BaseControl represents its payload by
+	 * rendering hidden descendants from control.defaultValue, so control.change()
+	 * stores an override in React state. Until then, the fieldset follows the
+	 * latest option directly, just like a standard control.
+	 *
+	 * The override becomes stale when either an internal update has happened or
+	 * the default value captured by control.change() no longer matches. The boolean
+	 * handles client resets, updates and form-key replacements even when the next
+	 * option is deeply equal to the previous one. It remains set while stale state
+	 * is cleared and is reset only by a later control.change(), so an interrupted
+	 * render cannot consume the signal. The option comparison handles updates
+	 * without an internal event, such as a server lastResult with a targetValue.
+	 *
+	 * Clearing stale state during render is intentional. React retries this
+	 * component before committing, so BaseControl never commits outdated hidden
+	 * descendants. Standard controls never create this override.
 	 */
-	if (
-		pendingDefaultValueSyncRef.current &&
-		inputRef.current &&
-		isGlobalInstance(inputRef.current, 'HTMLFieldSetElement')
-	) {
-		pendingDefaultValueSyncRef.current = false;
-		setDefaultValue(() => deriveDefaultPayload(options));
+	const hasStaleStructuralOverride =
+		isStructuralControl &&
+		structuralOverride !== null &&
+		(hasInternalUpdateSinceChangeRef.current ||
+			!deepEqual(structuralOverride.defaultValue, optionDefaultValue));
+
+	if (hasStaleStructuralOverride) {
+		setStructuralOverride(null);
 	}
+
+	const defaultValue =
+		isStructuralControl &&
+		structuralOverride !== null &&
+		!hasStaleStructuralOverride
+			? structuralOverride.value
+			: optionDefaultValue;
 
 	const eventDispatched = useRef<{
 		change?: number;
@@ -640,7 +667,7 @@ export function useControl(options: ControlOptions = {}): Control<any> {
 					input instanceof HTMLFieldSetElement &&
 					event.target === input.form
 				) {
-					pendingDefaultValueSyncRef.current = true;
+					hasInternalUpdateSinceChangeRef.current = true;
 				}
 			}),
 		[observer],
@@ -865,8 +892,23 @@ export function useControl(options: ControlOptions = {}): Control<any> {
 					// Fieldset mode renders hidden descendant inputs from defaultValue.
 					// Flush this update before dispatching events so listeners see the
 					// latest form structure in the same input/change cycle.
+					// Any pending internal update happened before this change. Clear the
+					// marker before flushSync so its synchronous render keeps the new override.
+					hasInternalUpdateSinceChangeRef.current = false;
+
 					flushSync(() => {
-						setDefaultValue(serializedValue);
+						const currentDefaultValue = deriveDefaultPayload(
+							optionsRef.current,
+						);
+
+						setStructuralOverride(
+							deepEqual(serializedValue, currentDefaultValue)
+								? null
+								: {
+										value: serializedValue,
+										defaultValue: currentDefaultValue,
+									},
+						);
 					});
 				}
 
