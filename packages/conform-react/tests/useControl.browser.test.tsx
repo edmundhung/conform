@@ -1375,11 +1375,33 @@ describe('future export: useControl', () => {
 			}),
 		);
 
-		const formData = new FormData();
-		formData.append('address.street', '456 Elm St');
-		formData.append('address.city', 'Othertown');
-		formData.append('address.contacts[0]', 'Jane');
-		const lastResult = report(parseSubmission(formData), {
+		const lastResult = report(
+			parseSubmission(new FormData(formElement ?? undefined)),
+			{
+				targetValue: {
+					address: { street: '123 Main St' },
+				},
+			},
+		);
+
+		// The target intentionally matches the value from before change(). Value
+		// comparison cannot distinguish this update from the original default.
+		screen.rerender(<TestForm lastResult={lastResult} />);
+
+		await expect.element(state).toHaveTextContent(
+			JSON.stringify({
+				payload: { street: '123 Main St' },
+				defaultValue: { street: '123 Main St' },
+			}),
+		);
+		await expect.element(formElement).toHaveFormValues({
+			'address.street': '123 Main St',
+		});
+
+		await userEvent.click(screen.getByText('Change address'));
+
+		const formData = new FormData(formElement ?? undefined);
+		const nextResult = report(parseSubmission(formData), {
 			targetValue: {
 				address: {
 					street: '456 Elm St',
@@ -1389,9 +1411,7 @@ describe('future export: useControl', () => {
 			},
 		});
 
-		// Server results do not dispatch the internal update event. The new option
-		// must still replace the structural override and add the contacts input.
-		screen.rerender(<TestForm lastResult={lastResult} />);
+		screen.rerender(<TestForm lastResult={nextResult} />);
 
 		await expect.element(state).toHaveTextContent(
 			JSON.stringify({

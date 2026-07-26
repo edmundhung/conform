@@ -2,4 +2,4 @@
 '@conform-to/react': patch
 ---
 
-fix: synchronize `useControl().defaultValue` when form defaults change
+fix: restore `useControl().defaultValue` updates after client and server form updates
