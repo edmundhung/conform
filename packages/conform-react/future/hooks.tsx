@@ -279,12 +279,13 @@ export function useConform<
 							handlers: options.intentHandlers,
 						})
 					: normalizedResult;
+			const shouldNotifyFormUpdate =
+				// Server results can replace values too. The async client phase only
+				// resolves validation for the target applied by the initial client phase.
+				type !== 'client:async' &&
+				(finalResult.reset || typeof finalResult.targetValue !== 'undefined');
 
-			if (
-				formElement &&
-				type === 'client' &&
-				(finalResult.reset || typeof finalResult.targetValue !== 'undefined')
-			) {
+			if (formElement && shouldNotifyFormUpdate) {
 				dispatchInternalUpdateEvent(formElement);
 			}
 
@@ -601,7 +602,6 @@ export function useControl(options: ControlOptions = {}): Control<any> {
 	const optionDefaultValue = deriveDefaultPayload(options);
 	const [structuralOverride, setStructuralOverride] = useState<{
 		value: unknown;
-		defaultValue: unknown;
 	} | null>(null);
 	const hasInternalUpdateSinceChangeRef = useRef(false);
 	const isStructuralControl = isGlobalInstance(
@@ -615,32 +615,16 @@ export function useControl(options: ControlOptions = {}): Control<any> {
 	 * stores an override in React state. Until then, the fieldset follows the
 	 * latest option directly, just like a standard control.
 	 *
-	 * The override becomes stale when either an internal update has happened or
-	 * the default value captured by control.change() no longer matches. The boolean
-	 * handles client resets, updates and form-key replacements even when the next
-	 * option is deeply equal to the previous one. It remains set while stale state
-	 * is cleared and is reset only by a later control.change(), so an interrupted
-	 * render cannot consume the signal. The option comparison handles updates
-	 * without an internal event, such as a server lastResult with a targetValue.
-	 *
-	 * Clearing stale state during render is intentional. React retries this
-	 * component before committing, so BaseControl never commits outdated hidden
-	 * descendants. Standard controls never create this override.
+	 * Conform dispatches an internal event before replacing form values through a
+	 * reset, target value or new form key. Once that happens, the option becomes
+	 * the source of truth until the next control.change(), which replaces the
+	 * override and clears the marker. Keeping the inactive override avoids another
+	 * render just to clear stale state.
 	 */
-	const hasStaleStructuralOverride =
-		isStructuralControl &&
-		structuralOverride !== null &&
-		(hasInternalUpdateSinceChangeRef.current ||
-			!deepEqual(structuralOverride.defaultValue, optionDefaultValue));
-
-	if (hasStaleStructuralOverride) {
-		setStructuralOverride(null);
-	}
-
 	const defaultValue =
 		isStructuralControl &&
 		structuralOverride !== null &&
-		!hasStaleStructuralOverride
+		!hasInternalUpdateSinceChangeRef.current
 			? structuralOverride.value
 			: optionDefaultValue;
 
@@ -892,23 +876,14 @@ export function useControl(options: ControlOptions = {}): Control<any> {
 					// Fieldset mode renders hidden descendant inputs from defaultValue.
 					// Flush this update before dispatching events so listeners see the
 					// latest form structure in the same input/change cycle.
-					// Any pending internal update happened before this change. Clear the
-					// marker before flushSync so its synchronous render keeps the new override.
+					// This change supersedes any previous form update, so reactivate the
+					// override before rendering its new value.
 					hasInternalUpdateSinceChangeRef.current = false;
 
 					flushSync(() => {
-						const currentDefaultValue = deriveDefaultPayload(
-							optionsRef.current,
-						);
-
-						setStructuralOverride(
-							deepEqual(serializedValue, currentDefaultValue)
-								? null
-								: {
-										value: serializedValue,
-										defaultValue: currentDefaultValue,
-									},
-						);
+						// The wrapper distinguishes no override from null / undefined, and
+						// its fresh identity reactivates an identical previous value.
+						setStructuralOverride({ value: serializedValue });
 					});
 				}
 
