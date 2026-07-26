@@ -21,6 +21,7 @@ export type {
 	CustomStateHandler,
 	FormsConfig,
 	FormContext,
+	FormHandle,
 	FormMetadata,
 	FormOptions,
 	FormRef,
