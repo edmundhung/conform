@@ -1,7 +1,8 @@
 import type { Constraint, Submission } from '@conform-to/dom';
 import type { FormError, ValidationAttributes } from '@conform-to/dom/future';
 import { expectTypeOf, test } from 'vitest';
-import { z, type ZodAny } from 'zod';
+import { z } from 'zod';
+import { object as miniObject, string as miniString } from 'zod/v4/mini';
 import { getZodConstraint, parseWithZod } from '@conform-to/zod/v4';
 import {
 	coerceFormValue,
@@ -133,5 +134,16 @@ test('getConstraints', () => {
 });
 
 test('isSchema', () => {
-	expectTypeOf(isSchema).toEqualTypeOf<(schema: unknown) => schema is ZodAny>();
+	function configure<Schema>(
+		guard: (schema: unknown) => schema is Schema,
+	): (schema: Schema) => boolean {
+		return (schema) => guard(schema);
+	}
+
+	const configured = configure(isSchema);
+
+	expectTypeOf(configured(z.string())).toEqualTypeOf<boolean>();
+	expectTypeOf(configured(miniString())).toEqualTypeOf<boolean>();
+	expectTypeOf(configured(z.object({}))).toEqualTypeOf<boolean>();
+	expectTypeOf(configured(miniObject({}))).toEqualTypeOf<boolean>();
 });
