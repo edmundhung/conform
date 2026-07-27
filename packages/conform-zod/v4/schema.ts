@@ -1,11 +1,12 @@
-import type { ZodAny } from 'zod/v4';
+import type { ZodType } from 'zod/v4';
+import type { ZodMiniType } from 'zod/v4/mini';
 import type { ValidationAttributes } from '@conform-to/dom/future';
 import { getZodConstraint } from './constraint';
 
 /**
  * Type guard to check if a value is a Zod v4 schema.
  */
-export function isSchema(schema: unknown): schema is ZodAny {
+export function isSchema(schema: unknown): schema is ZodType | ZodMiniType {
 	return (
 		typeof schema === 'object' &&
 		schema !== null &&
