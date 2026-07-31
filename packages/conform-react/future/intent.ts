@@ -69,12 +69,6 @@ export function mergeIntentHandlers<
 
 const undefinedArg = '$$__undefined__$$';
 
-function deserializeIntentArgs(value: string): unknown[] {
-	return JSON.parse(`[${value}]`, (_, value) =>
-		value === undefinedArg ? undefined : value,
-	);
-}
-
 /**
  * Serializes a transport intent to string format.
  */
@@ -86,7 +80,7 @@ export function serializeIntent(intent: TransportIntent): string {
 	}
 
 	if (args.length === 0) {
-		return intent.type;
+		return `${intent.type}()`;
 	}
 
 	const serializedArgs = JSON.stringify(args, function (this, _, value) {
@@ -102,34 +96,28 @@ export function serializeIntent(intent: TransportIntent): string {
 
 /**
  * Parses the serialized intent string into a transport intent.
+ * Throws if the serialized arguments are malformed.
  */
 export function deserializeIntent(
 	serializedIntent: string,
 ): TransportIntent | undefined {
-	if (serializedIntent === '') {
-		return undefined;
-	}
-
-	let type = serializedIntent;
-	let args: Array<unknown> = [];
-
 	const openParenIndex = serializedIntent.indexOf('(');
 
 	if (
-		openParenIndex > 0 &&
-		serializedIntent[serializedIntent.length - 1] === ')'
+		openParenIndex <= 0 ||
+		serializedIntent[serializedIntent.length - 1] !== ')'
 	) {
-		type = serializedIntent.slice(0, openParenIndex);
+		return undefined;
+	}
 
-		const serializedArgs = serializedIntent.slice(openParenIndex + 1, -1);
+	const type = serializedIntent.slice(0, openParenIndex);
+	let args: Array<unknown> = [];
+	const serializedArgs = serializedIntent.slice(openParenIndex + 1, -1);
 
-		if (serializedArgs !== '') {
-			try {
-				args = deserializeIntentArgs(serializedArgs);
-			} catch {
-				return undefined;
-			}
-		}
+	if (serializedArgs !== '') {
+		args = JSON.parse(`[${serializedArgs}]`, (_, value) =>
+			value === undefinedArg ? undefined : value,
+		);
 	}
 
 	return {
@@ -147,16 +135,22 @@ export function parseIntent<
 	},
 ):
 	| FormIntent<Record<string, any>, Handlers>
-	| { type: 'submit'; payload: undefined }
+	| { type: 'submit'; payload: string | undefined }
 	| undefined {
 	if (intentValue === null) {
 		return { type: 'submit', payload: undefined };
 	}
 
-	const transportIntent = deserializeIntent(intentValue);
+	let transportIntent: TransportIntent | undefined;
+
+	try {
+		transportIntent = deserializeIntent(intentValue);
+	} catch {
+		return undefined;
+	}
 
 	if (!transportIntent) {
-		return undefined;
+		return { type: 'submit', payload: intentValue };
 	}
 
 	const handler = options.handlers[transportIntent.type];
@@ -166,9 +160,11 @@ export function parseIntent<
 	}
 
 	try {
+		const payload = handler.parse(...transportIntent.args);
+
 		return {
 			type: transportIntent.type,
-			payload: handler.parse(...transportIntent.args),
+			payload,
 		} as any;
 	} catch {
 		return undefined;

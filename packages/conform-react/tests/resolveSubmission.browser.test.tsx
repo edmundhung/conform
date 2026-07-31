@@ -26,7 +26,7 @@ test('resolveSubmission', () => {
 
 	expect(
 		resolveSubmission({
-			intent: 'reset',
+			intent: 'reset()',
 			payload: { email: 'test@example.com' },
 			fields: ['email'],
 		}),
@@ -61,6 +61,27 @@ test('resolveSubmission', () => {
 		resolveSubmission(
 			{
 				intent: 'unknown',
+				payload: { email: 'test@example.com' },
+				fields: ['email'],
+			},
+			{
+				handlers: customHandlers,
+			},
+		),
+	).toEqual({
+		intent: {
+			type: 'submit',
+			payload: 'unknown',
+		},
+		targetValue: {
+			email: 'test@example.com',
+		},
+	});
+
+	expect(
+		resolveSubmission(
+			{
+				intent: 'unknown()',
 				payload: { email: 'test@example.com' },
 				fields: ['email'],
 			},

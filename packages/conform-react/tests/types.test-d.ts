@@ -647,7 +647,9 @@ describe('configureForms', () => {
 		if (resolvedConfiguredSubmission.intent?.type === 'goToStep') {
 			assertType<number>(resolvedConfiguredSubmission.intent.payload.step);
 		} else if (resolvedConfiguredSubmission.intent?.type === 'submit') {
-			assertType<undefined>(resolvedConfiguredSubmission.intent.payload);
+			assertType<string | undefined>(
+				resolvedConfiguredSubmission.intent.payload,
+			);
 		}
 
 		const unresolvedConfiguredSubmission = custom.resolveSubmission({
@@ -991,6 +993,7 @@ test('IntentDispatcher', () => {
 	const intent = {} as IntentDispatcher<TestSchema>;
 
 	// Verify all intent methods exist
+	expectTypeOf(intent.submit).toBeFunction();
 	expectTypeOf(intent.validate).toBeFunction();
 	expectTypeOf(intent.update).toBeFunction();
 	expectTypeOf(intent.insert).toBeFunction();
@@ -1000,6 +1003,10 @@ test('IntentDispatcher', () => {
 	// Test validate
 	assertType<void>(intent.validate());
 	assertType<void>(intent.validate('name'));
+
+	// Test submit
+	assertType<void>(intent.submit());
+	assertType<void>(intent.submit('delete'));
 
 	// Test remove
 	assertType<void>(intent.remove({ name: 'tasks', index: 0 }));

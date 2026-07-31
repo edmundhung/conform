@@ -268,7 +268,7 @@ export function useConform<
 
 			if (!intent) {
 				throw new Error(
-					`Unknown intent found in the submission result; Received intent: ${result.submission.intent}`,
+					`Invalid form intent found in the submission result; Received intent: ${result.submission.intent}`,
 				);
 			}
 

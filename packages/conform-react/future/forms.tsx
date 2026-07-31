@@ -762,7 +762,7 @@ export function configureForms<
 					Record<string, any>,
 					DefaultIntentHandlers & GlobalIntentHandlers & IntentHandlers
 			  >
-			| { type: 'submit'; payload: undefined }
+			| { type: 'submit'; payload: string | undefined }
 			| undefined;
 		targetValue: Record<string, FormValue> | undefined;
 	} {

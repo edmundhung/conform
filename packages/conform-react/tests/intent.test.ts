@@ -17,7 +17,7 @@ import { IntentHandler } from '../future/types';
 
 test('serializeIntent', () => {
 	// Test intent without payload
-	expect(serializeIntent({ type: 'reset', args: [] })).toBe('reset');
+	expect(serializeIntent({ type: 'reset', args: [] })).toBe('reset()');
 
 	// Test intent with payload
 	expect(serializeIntent({ type: 'validate', args: ['email'] })).toBe(
@@ -51,7 +51,9 @@ test('serializeIntent', () => {
 			args: [undefined, 1, undefined, 2, undefined],
 		}),
 	).toBe('custom("$$__undefined__$$",1,"$$__undefined__$$",2)');
-	expect(serializeIntent({ type: 'custom', args: [undefined] })).toBe('custom');
+	expect(serializeIntent({ type: 'custom', args: [undefined] })).toBe(
+		'custom()',
+	);
 	expect(
 		serializeIntent({
 			type: 'custom',
@@ -79,15 +81,12 @@ test('serializeIntent', () => {
 	).toBe('custom([1,"$$__undefined__$$"])');
 
 	// Test intent with undefined payload
-	expect(serializeIntent({ type: 'reset', args: [] })).toBe('reset');
+	expect(serializeIntent({ type: 'reset', args: [] })).toBe('reset()');
 });
 
 test('deserializeIntent', () => {
 	// Test simple intent
-	expect(deserializeIntent('reset')).toEqual({
-		type: 'reset',
-		args: [],
-	});
+	expect(deserializeIntent('reset')).toBeUndefined();
 
 	// Test intent with string payload
 	expect(deserializeIntent('validate("email")')).toEqual({
@@ -102,13 +101,10 @@ test('deserializeIntent', () => {
 	});
 
 	// Test malformed JSON
-	expect(deserializeIntent('update({invalid)')).toBeUndefined();
+	expect(() => deserializeIntent('update({invalid)')).toThrow();
 
 	// Test without closing parenthesis
-	expect(deserializeIntent('validate("email"')).toEqual({
-		type: 'validate("email"',
-		args: [],
-	});
+	expect(deserializeIntent('validate("email"')).toBeUndefined();
 
 	// Test empty parentheses
 	expect(deserializeIntent('reset()')).toEqual({
@@ -201,13 +197,13 @@ test('deserializeIntent', () => {
 		type: 'custom',
 		args: [0],
 	});
-	expect(deserializeIntent('custom(1,)')).toBeUndefined();
-	expect(deserializeIntent('custom({])')).toBeUndefined();
-	expect(deserializeIntent('custom([})')).toBeUndefined();
-	expect(deserializeIntent('custom("unterminated,,,,)')).toBeUndefined();
-	expect(
+	expect(() => deserializeIntent('custom(1,)')).toThrow();
+	expect(() => deserializeIntent('custom({])')).toThrow();
+	expect(() => deserializeIntent('custom([})')).toThrow();
+	expect(() => deserializeIntent('custom("unterminated,,,,)')).toThrow();
+	expect(() =>
 		deserializeIntent(`custom("${'\\"?'.repeat(50_000)})`),
-	).toBeUndefined();
+	).toThrow();
 
 	// Test empty string
 	expect(deserializeIntent('')).toBeUndefined();
@@ -221,16 +217,39 @@ test('parseIntent', () => {
 
 	expect(parseIntent('submit', { handlers: defaultIntentHandlers })).toEqual({
 		type: 'submit',
-		payload: undefined,
+		payload: 'submit',
 	});
-	expect(parseIntent('custom', { handlers: defaultIntentHandlers })).toBe(
-		undefined,
-	);
+	expect(
+		parseIntent('submit("delete")', { handlers: defaultIntentHandlers }),
+	).toEqual({
+		type: 'submit',
+		payload: 'delete',
+	});
+	expect(parseIntent('custom', { handlers: defaultIntentHandlers })).toEqual({
+		type: 'submit',
+		payload: 'custom',
+	});
 	expect(
 		parseIntent('validate(null)', { handlers: defaultIntentHandlers }),
-	).toBe(undefined);
+	).toBeUndefined();
 	expect(parseIntent('validate', { handlers: defaultIntentHandlers })).toEqual({
-		type: 'validate',
+		type: 'submit',
+		payload: 'validate',
+	});
+	expect(parseIntent('reset', { handlers: defaultIntentHandlers })).toEqual({
+		type: 'submit',
+		payload: 'reset',
+	});
+	expect(parseIntent('update', { handlers: defaultIntentHandlers })).toEqual({
+		type: 'submit',
+		payload: 'update',
+	});
+	expect(parseIntent('insert', { handlers: defaultIntentHandlers })).toEqual({
+		type: 'submit',
+		payload: 'insert',
+	});
+	expect(parseIntent('reset()', { handlers: defaultIntentHandlers })).toEqual({
+		type: 'reset',
 		payload: undefined,
 	});
 
@@ -258,13 +277,13 @@ test('parseIntent', () => {
 		type: 'singleArg',
 		payload: 'field',
 	});
-	expect(parseIntent('zeroArg', { handlers: fallbackHandlers })).toEqual({
+	expect(parseIntent('zeroArg()', { handlers: fallbackHandlers })).toEqual({
 		type: 'zeroArg',
 		payload: undefined,
 	});
 	expect(
 		parseIntent('singleArg("field",1)', { handlers: fallbackHandlers }),
-	).toBe(undefined);
+	).toBeUndefined();
 
 	expect(
 		parseIntent('reset({invalid)', { handlers: defaultIntentHandlers }),
@@ -289,11 +308,25 @@ test('parseIntent', () => {
 			{ handlers: defaultIntentHandlers },
 		),
 	).toBeUndefined();
+
+	// Incomplete call syntax remains a submit intent
+	expect(
+		parseIntent('custom("field"', { handlers: defaultIntentHandlers }),
+	).toEqual({
+		type: 'submit',
+		payload: 'custom("field"',
+	});
+	expect(
+		parseIntent('custom()extra', { handlers: defaultIntentHandlers }),
+	).toEqual({
+		type: 'submit',
+		payload: 'custom()extra',
+	});
 });
 
 test('resolveIntent', () => {
 	const submission: Submission = {
-		intent: 'reset',
+		intent: 'reset()',
 		payload: { email: 'test@example.com', name: 'John' },
 		fields: ['email', 'name'],
 	};
@@ -335,7 +368,7 @@ test('resolveIntent', () => {
 	} satisfies Record<string, IntentHandler>;
 
 	const customSubmission: Submission = {
-		intent: 'custom',
+		intent: 'custom()',
 		payload: { email: 'test' },
 		fields: ['email'],
 	};
@@ -361,7 +394,7 @@ test('resolveIntent', () => {
 	} satisfies Record<string, IntentHandler>;
 
 	const failingSubmission: Submission = {
-		intent: 'failing',
+		intent: 'failing()',
 		payload: { test: true },
 		fields: ['test'],
 	};
@@ -385,13 +418,13 @@ test('resolveIntent', () => {
 
 	const targetedResult = resolveIntent(
 		{
-			intent: 'targeted',
+			intent: 'targeted()',
 			payload: { email: 'test@example.com', name: 'John' },
 			fields: ['email', 'name'],
 		},
 		{
 			handlers: targetedHandlers,
-			intent: parseIntent('targeted', { handlers: targetedHandlers }),
+			intent: parseIntent('targeted()', { handlers: targetedHandlers }),
 		},
 	);
 	expect(targetedResult).toEqual({
@@ -408,13 +441,13 @@ test('resolveIntent', () => {
 
 	const wrappedResult = resolveIntent(
 		{
-			intent: 'wrapped',
+			intent: 'wrapped()',
 			payload: { email: 'test@example.com' },
 			fields: ['email'],
 		},
 		{
 			handlers: wrappedHandlers,
-			intent: parseIntent('wrapped', { handlers: wrappedHandlers }),
+			intent: parseIntent('wrapped()', { handlers: wrappedHandlers }),
 		},
 	);
 	expect(wrappedResult).toEqual({ email: 'wrapped@example.com' });
@@ -423,7 +456,7 @@ test('resolveIntent', () => {
 test('applyIntent', () => {
 	const resetResult: SubmissionResult = {
 		submission: {
-			intent: 'reset',
+			intent: 'reset()',
 			payload: { email: 'test@example.com' },
 			fields: ['email'],
 		},
@@ -456,7 +489,7 @@ test('applyIntent', () => {
 	} satisfies Record<string, IntentHandler>;
 	const customResult: SubmissionResult = {
 		submission: {
-			intent: 'custom',
+			intent: 'custom()',
 			payload: { email: 'test@example.com' },
 			fields: ['email'],
 		},
