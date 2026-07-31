@@ -33,6 +33,8 @@ const schema = coerceFormValue(
 	}),
 );
 
+type FormShape = z.input<typeof schema>;
+
 const options = [
 	{ label: 'Durward Reynolds', value: '1' },
 	{ label: 'Kenton Towne', value: '2' },
@@ -56,7 +58,8 @@ export default function App() {
 			color: searchParams.get('color'),
 			project: searchParams.get('project'),
 			notes: searchParams.get('notes'),
-			priority: searchParams.get('priority') ?? 'normal',
+			priority: (searchParams.get('priority') ??
+				'normal') as FormShape['priority'],
 			notifications: searchParams.get('notifications'),
 		},
 		onSubmit(event, { formData, value }) {

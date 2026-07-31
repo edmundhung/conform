@@ -42,6 +42,8 @@ const schema = coerceFormValue(
 	}),
 );
 
+type FormShape = z.input<typeof schema>;
+
 function getDefaultMembers(searchParams: URLSearchParams) {
 	const defaultMembers: Array<Record<string, string>> = [];
 
@@ -71,17 +73,17 @@ export default function App() {
 			name: searchParams.get('name'),
 			dateOfBirth: searchParams.get('dateOfBirth'),
 			country: searchParams.get('country'),
-			gender: searchParams.get('gender'),
+			gender: searchParams.get('gender') as FormShape['gender'],
 			agreeToTerms: searchParams.get('agreeToTerms'),
-			job: searchParams.get('job'),
+			job: searchParams.get('job') as FormShape['job'],
 			age: searchParams.get('age'),
 			isAdult: searchParams.get('isAdult'),
 			description: searchParams.get('description'),
-			accountType: searchParams.get('accountType'),
-			categories: searchParams.getAll('categories'),
+			accountType: searchParams.get('accountType') as FormShape['accountType'],
+			categories: searchParams.getAll('categories') as FormShape['categories'],
 			interests: searchParams.getAll('interests'),
 			code: searchParams.get('code'),
-			members: getDefaultMembers(searchParams),
+			members: getDefaultMembers(searchParams) as FormShape['members'],
 		},
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();

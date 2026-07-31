@@ -32,6 +32,8 @@ const schema = coerceFormValue(
 	}),
 );
 
+type FormShape = z.input<typeof schema>;
+
 export default function App() {
 	const [submittedValue, setSubmittedValue] = useState<z.output<
 		typeof schema
@@ -43,8 +45,8 @@ export default function App() {
 		defaultValue: {
 			email: searchParams.get('email'),
 			price: searchParams.get('price'),
-			language: searchParams.get('language'),
-			colors: searchParams.getAll('colors'),
+			language: searchParams.get('language') as FormShape['language'],
+			colors: searchParams.getAll('colors') as FormShape['colors'],
 			date: searchParams.get('date'),
 			range: {
 				start: searchParams.get('range.start'),
