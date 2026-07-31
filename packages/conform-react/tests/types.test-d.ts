@@ -120,6 +120,36 @@ test('DefaultValue', () => {
 	assertType<DefaultValue<number>>(numberWithUndefined);
 	assertType<DefaultValue<UserObject>>(objectWithUndefined);
 	assertType<DefaultValue<string[]>>(arrayWithUndefined);
+
+	// String literal types should not be widened to string
+	expectTypeOf<DefaultValue<'abc'>>().toEqualTypeOf<'abc' | null | undefined>();
+	// @ts-expect-error default value should not accept any string
+	assertType<DefaultValue<'abc'>>('def');
+
+	// Unions of string literals stay narrow
+	expectTypeOf<DefaultValue<'active' | 'inactive'>>().toEqualTypeOf<
+		'active' | 'inactive' | null | undefined
+	>();
+
+	// Template literal types stay narrow
+	expectTypeOf<DefaultValue<`#${string}`>>().toEqualTypeOf<
+		`#${string}` | null | undefined
+	>();
+
+	// Literal-typed object properties narrow
+	type StatusObject = { status: 'abc'; name: string };
+	expectTypeOf<DefaultValue<StatusObject>>().toEqualTypeOf<
+		| { status?: 'abc' | null | undefined; name?: string | null | undefined }
+		| null
+		| undefined
+	>();
+	// @ts-expect-error wrong literal on a field should be rejected
+	assertType<DefaultValue<StatusObject>>({ status: 'def', name: 'John' });
+
+	// Arrays of literals narrow their items
+	expectTypeOf<DefaultValue<'abc'[]>>().toEqualTypeOf<
+		('abc' | null | undefined)[] | null | undefined
+	>();
 });
 
 test('FormOptions', () => {
