@@ -195,7 +195,7 @@ export type DefaultValue<Shape> =
 			? Array<DefaultValue<Item>> | null | undefined
 			: Shape extends File | File[]
 				? null | undefined // We don't support setting default value for file inputs yet
-				: Shape extends string
+				: Shape extends string | null | undefined
 					? Shape | null | undefined
 					: Shape | string | null | undefined;
 

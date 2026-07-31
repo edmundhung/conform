@@ -150,6 +150,22 @@ test('DefaultValue', () => {
 	expectTypeOf<DefaultValue<'abc'[]>>().toEqualTypeOf<
 		('abc' | null | undefined)[] | null | undefined
 	>();
+
+	// Nullable and optional constituents of string unions keep their literals
+	expectTypeOf<DefaultValue<'save' | 'publish' | undefined>>().toEqualTypeOf<
+		'save' | 'publish' | null | undefined
+	>();
+	expectTypeOf<DefaultValue<'save' | null>>().toEqualTypeOf<
+		'save' | null | undefined
+	>();
+
+	// Optional literal-typed fields (e.g. z.enum([...]).optional()) stay narrow
+	type IntentObject = { intent?: 'save' | 'publish' };
+	expectTypeOf<DefaultValue<IntentObject>>().toEqualTypeOf<
+		{ intent?: 'save' | 'publish' | null | undefined } | null | undefined
+	>();
+	// @ts-expect-error unsupported literal should be rejected
+	assertType<DefaultValue<IntentObject>>({ intent: 'delete' });
 });
 
 test('FormOptions', () => {
