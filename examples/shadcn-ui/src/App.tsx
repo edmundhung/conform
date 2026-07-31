@@ -1,3 +1,4 @@
+import { parseWithZod } from '@conform-to/zod/v3';
 import { coerceFormValue } from '@conform-to/zod/v3/future';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -42,25 +43,6 @@ const schema = coerceFormValue(
 	}),
 );
 
-type FormShape = z.input<typeof schema>;
-
-function getDefaultMembers(searchParams: URLSearchParams) {
-	const defaultMembers: Array<Record<string, string>> = [];
-
-	for (let i = 0; searchParams.has(`members[${i}].id`); i++) {
-		const id = searchParams.get(`members[${i}].id`);
-		const name = searchParams.get(`members[${i}].name`);
-		const email = searchParams.get(`members[${i}].email`);
-		const role = searchParams.get(`members[${i}].role`);
-
-		if (id && name && email && role) {
-			defaultMembers.push({ id, name, email, role });
-		}
-	}
-
-	return defaultMembers;
-}
-
 export default function App() {
 	const [submittedValue, setSubmittedValue] = useState<z.output<
 		typeof schema
@@ -68,23 +50,11 @@ export default function App() {
 	const [searchParams, setSearchParams] = useState(
 		() => new URLSearchParams(window.location.search),
 	);
+	const submission = parseWithZod(searchParams, { schema });
+	const defaultValue =
+		submission.status === 'success' ? submission.value : undefined;
 	const { form, fields, intent } = useForm(schema, {
-		defaultValue: {
-			name: searchParams.get('name'),
-			dateOfBirth: searchParams.get('dateOfBirth'),
-			country: searchParams.get('country'),
-			gender: searchParams.get('gender') as FormShape['gender'],
-			agreeToTerms: searchParams.get('agreeToTerms'),
-			job: searchParams.get('job') as FormShape['job'],
-			age: searchParams.get('age'),
-			isAdult: searchParams.get('isAdult'),
-			description: searchParams.get('description'),
-			accountType: searchParams.get('accountType') as FormShape['accountType'],
-			categories: searchParams.getAll('categories') as FormShape['categories'],
-			interests: searchParams.getAll('interests'),
-			code: searchParams.get('code'),
-			members: getDefaultMembers(searchParams) as FormShape['members'],
-		},
+		defaultValue,
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 

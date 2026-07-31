@@ -1,3 +1,4 @@
+import { parseWithZod } from '@conform-to/zod/v4';
 import { coerceFormValue } from '@conform-to/zod/v4/future';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -22,8 +23,6 @@ const schema = coerceFormValue(
 	}),
 );
 
-type FormShape = z.input<typeof schema>;
-
 export default function App() {
 	const [submittedValue, setSubmittedValue] = useState<z.output<
 		typeof schema
@@ -31,19 +30,11 @@ export default function App() {
 	const [searchParams, setSearchParams] = useState(
 		() => new URLSearchParams(window.location.search),
 	);
+	const submission = parseWithZod(searchParams, { schema });
+	const defaultValue =
+		submission.status === 'success' ? submission.value : undefined;
 	const { form, fields, intent } = useForm(schema, {
-		defaultValue: {
-			isTermsAgreed: searchParams.get('isTermsAgreed'),
-			carType: searchParams.get('carType') as FormShape['carType'],
-			userCountry: searchParams.get('userCountry') as FormShape['userCountry'],
-			estimatedKilometersPerYear: searchParams.get(
-				'estimatedKilometersPerYear',
-			),
-			insurance: searchParams.get('insurance'),
-			desiredContractType: searchParams.get(
-				'desiredContractType',
-			) as FormShape['desiredContractType'],
-		},
+		defaultValue,
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 

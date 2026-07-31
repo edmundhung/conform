@@ -32,6 +32,13 @@ export interface DatePickerProps<T extends DateValue> extends Omit<
 	errors?: string[];
 }
 
+// Conform serializes a `Date` default via `toISOString()`, which produces a
+// Z-suffixed string (e.g. `2025-04-01T00:00:00.000Z`) that `parseDateTime`
+// rejects. Drop the suffix so the value conform produced can be parsed back.
+function parseDate(value: string): CalendarDateTime {
+	return parseDateTime(value.replace(/Z$/, ''));
+}
+
 export function DatePicker({
 	label,
 	name,
@@ -52,7 +59,7 @@ export function DatePicker({
 	return (
 		<AriaDatePicker
 			{...props}
-			value={control.value ? parseDateTime(control.value) : null}
+			value={control.value ? parseDate(control.value) : null}
 			onChange={(value) => control.change(value?.toString() ?? '')}
 			onBlur={() => control.blur()}
 		>

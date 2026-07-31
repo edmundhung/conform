@@ -1,3 +1,4 @@
+import { parseWithZod } from '@conform-to/zod/v3';
 import { coerceFormValue } from '@conform-to/zod/v3/future';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -14,25 +15,24 @@ import { ComboBox, ComboBoxItem } from './components/ComboBox';
 import { FileTrigger } from './components/FileTrigger';
 import { useForm } from './forms';
 
-const schema = coerceFormValue(
-	z.object({
-		email: z.string(),
-		price: z.number(),
-		language: z.enum(['en', 'de', 'ja']),
-		colors: z.enum(['red', 'green', 'blue']).array().min(1),
-		date: z.date(),
-		range: z.object({
-			start: z.string(),
-			end: z.string(),
-		}),
-		category: z.string(),
-		author: z.string(),
-		profile: z.instanceof(File, { message: 'Required' }),
-		acceptTerms: z.boolean(),
+const formSchema = z.object({
+	email: z.string(),
+	price: z.number(),
+	language: z.enum(['en', 'de', 'ja']),
+	colors: z.enum(['red', 'green', 'blue']).array().min(1),
+	date: z.date(),
+	range: z.object({
+		start: z.string(),
+		end: z.string(),
 	}),
-);
+	category: z.string(),
+	author: z.string(),
+	profile: z.instanceof(File, { message: 'Required' }),
+	acceptTerms: z.boolean(),
+});
 
-type FormShape = z.input<typeof schema>;
+const schema = coerceFormValue(formSchema);
+const defaultSchema = formSchema.omit({ profile: true });
 
 export default function App() {
 	const [submittedValue, setSubmittedValue] = useState<z.output<
@@ -41,21 +41,11 @@ export default function App() {
 	const [searchParams, setSearchParams] = useState(
 		() => new URLSearchParams(window.location.search),
 	);
+	const submission = parseWithZod(searchParams, { schema: defaultSchema });
+	const defaultValue =
+		submission.status === 'success' ? submission.value : undefined;
 	const { form, fields, intent } = useForm(schema, {
-		defaultValue: {
-			email: searchParams.get('email'),
-			price: searchParams.get('price'),
-			language: searchParams.get('language') as FormShape['language'],
-			colors: searchParams.getAll('colors') as FormShape['colors'],
-			date: searchParams.get('date'),
-			range: {
-				start: searchParams.get('range.start'),
-				end: searchParams.get('range.end'),
-			},
-			category: searchParams.get('category'),
-			author: searchParams.get('author'),
-			acceptTerms: searchParams.get('acceptTerms'),
-		},
+		defaultValue,
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 

@@ -1,3 +1,4 @@
+import { parseWithZod } from '@conform-to/zod/v4';
 import { coerceFormValue } from '@conform-to/zod/v4/future';
 import {
 	Description,
@@ -33,8 +34,6 @@ const schema = coerceFormValue(
 	}),
 );
 
-type FormShape = z.input<typeof schema>;
-
 const options = [
 	{ label: 'Durward Reynolds', value: '1' },
 	{ label: 'Kenton Towne', value: '2' },
@@ -50,18 +49,13 @@ export default function App() {
 	const [searchParams, setSearchParams] = useState(
 		() => new URLSearchParams(window.location.search),
 	);
+	const submission = parseWithZod(searchParams, { schema });
+	const defaultValue =
+		submission.status === 'success' ? submission.value : undefined;
 	const { form, fields, intent } = useForm(schema, {
-		defaultValue: {
-			owner: searchParams.getAll('owner'),
-			assignee: searchParams.get('assignee'),
-			enabled: searchParams.get('enabled'),
-			color: searchParams.get('color'),
-			project: searchParams.get('project'),
-			notes: searchParams.get('notes'),
-			priority: (searchParams.get('priority') ??
-				'normal') as FormShape['priority'],
-			notifications: searchParams.get('notifications'),
-		},
+		// Fall back to 'normal' when the URL has no priority (the browser would
+		// otherwise submit the first option of the native select)
+		defaultValue: { priority: 'normal', ...defaultValue },
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 
