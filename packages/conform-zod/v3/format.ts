@@ -17,7 +17,7 @@ export function formatResult(
 export function formatResult<Output, ErrorShape>(
 	result: SafeParseReturnType<any, Output>,
 	options: {
-		/** Whether to include the parsed value in the returned object */
+		/** @deprecated This option will be removed in the next minor release, when the parsed value will always be included. */
 		includeValue: true;
 		/** Custom function to format validation issues for each field */
 		formatIssues: (issue: ZodIssue[], name: string) => ErrorShape;
@@ -29,6 +29,7 @@ export function formatResult<Output, ErrorShape>(
 export function formatResult<Output>(
 	result: SafeParseReturnType<any, Output>,
 	options: {
+		/** @deprecated This option will be removed in the next minor release, when the parsed value will always be included. */
 		includeValue: true;
 		formatIssues?: undefined;
 	},
@@ -39,6 +40,7 @@ export function formatResult<Output>(
 export function formatResult<Output, ErrorShape>(
 	result: SafeParseReturnType<any, Output>,
 	options: {
+		/** @deprecated This option will be removed in the next minor release, when the parsed value will always be included. */
 		includeValue?: false;
 		formatIssues: (issue: ZodIssue[], name: string) => ErrorShape;
 	},
