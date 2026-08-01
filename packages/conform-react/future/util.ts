@@ -1,6 +1,7 @@
 import type {
 	CustomSerialize,
 	FormError,
+	FormValue,
 	Serialize,
 } from '@conform-to/dom/future';
 import {
@@ -9,6 +10,8 @@ import {
 	parsePath,
 	getPathValue,
 	isPlainObject,
+	isGlobalInstance,
+	parseSubmission,
 	setPathValue,
 	normalizeFormError,
 } from '@conform-to/dom/future';
@@ -57,6 +60,15 @@ export function getPathArray<Type>(
 	}
 
 	return value;
+}
+
+export function resolveDefaultValue<Value>(
+	defaultValue: Record<string, Value> | URLSearchParams | null | undefined,
+	intentName: string,
+): Record<string, Value | FormValue> {
+	return isGlobalInstance(defaultValue, 'URLSearchParams')
+		? parseSubmission(defaultValue, { intentName }).payload
+		: (defaultValue ?? {});
 }
 
 /**

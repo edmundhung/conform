@@ -30,7 +30,11 @@ import {
 	useLayoutEffect,
 	forwardRef,
 } from 'react';
-import { appendUniqueItem, resolveValidateResult } from './util';
+import {
+	appendUniqueItem,
+	resolveDefaultValue,
+	resolveValidateResult,
+} from './util';
 import { getApplyStatus, initializeState, updateState } from './state';
 import type {
 	FormContext,
@@ -75,15 +79,6 @@ export const GlobalFormsObserverContext = createContext(
 );
 
 export const FormContextContext = createContext<FormContext[]>([]);
-
-function resolveDefaultValue<Value>(
-	defaultValue: Record<string, Value> | URLSearchParams | null | undefined,
-	intentName: string,
-): Record<string, Value | FormValue> {
-	return isGlobalInstance(defaultValue, 'URLSearchParams')
-		? parseSubmission(defaultValue, { intentName }).payload
-		: (defaultValue ?? {});
-}
 
 /**
  * Preserves form field values when its contents are unmounted.

@@ -5,6 +5,7 @@ import {
 	isNumber,
 	isOptional,
 	getPathArray,
+	resolveDefaultValue,
 	updatePathValue,
 	updatePathIndex,
 	normalizeValidateResult,
@@ -74,6 +75,26 @@ test('getPathArray', () => {
 	expect(() => getPathArray(invalidValue, 'notArray')).toThrow(
 		'The value of "notArray" is not an array',
 	);
+});
+
+test('resolveDefaultValue', () => {
+	const object = { title: 'Example' };
+
+	expect(resolveDefaultValue(object, 'intent')).toBe(object);
+	expect(
+		resolveDefaultValue(
+			new URLSearchParams([
+				['owner', '1'],
+				['owner', '2'],
+				['tasks[0].content', 'First task'],
+				['intent', 'save'],
+			]),
+			'intent',
+		),
+	).toEqual({
+		owner: ['1', '2'],
+		tasks: [{ content: 'First task' }],
+	});
 });
 
 test('updatePathValue', () => {
