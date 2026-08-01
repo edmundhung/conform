@@ -676,7 +676,7 @@ export type IntentHandlerPayload<
 	? IntentPayload<NormalizeIntentType<Dispatch>, FormShape>
 	: Payload;
 
-export type SubmitIntent = () => void;
+export type SubmitIntent = (value?: string) => void;
 
 export interface ResetIntent extends TypedIntentDefinition {
 	dispatch<

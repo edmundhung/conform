@@ -82,6 +82,28 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 		expect(fields.description.errors).toEqual(['Description error']);
 	});
 
+	test('initialize with submit intent', () => {
+		const { form, fields } = serverRenderHook(() =>
+			useForm<{ title: string }, string[]>({
+				lastResult: createResult(
+					[
+						['title', 'Example'],
+						[DEFAULT_INTENT_NAME, 'delete'],
+					],
+					{
+						error: {
+							formErrors: ['Confirm deletion'],
+						},
+					},
+				),
+				onValidate: () => undefined,
+			}),
+		);
+
+		expect(form.errors).toEqual(['Confirm deletion']);
+		expect(fields.title.defaultValue).toBe('Example');
+	});
+
 	test('initialize with validate intent', () => {
 		const { form, fields } = serverRenderHook(() =>
 			useForm<{ title: string; description: string }, string[]>({
