@@ -241,7 +241,7 @@ export default function App() {
 								// name={fields.project.name}
 								// defaultValue={fields.project.defaultValue}
 								// required={fields.project.required}
-								// invalid={fields.project.invalid}
+								// invalid={!fields.project.valid}
 								className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm data-focus:border-indigo-500 data-focus:ring-1 data-focus:ring-indigo-500 data-focus:outline-none sm:text-sm"
 							/>
 							<Description
@@ -266,7 +266,7 @@ export default function App() {
 								// name={fields.notes.name}
 								// defaultValue={fields.notes.defaultValue}
 								// required={fields.notes.required}
-								// invalid={fields.notes.invalid}
+								// invalid={!fields.notes.valid}
 								rows={3}
 								className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm data-focus:border-indigo-500 data-focus:ring-1 data-focus:ring-indigo-500 data-focus:outline-none sm:text-sm"
 							/>
@@ -292,7 +292,7 @@ export default function App() {
 								// name={fields.priority.name}
 								// defaultValue={fields.priority.defaultValue}
 								// required={fields.priority.required}
-								// invalid={fields.priority.invalid}
+								// invalid={!fields.priority.valid}
 								className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm data-focus:border-indigo-500 data-focus:ring-1 data-focus:ring-indigo-500 data-focus:outline-none sm:text-sm"
 							>
 								<option value="low">Low</option>

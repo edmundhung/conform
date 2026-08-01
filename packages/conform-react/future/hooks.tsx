@@ -567,7 +567,9 @@ export function useConform<
 					update(options) {
 						if (!abortController.signal.aborted) {
 							const submissionResult = report(result.submission, {
-								...options,
+								error: options.error,
+								targetValue: options.value,
+								reset: options.reset,
 								keepFiles: true,
 							});
 							handleSubmission('server', submissionResult);

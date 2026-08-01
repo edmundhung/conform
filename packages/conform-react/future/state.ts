@@ -815,9 +815,6 @@ export function getFormMetadata<
 		get valid() {
 			return isValid(context.state);
 		},
-		get invalid() {
-			return !this.valid;
-		},
 		props: {
 			id: context.formId,
 			onSubmit: context.handleSubmit,
@@ -923,9 +920,6 @@ export function getField<
 		},
 		get valid() {
 			return isValid(context.state, name);
-		},
-		get invalid() {
-			return !this.valid;
 		},
 		get errors() {
 			return getErrors(context.state, name);

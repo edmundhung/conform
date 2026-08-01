@@ -76,12 +76,6 @@ Whether this field has been touched (through `intent.validate()` or the `shouldV
 
 Whether this field currently has no validation errors.
 
-### `invalid: boolean`
-
-> **⚠️ Deprecated:** Use `valid` instead. This property will be removed in version 1.11.0.
-
-Whether this field currently has validation errors. This is equivalent to `!valid`.
-
 ### `errors: ErrorShape | undefined`
 
 Validation error for this field.

@@ -151,7 +151,6 @@ test('parseSubmission', () => {
 		parseSubmission(new FormData(), {
 			intentName: undefined,
 			skipEntry: undefined,
-			stripEmptyValues: undefined,
 		}),
 	).toEqualTypeOf<Submission>();
 });
@@ -188,7 +187,6 @@ test('report', () => {
 	const defaultResultWithValue = report(submission, {
 		targetValue: updatedValue,
 	});
-	const deprecatedValueResult = report(submission, { value: updatedValue });
 
 	expectTypeOf(defaultResult).toEqualTypeOf<
 		SubmissionResult<never, string | number | boolean | null>
@@ -202,10 +200,6 @@ test('report', () => {
 	expectTypeOf(defaultResultWithValue.targetValue).toEqualTypeOf<
 		Record<string, FormValue<string | number | boolean | null>> | undefined
 	>();
-	expectTypeOf(deprecatedValueResult).toEqualTypeOf<
-		SubmissionResult<never, string | number | boolean | null>
-	>();
-
 	/** `keepFiles: true` preserves file values in both payload and target value. */
 	const keepFilesResult = report(submission, {
 		keepFiles: true,

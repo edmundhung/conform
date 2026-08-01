@@ -963,8 +963,6 @@ export type FieldMetadata<
 			touched: boolean;
 			/** Whether this field currently has no validation errors. */
 			valid: boolean;
-			/** @deprecated Use `.valid` instead. This was not an intentionl breaking change and would be removed in the next minor version soon  */
-			invalid: boolean;
 			/** Validation error for this field. */
 			errors: ErrorShape | undefined;
 			/** Object containing validation errors for all touched subfields. */
@@ -1038,8 +1036,6 @@ export type FormMetadata<
 		touched: boolean;
 		/** Whether the form currently has no validation errors. */
 		valid: boolean;
-		/** @deprecated Use `.valid` instead. This was not an intentional breaking change and would be removed in the next minor version soon  */
-		invalid: boolean;
 		/** Form-level validation error, if any exists. */
 		errors: ErrorShape | undefined;
 		/** Object containing validation errors for all touched fields. */

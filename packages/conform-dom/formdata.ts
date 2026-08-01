@@ -366,33 +366,6 @@ export function getPathValue(
 }
 
 /**
- * Check if a form value is considered empty and should be stripped from the submission.
- * A value is empty if:
- * - It's an empty string ""
- * - It's an empty File (size 0 and name "")
- * - It's an array where all items are empty
- */
-function isEmptyValue(
-	value: FormDataEntryValue | FormDataEntryValue[] | undefined,
-): boolean {
-	if (value === '' || value === undefined) {
-		return true;
-	}
-
-	if (isGlobalInstance(value, 'File')) {
-		// Empty File has size 0 and empty name
-		return value.size === 0 && value.name === '';
-	}
-
-	if (Array.isArray(value)) {
-		// If all items are empty, consider it empty
-		return value.every((item) => isEmptyValue(item));
-	}
-
-	return false;
-}
-
-/**
  * Parse `FormData` or `URLSearchParams` into a submission object.
  * This function structures the form values based on the naming convention.
  * It also includes all the field names and extracts the intent from the submission.
@@ -436,15 +409,6 @@ export function parseSubmission(
 		 * Return `true` to skip the entry.
 		 */
 		skipEntry?: ((name: string) => boolean) | undefined;
-		/**
-		 * Whether to strip empty values (empty strings, empty files, arrays with all empty values)
-		 * from the submission payload. Defaults to `false`.
-		 *
-		 * @deprecated This option will be removed in a future minor release.
-		 * If you are using a schema library like Zod or Valibot, our integration
-		 * already strips empty values for you. There is no need to use this option.
-		 */
-		stripEmptyValues?: boolean | undefined;
 	},
 ): Submission {
 	const intentName = options?.intentName ?? DEFAULT_INTENT_NAME;
@@ -455,7 +419,6 @@ export function parseSubmission(
 	};
 
 	const segmentsByName = new Map<string, Array<string | number> | null>();
-	const stripEmptyValues = options?.stripEmptyValues ?? false;
 	let intentValue: string | null | undefined = undefined;
 
 	for (const [name, entryValue] of formData) {
@@ -499,10 +462,6 @@ export function parseSubmission(
 			submission.payload,
 			segments,
 			(current: unknown) => {
-				if (stripEmptyValues && isEmptyValue(entryValue)) {
-					return current;
-				}
-
 				if (Array.isArray(current)) {
 					current.push(entryValue);
 					return current;
@@ -566,8 +525,6 @@ export function report(
 		keepFiles?: false;
 		error?: null;
 		targetValue?: Record<string, FormValue> | null;
-		/** @deprecated Use `targetValue` instead. This will be removed in the next minor release. */
-		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -578,8 +535,6 @@ export function report(
 		keepFiles: true;
 		error?: null;
 		targetValue?: Record<string, FormValue> | null;
-		/** @deprecated Use `targetValue` instead. This will be removed in the next minor release. */
-		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -590,8 +545,6 @@ export function report<ErrorShape>(
 		keepFiles?: false;
 		error: CustomError<ErrorShape> | null;
 		targetValue?: Record<string, FormValue> | null;
-		/** @deprecated Use `targetValue` instead. This will be removed in the next minor release. */
-		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -605,8 +558,6 @@ export function report<ErrorShape>(
 		keepFiles: true;
 		error: CustomError<ErrorShape> | null;
 		targetValue?: Record<string, FormValue> | null;
-		/** @deprecated Use `targetValue` instead. This will be removed in the next minor release. */
-		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -617,8 +568,6 @@ export function report(
 		keepFiles?: false;
 		error: StandardSchemaError;
 		targetValue?: Record<string, FormValue> | null;
-		/** @deprecated Use `targetValue` instead. This will be removed in the next minor release. */
-		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -632,8 +581,6 @@ export function report(
 		keepFiles: true;
 		error: StandardSchemaError;
 		targetValue?: Record<string, FormValue> | null;
-		/** @deprecated Use `targetValue` instead. This will be removed in the next minor release. */
-		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -644,8 +591,6 @@ export function report<ErrorShape>(
 		keepFiles?: boolean;
 		error?: CustomError<ErrorShape> | null;
 		targetValue?: Record<string, FormValue> | null;
-		/** @deprecated Use `targetValue` instead. This will be removed in the next minor release. */
-		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -669,10 +614,6 @@ export function report<ErrorShape>(
 		 */
 		targetValue?: Record<string, FormValue> | null;
 		/**
-		 * @deprecated Use `targetValue` instead. This will be removed in the next minor release.
-		 */
-		value?: Record<string, FormValue> | null;
-		/**
 		 * Array of field names to hide from the result by setting them to `undefined`.
 		 * Primarily used for sensitive data like passwords that should not be sent back to the client.
 		 */
@@ -693,15 +634,13 @@ export function report<ErrorShape>(
 		error = normalizeFormError(options.error);
 	}
 
-	const targetValueOption =
-		'targetValue' in options ? options.targetValue : options.value;
 	const targetValue =
-		typeof targetValueOption === 'undefined' ||
-		(submission.payload === targetValueOption && !options.reset)
+		typeof options.targetValue === 'undefined' ||
+		(submission.payload === options.targetValue && !options.reset)
 			? undefined
-			: targetValueOption && !options.keepFiles
-				? stripFiles(targetValueOption)
-				: (targetValueOption ?? {});
+			: options.targetValue && !options.keepFiles
+				? stripFiles(options.targetValue)
+				: (options.targetValue ?? {});
 
 	if (options.hideFields) {
 		for (const name of options.hideFields) {
