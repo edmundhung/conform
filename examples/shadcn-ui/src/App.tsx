@@ -42,23 +42,6 @@ const schema = coerceFormValue(
 	}),
 );
 
-function getDefaultMembers(searchParams: URLSearchParams) {
-	const defaultMembers: Array<Record<string, string>> = [];
-
-	for (let i = 0; searchParams.has(`members[${i}].id`); i++) {
-		const id = searchParams.get(`members[${i}].id`);
-		const name = searchParams.get(`members[${i}].name`);
-		const email = searchParams.get(`members[${i}].email`);
-		const role = searchParams.get(`members[${i}].role`);
-
-		if (id && name && email && role) {
-			defaultMembers.push({ id, name, email, role });
-		}
-	}
-
-	return defaultMembers;
-}
-
 export default function App() {
 	const [submittedValue, setSubmittedValue] = useState<z.output<
 		typeof schema
@@ -67,22 +50,7 @@ export default function App() {
 		() => new URLSearchParams(window.location.search),
 	);
 	const { form, fields, intent } = useForm(schema, {
-		defaultValue: {
-			name: searchParams.get('name'),
-			dateOfBirth: searchParams.get('dateOfBirth'),
-			country: searchParams.get('country'),
-			gender: searchParams.get('gender'),
-			agreeToTerms: searchParams.get('agreeToTerms'),
-			job: searchParams.get('job'),
-			age: searchParams.get('age'),
-			isAdult: searchParams.get('isAdult'),
-			description: searchParams.get('description'),
-			accountType: searchParams.get('accountType'),
-			categories: searchParams.getAll('categories'),
-			interests: searchParams.getAll('interests'),
-			code: searchParams.get('code'),
-			members: getDefaultMembers(searchParams),
-		},
+		defaultValue: searchParams,
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 

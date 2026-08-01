@@ -30,7 +30,11 @@ import {
 	useLayoutEffect,
 	forwardRef,
 } from 'react';
-import { appendUniqueItem, resolveValidateResult } from './util';
+import {
+	appendUniqueItem,
+	resolveDefaultValue,
+	resolveValidateResult,
+} from './util';
 import { getApplyStatus, initializeState, updateState } from './state';
 import type {
 	FormContext,
@@ -178,7 +182,11 @@ export function useConform<
 	formRef: FormRef,
 	options: {
 		key?: string | undefined;
-		defaultValue?: Record<string, FormValue> | null | undefined;
+		defaultValue?:
+			| Record<string, FormValue>
+			| URLSearchParams
+			| null
+			| undefined;
 		serialize: Serialize;
 		intentName: string;
 		intentHandlers: Record<string, IntentHandler<any, any>>;
@@ -201,7 +209,10 @@ export function useConform<
 		FormState<ErrorShape, FormCustomState<CustomStateHandlers>>
 	>(() => {
 		let state = initializeState<ErrorShape, CustomStateHandlers>({
-			defaultValue: options.defaultValue,
+			defaultValue: resolveDefaultValue(
+				options.defaultValue,
+				options.intentName,
+			),
 			customStateHandlers: options.customStateHandlers,
 			resetKey: INITIAL_KEY,
 		});
@@ -226,7 +237,10 @@ export function useConform<
 						status: getApplyStatus(lastResult.targetValue, result.targetValue),
 						reset() {
 							return initializeState<ErrorShape, CustomStateHandlers>({
-								defaultValue: result.targetValue ?? options.defaultValue,
+								defaultValue: resolveDefaultValue(
+									result.targetValue ?? options.defaultValue,
+									options.intentName,
+								),
 								resetKey: INITIAL_KEY,
 								customStateHandlers: options.customStateHandlers,
 								lastCustomState: state.customState,
@@ -303,7 +317,10 @@ export function useConform<
 						),
 						reset() {
 							return initializeState<ErrorShape, CustomStateHandlers>({
-								defaultValue: finalResult.targetValue ?? options.defaultValue,
+								defaultValue: resolveDefaultValue(
+									finalResult.targetValue ?? options.defaultValue,
+									options.intentName,
+								),
 								customStateHandlers: options.customStateHandlers,
 								lastCustomState: current.customState,
 								result: finalResult,
@@ -337,7 +354,10 @@ export function useConform<
 
 		setState((current) =>
 			initializeState<ErrorShape, CustomStateHandlers>({
-				defaultValue: options.defaultValue,
+				defaultValue: resolveDefaultValue(
+					options.defaultValue,
+					options.intentName,
+				),
 				customStateHandlers: options.customStateHandlers,
 				lastCustomState: current.customState,
 			}),
@@ -510,7 +530,11 @@ export function useConform<
 
 				if (clientResult.reset || clientResult.targetValue !== undefined) {
 					pendingValueRef.current =
-						clientResult.targetValue ?? optionsRef.current.defaultValue ?? {};
+						clientResult.targetValue ??
+						resolveDefaultValue(
+							optionsRef.current.defaultValue,
+							optionsRef.current.intentName,
+						);
 				}
 
 				if (

@@ -141,6 +141,10 @@ test('FormOptions', () => {
 	});
 
 	assertType<FormOptions<TestSchema>>({
+		defaultValue: new URLSearchParams('name=John&email=john%40example.com'),
+	});
+
+	assertType<FormOptions<TestSchema>>({
 		onValidate({ error, schemaValue }) {
 			expectTypeOf(schemaValue).toEqualTypeOf<undefined>();
 

@@ -38,9 +38,12 @@ Optional form identifier. If not provided, a unique ID is automatically generate
 
 Optional key for form state reset. When the key changes, the form resets to its initial state.
 
-### `defaultValue?: DefaultValue<FormShape>`
+### `defaultValue?: DefaultValue<FormShape> | URLSearchParams`
 
-Initial form values. Can be a partial object matching your form structure.
+Initial form values. This can be either:
+
+- A partial object matching your form structure
+- A `URLSearchParams` object
 
 ### `serialize?: (value, ctx) => FormValue | null | undefined`
 

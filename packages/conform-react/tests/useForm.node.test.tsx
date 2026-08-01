@@ -53,6 +53,33 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 		expect(fields.description.errors).toBe(undefined);
 	});
 
+	test('default value from URLSearchParams', () => {
+		const searchParams = new URLSearchParams([
+			['owner', '1'],
+			['owner', '2'],
+			['tasks[0].content', 'First task'],
+			['tasks[1].content', 'Second task'],
+		]);
+		const { form } = serverRenderHook(() =>
+			useForm<
+				{
+					owner: string[];
+					tasks: Array<{ content: string }>;
+				},
+				string[]
+			>({
+				lastResult: null,
+				defaultValue: searchParams,
+				onValidate: () => undefined,
+			}),
+		);
+
+		expect(form.defaultValue).toEqual({
+			owner: ['1', '2'],
+			tasks: [{ content: 'First task' }, { content: 'Second task' }],
+		});
+	});
+
 	test('initialize with last submission result', () => {
 		const { form, fields } = serverRenderHook(() =>
 			useForm<{ title: string; description: string }, string[]>({
