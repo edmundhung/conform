@@ -45,20 +45,17 @@ export default function App() {
 	const [submittedValue, setSubmittedValue] = useState<z.output<
 		typeof schema
 	> | null>(null);
-	const [searchParams, setSearchParams] = useState(
-		() => new URLSearchParams(window.location.search),
-	);
+	const [searchParams, setSearchParams] = useState(() => {
+		const searchParams = new URLSearchParams(window.location.search);
+
+		if (!searchParams.has('priority')) {
+			searchParams.set('priority', 'normal');
+		}
+
+		return searchParams;
+	});
 	const { form, fields, intent } = useForm(schema, {
-		defaultValue: {
-			owner: searchParams.getAll('owner'),
-			assignee: searchParams.get('assignee'),
-			enabled: searchParams.get('enabled'),
-			color: searchParams.get('color'),
-			project: searchParams.get('project'),
-			notes: searchParams.get('notes'),
-			priority: searchParams.get('priority') ?? 'normal',
-			notifications: searchParams.get('notifications'),
-		},
+		defaultValue: searchParams,
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 

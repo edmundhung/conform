@@ -49,18 +49,7 @@ export default function App() {
 		() => new URLSearchParams(window.location.search),
 	);
 	const { form, fields, intent } = useForm(schema, {
-		defaultValue: {
-			email: searchParams.get('email'),
-			language: searchParams.get('language'),
-			description: searchParams.get('description'),
-			quantity: searchParams.get('quantity'),
-			pin: searchParams.get('pin'),
-			title: searchParams.get('title'),
-			subscribe: searchParams.get('subscribe'),
-			enabled: searchParams.get('enabled'),
-			progress: searchParams.get('progress'),
-			active: searchParams.get('active'),
-		},
+		defaultValue: searchParams,
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 

@@ -509,8 +509,11 @@ export type FormOptions<
 	onSubmit?:
 		| SubmitHandler<FormShape, NoInfer<ErrorShape>, NoInfer<Value>>
 		| undefined;
-	/** Initial form values. Can be a partial object matching your form structure. */
-	defaultValue?: DefaultValue<FormShape> | undefined;
+	/**
+	 * Initial form values. Can be a partial object matching your form structure or
+	 * URL search parameters.
+	 */
+	defaultValue?: DefaultValue<FormShape> | URLSearchParams | undefined;
 	/**
 	 * Override serialization for specific fields on this form and delegate the rest
 	 * to the configured global serializer.

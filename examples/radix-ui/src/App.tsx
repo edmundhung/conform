@@ -30,16 +30,7 @@ export default function App() {
 		() => new URLSearchParams(window.location.search),
 	);
 	const { form, fields, intent } = useForm(schema, {
-		defaultValue: {
-			isTermsAgreed: searchParams.get('isTermsAgreed'),
-			carType: searchParams.get('carType'),
-			userCountry: searchParams.get('userCountry'),
-			estimatedKilometersPerYear: searchParams.get(
-				'estimatedKilometersPerYear',
-			),
-			insurance: searchParams.get('insurance'),
-			desiredContractType: searchParams.get('desiredContractType'),
-		},
+		defaultValue: searchParams,
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 
