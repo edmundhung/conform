@@ -490,6 +490,7 @@ export function configureForms<
 		>(
 			() => ({
 				formId,
+				intentName: globalConfig.intentName,
 				state,
 				serialize,
 				constraint: constraint ?? null,

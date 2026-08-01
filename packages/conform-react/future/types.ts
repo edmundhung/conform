@@ -603,6 +603,8 @@ export interface FormContext<
 > {
 	/** The form's unique identifier */
 	formId: string;
+	/** The name of the submit button field that indicates the submission intent. */
+	intentName: string;
 	/** Internal form state with validation results and field data */
 	state: FormState<ErrorShape, CustomState>;
 	/** Serializer used to derive field defaults and sync values for this form. */
@@ -666,7 +668,13 @@ export type ApplyStatus = 'applied' | 'reverted' | 'modified';
 export type IntentDispatch<
 	Intent extends IntentDefinition,
 	FormShape extends Record<string, any> = Record<string, any>,
-> = ExtractDispatchSignature<NormalizeIntentType<Intent>, FormShape>;
+> = ExtractDispatchSignature<NormalizeIntentType<Intent>, FormShape> & {
+	serialize(
+		...args: Parameters<
+			ExtractDispatchSignature<NormalizeIntentType<Intent>, FormShape>
+		>
+	): string;
+};
 
 export type IntentHandlerPayload<
 	Dispatch extends IntentDefinition,
@@ -1017,6 +1025,8 @@ export type FormMetadata<
 		key: string;
 		/** The form's unique identifier. */
 		id: string;
+		/** The name of the submit button field that indicates the submission intent. */
+		intentName: string;
 		/** Auto-generated ID for associating form descriptions via aria-describedby. */
 		descriptionId: string;
 		/** Auto-generated ID for associating form errors via aria-describedby. */

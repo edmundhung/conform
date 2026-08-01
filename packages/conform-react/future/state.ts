@@ -796,6 +796,7 @@ export function getFormMetadata<
 	const metadata: BaseFormMetadata<ErrorShape, CustomState> = {
 		key: context.state.resetKey,
 		id: context.formId,
+		intentName: context.intentName,
 		errorId: `${context.formId}-form-error`,
 		descriptionId: `${context.formId}-form-description`,
 		defaultValue: context.state.defaultValue,

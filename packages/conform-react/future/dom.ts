@@ -291,26 +291,28 @@ export function createIntentDispatcher<
 	return new Proxy({} as IntentDispatcher<FormShape, IntentHandlers>, {
 		get(target, type, receiver) {
 			if (typeof type === 'string') {
+				const serialize = (...args: unknown[]) =>
+					serializeIntent({
+						type,
+						args,
+					});
+
 				// @ts-expect-error
-				target[type] ??= (...args: unknown[]) => {
-					const form =
-						typeof formElement === 'function' ? formElement() : formElement;
+				target[type] ??= Object.assign(
+					(...args: unknown[]) => {
+						const form =
+							typeof formElement === 'function' ? formElement() : formElement;
 
-					if (!form) {
-						throw new Error(
-							`Dispatching "${type}" intent failed; No form element found.`,
-						);
-					}
+						if (!form) {
+							throw new Error(
+								`Dispatching "${type}" intent failed; No form element found.`,
+							);
+						}
 
-					requestIntent(
-						form,
-						intentName,
-						serializeIntent({
-							type,
-							args,
-						}),
-					);
-				};
+						requestIntent(form, intentName, serialize(...args));
+					},
+					{ serialize },
+				);
 			}
 
 			return Reflect.get(target, type, receiver);

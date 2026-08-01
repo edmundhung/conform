@@ -286,9 +286,8 @@ test('useForm', () => {
 	expectTypeOf(intentInferred.intent).toEqualTypeOf<
 		IntentDispatcher<Record<string, any>, { goToStep: typeof goToStep }>
 	>();
-	expectTypeOf(intentInferred.intent.goToStep).toEqualTypeOf<
-		(payload: { step: number }) => void
-	>();
+	assertType<void>(intentInferred.intent.goToStep({ step: 1 }));
+	assertType<string>(intentInferred.intent.goToStep.serialize({ step: 1 }));
 });
 
 describe('configureForms', () => {
@@ -622,12 +621,14 @@ describe('configureForms', () => {
 		expectTypeOf(globalIntentSetup.intent).toEqualTypeOf<
 			IntentDispatcher<Record<string, any>, { goToStep: typeof goToStep }>
 		>();
-		expectTypeOf(globalIntentSetup.intent.goToStep).toEqualTypeOf<
-			(payload: { step: number }) => void
-		>();
-		expectTypeOf(custom.useIntent('form-id').goToStep).toEqualTypeOf<
-			(payload: { step: number }) => void
-		>();
+		assertType<void>(globalIntentSetup.intent.goToStep({ step: 1 }));
+		assertType<string>(
+			globalIntentSetup.intent.goToStep.serialize({ step: 1 }),
+		);
+		assertType<void>(custom.useIntent('form-id').goToStep({ step: 1 }));
+		assertType<string>(
+			custom.useIntent('form-id').goToStep.serialize({ step: 1 }),
+		);
 
 		// @ts-expect-error unknown custom intents should not be exposed without typing
 		custom.useIntent('form-id').unknownIntent();
@@ -693,12 +694,12 @@ describe('configureForms', () => {
 				{ goToStep: typeof goToStep; confirm: typeof confirm }
 			>
 		>();
-		expectTypeOf(inlineIntentSetup.intent.confirm).toEqualTypeOf<
-			(payload: string) => void
-		>();
-		expectTypeOf(custom.useIntent('form-id').goToStep).toEqualTypeOf<
-			(payload: { step: number }) => void
-		>();
+		assertType<void>(inlineIntentSetup.intent.confirm('confirm'));
+		assertType<string>(inlineIntentSetup.intent.confirm.serialize('confirm'));
+		assertType<void>(custom.useIntent('form-id').goToStep({ step: 1 }));
+		assertType<string>(
+			custom.useIntent('form-id').goToStep.serialize({ step: 1 }),
+		);
 	});
 
 	test('custom state', () => {
@@ -957,20 +958,39 @@ test('defineIntent', () => {
 		},
 	});
 
-	expectTypeOf(configured.useIntent('form-id').updateField).toEqualTypeOf<
-		(name: string, value: string) => void
-	>();
+	assertType<void>(
+		configured.useIntent('form-id').updateField('title', 'value'),
+	);
+	assertType<string>(
+		configured.useIntent('form-id').updateField.serialize('title', 'value'),
+	);
+	// @ts-expect-error value must be a string
+	configured.useIntent('form-id').updateField.serialize('title', 1);
 	// @ts-expect-error unknown custom intents should not be exposed without typing
 	configured.useIntent('form-id').unknownIntent();
 
-	expectTypeOf(
-		useIntent<{ updateField: typeof updateField }>('form-id').updateField,
-	).toEqualTypeOf<(name: string, value: string) => void>();
+	assertType<void>(
+		useIntent<{ updateField: typeof updateField }>('form-id').updateField(
+			'title',
+			'value',
+		),
+	);
+	assertType<string>(
+		useIntent<{ updateField: typeof updateField }>(
+			'form-id',
+		).updateField.serialize('title', 'value'),
+	);
 
-	expectTypeOf(
-		useIntent<{ title: string }, { updateField: typeof updateField }>('form-id')
-			.updateField,
-	).toEqualTypeOf<(name: string, value: string) => void>();
+	assertType<void>(
+		useIntent<{ title: string }, { updateField: typeof updateField }>(
+			'form-id',
+		).updateField('title', 'value'),
+	);
+	assertType<string>(
+		useIntent<{ title: string }, { updateField: typeof updateField }>(
+			'form-id',
+		).updateField.serialize('title', 'value'),
+	);
 });
 
 test('IntentDispatcher', () => {
@@ -1003,19 +1023,27 @@ test('IntentDispatcher', () => {
 	// Test validate
 	assertType<void>(intent.validate());
 	assertType<void>(intent.validate('name'));
+	assertType<string>(intent.validate.serialize());
+	assertType<string>(intent.validate.serialize('name'));
 
 	// Test submit
 	assertType<void>(intent.submit());
 	assertType<void>(intent.submit('delete'));
+	assertType<string>(intent.submit.serialize());
+	assertType<string>(intent.submit.serialize('delete'));
 
 	// Test remove
 	assertType<void>(intent.remove({ name: 'tasks', index: 0 }));
+	assertType<string>(intent.remove.serialize({ name: 'tasks', index: 0 }));
+	// @ts-expect-error index must be a number
+	intent.remove.serialize({ name: 'tasks', index: '0' });
 
 	// Test reorder
 	assertType<void>(intent.reorder({ name: 'tasks', from: 0, to: 1 }));
 
 	// Test insert
 	assertType<void>(intent.insert({ name: 'tags' }));
+	assertType<string>(intent.insert.serialize({ name: 'tags' }));
 	assertType<void>(intent.insert({ name: 'tags', defaultValue: 'new-tag' }));
 	assertType<void>(intent.insert({ name: 'tags', defaultValue: undefined }));
 	assertType<void>(
@@ -1029,6 +1057,7 @@ test('IntentDispatcher', () => {
 
 	// Test update
 	assertType<void>(intent.update({ name: 'name', value: 'text' }));
+	assertType<string>(intent.update.serialize({ name: 'name', value: 'text' }));
 	assertType<void>(intent.update({ name: 'name', value: null }));
 	assertType<void>(intent.update({ name: 'name', value: undefined }));
 	assertType<void>(

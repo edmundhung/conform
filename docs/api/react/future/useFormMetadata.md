@@ -24,6 +24,10 @@ A `FormMetadata` object containing:
 
 The form's unique identifier.
 
+### `intentName: string`
+
+The name of the submit button field that indicates the submission intent. Use it with [`intent.*.serialize()`](./useIntent.md) when rendering native submit buttons for form intents.
+
 ### `key: string`
 
 Unique identifier that changes on form reset.
