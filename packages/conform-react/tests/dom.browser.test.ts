@@ -379,6 +379,8 @@ test('createIntentDispatcher', () => {
 	// Test property access creates function
 	expect(typeof dispatcher.reset).toBe('function');
 	expect(typeof dispatcher.validate).toBe('function');
+	expect(dispatcher.reset.serialize()).toBe('reset()');
+	expect(dispatcher.validate.serialize('email')).toBe('validate("email")');
 
 	// Test with form getter function
 	const getForm = vi.fn(() => mockForm);
@@ -388,6 +390,7 @@ test('createIntentDispatcher', () => {
 	// Test error when form is not found
 	const getNullForm = vi.fn(() => null);
 	const dispatcher3 = createIntentDispatcher(getNullForm, 'intent');
+	expect(dispatcher3.reset.serialize()).toBe('reset()');
 	expect(() => dispatcher3.reset()).toThrow(
 		'Dispatching "reset" intent failed; No form element found.',
 	);

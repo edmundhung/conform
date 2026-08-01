@@ -38,6 +38,7 @@ function createContext(
 ): FormContext<any> {
 	return {
 		formId: 'test-id',
+		intentName: DEFAULT_INTENT_NAME,
 		serialize: defaultSerialize,
 		constraint: null,
 		state: initializeState(),
@@ -1730,6 +1731,7 @@ test('getFormMetadata', () => {
 
 	// Test basic properties
 	expect(metadata.id).toBe('test-id');
+	expect(metadata.intentName).toBe(DEFAULT_INTENT_NAME);
 	expect(metadata.key).toBe(context.state.resetKey);
 	expect(metadata.errorId).toBe('test-id-form-error');
 	expect(metadata.descriptionId).toBe('test-id-form-description');

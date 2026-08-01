@@ -25,6 +25,27 @@ A reference to the form element. Can be either:
 
 An `IntentDispatcher` object with the built-in methods below. A customized `useIntent` returned from [`configureForms`](./configureForms.md) also includes that factory's custom intents:
 
+Each intent method also exposes a `serialize()` method with the same arguments. It returns the intent value without dispatching it, which lets a native submit button trigger the same form intent when JavaScript is unavailable:
+
+```tsx
+import { useForm } from '@conform-to/react/future';
+
+function Example() {
+  const { form, intent } = useForm({
+    // ...
+  });
+
+  return (
+    <form {...form.props}>
+      <input name="title" />
+      <button name={form.intentName} value={intent.validate.serialize('title')}>
+        Validate title
+      </button>
+    </form>
+  );
+}
+```
+
 ### `validate(name?: string): void`
 
 Triggers validation for the entire form or a specific field. If you provide a name that includes nested fields (e.g. `user.email`), it will validate all fields within that fieldset.
