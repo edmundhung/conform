@@ -21,7 +21,7 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
 					required: metadata.required,
-					invalid: metadata.invalid,
+					invalid: !metadata.valid,
 				} satisfies Partial<InputProps>;
 			},
 			get textareaProps() {
@@ -30,7 +30,7 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
 					required: metadata.required,
-					invalid: metadata.invalid,
+					invalid: !metadata.valid,
 				} satisfies Partial<TextareaProps>;
 			},
 			get selectProps() {
@@ -39,7 +39,7 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
 					required: metadata.required,
-					invalid: metadata.invalid,
+					invalid: !metadata.valid,
 				} satisfies Partial<SelectProps>;
 			},
 			get listBoxProps() {

@@ -1,16 +1,7 @@
-import type { Constraint } from '@conform-to/dom';
 import type { ValidationAttributes } from '@conform-to/dom/future';
-import type { $ZodType } from 'zod/v4/core';
 import { configureCoercion as baseConfigureCoercion } from './coercion';
 import { getZodConstraint as baseGetZodConstraint } from './constraint';
 import { isSchema } from './schema';
-
-/**
- * @deprecated Use `getConstraints` instead.
- */
-export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
-	return baseGetZodConstraint(schema);
-}
 
 export function getConstraints(
 	schema: unknown,

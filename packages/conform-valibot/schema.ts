@@ -31,8 +31,3 @@ export function getConstraints(
 
 	return getValibotConstraint(schema);
 }
-
-/**
- * @deprecated Use `getConstraints` instead.
- */
-export { getValibotConstraint };

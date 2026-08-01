@@ -91,7 +91,7 @@ describe.each(testCases)(
 							defaultValue={fields.title.defaultValue}
 							aria-label="Title"
 							aria-describedby={
-								fields.title.invalid ? fields.title.errorId : undefined
+								!fields.title.valid ? fields.title.errorId : undefined
 							}
 						/>
 						<textarea
@@ -99,7 +99,7 @@ describe.each(testCases)(
 							defaultValue={fields.description.defaultValue}
 							aria-label="Description"
 							aria-describedby={
-								fields.description.invalid
+								!fields.description.valid
 									? fields.description.errorId
 									: undefined
 							}

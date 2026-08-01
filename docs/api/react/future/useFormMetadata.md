@@ -48,12 +48,6 @@ Whether any field in the form has been touched (through `intent.validate()` or t
 
 Whether the form currently has no validation errors.
 
-### `invalid: boolean`
-
-> **⚠️ Deprecated:** Use `valid` instead. This property will be removed in version 1.11.0.
-
-Whether the form currently has any validation errors. This is equivalent to `!valid`.
-
 ### `errors: ErrorShape | undefined`
 
 Form-level validation error, if any exists.

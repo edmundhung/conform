@@ -1,9 +1,5 @@
 import { configureCoercion as baseConfigureCoercion } from './coercion';
 
-/**
- * @deprecated Use `getConstraints` instead.
- */
-export { getValibotConstraint } from './constraint';
 export { formatResult } from './format';
 export { isSchema, getConstraints } from './schema';
 
