@@ -44,7 +44,7 @@ export default function Todos() {
 			} else {
 				update({
 					reset: true,
-					value,
+					targetValue: value,
 				});
 			}
 		},

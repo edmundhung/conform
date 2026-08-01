@@ -435,47 +435,61 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 		};
 	}
 
-	test('applies the value passed to submit update', async () => {
-		function SubmitUpdateForm() {
-			const { form, fields } = useForm<
-				{ title: string },
-				string[],
-				{ title: string }
-			>({
-				defaultValue: { title: 'Initial title' },
-				onValidate({ payload }) {
-					return {
-						error: null,
-						value: { title: String(payload.title ?? '') },
-					};
-				},
-				onSubmit(event, { value, update }) {
-					event.preventDefault();
-					update({ reset: true, value });
-				},
-			});
+	test.each(['value', 'targetValue', 'both'] as const)(
+		'applies the %s option passed to submit update',
+		async (option) => {
+			function SubmitUpdateForm() {
+				const { form, fields } = useForm<
+					{ title: string },
+					string[],
+					{ title: string }
+				>({
+					defaultValue: { title: 'Initial title' },
+					onValidate({ payload }) {
+						return {
+							error: null,
+							value: { title: String(payload.title ?? '') },
+						};
+					},
+					onSubmit(event, { value, update }) {
+						event.preventDefault();
 
-			return (
-				<form {...form.props}>
-					<label htmlFor={fields.title.id}>Submit update title</label>
-					<input
-						id={fields.title.id}
-						name={fields.title.name}
-						defaultValue={fields.title.defaultValue}
-					/>
-					<button>Save</button>
-				</form>
-			);
-		}
+						if (option === 'value') {
+							update({ reset: true, value });
+						} else if (option === 'targetValue') {
+							update({ reset: true, targetValue: value });
+						} else {
+							update({
+								reset: true,
+								value: { title: 'Legacy title' },
+								targetValue: value,
+							});
+						}
+					},
+				});
 
-		const screen = render(<SubmitUpdateForm />);
-		const title = screen.getByLabelText('Submit update title');
+				return (
+					<form {...form.props}>
+						<label htmlFor={fields.title.id}>Submit update title</label>
+						<input
+							id={fields.title.id}
+							name={fields.title.name}
+							defaultValue={fields.title.defaultValue}
+						/>
+						<button>Save</button>
+					</form>
+				);
+			}
 
-		await userEvent.clear(title);
-		await userEvent.type(title, 'Updated title');
-		await userEvent.click(screen.getByRole('button', { name: 'Save' }));
-		await expect.element(title).toHaveValue('Updated title');
-	});
+			const screen = render(<SubmitUpdateForm />);
+			const title = screen.getByLabelText('Submit update title');
+
+			await userEvent.clear(title);
+			await userEvent.type(title, 'Updated title');
+			await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+			await expect.element(title).toHaveValue('Updated title');
+		},
+	);
 
 	test('shouldValidate: onSubmit (default)', async () => {
 		const screen = render(<Form />);

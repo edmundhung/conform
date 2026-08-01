@@ -102,6 +102,20 @@ Error handling callback triggered when validation errors occur. By default, it f
 
 Form submission handler called when the form is submitted with no validation errors.
 
+The second argument includes the submitted `formData`, the validated `value`, and an `update()` function for applying the result. Pass `targetValue` to update or reset the form to a specific value:
+
+```tsx
+onSubmit(event, { value, update }) {
+  event.preventDefault();
+  update({
+    reset: true,
+    targetValue: value,
+  });
+}
+```
+
+The `value` option on `update()` is deprecated. It remains an alias for `targetValue`; when both options are provided, `targetValue` takes precedence.
+
 ### `onInput?: InputHandler`
 
 Input event handler for custom input event logic.
