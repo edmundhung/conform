@@ -20,6 +20,8 @@ The Valibot validation result to be formatted. This should be the result from `v
 
 Optional. Set to `true` if you want both the error and the parsed value returned in an object. This is useful when you are parsing the form value manually and still want to access the parsed value in the `onSubmit` handler on the `useForm` hook.
 
+> **Deprecated:** This option will be removed in the next minor release. `formatResult()` will then always return both `error` and `value`, equivalent to the current `includeValue: true` behavior.
+
 ### `options.formatIssues?: (issue: BaseIssue<unknown>[], name: string) => ErrorShape`
 
 Optional. A function to customize how valibot issues are formatted for each field. This is particularly useful if you want to include additional information from the `BaseIssue` object in the error messages, or if you need to support internationalization.

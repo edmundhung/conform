@@ -16,7 +16,7 @@ export function formatResult<
 >(
 	result: SafeParseResult<Schema>,
 	options: {
-		/** Whether to include the parsed value in the returned object */
+		/** @deprecated This option will be removed in the next minor release, when the parsed value will always be included. */
 		includeValue: true;
 		/** Custom function to format validation issues for each field */
 		formatIssues: (issues: InferIssue<Schema>[], name: string) => ErrorShape;
@@ -28,6 +28,7 @@ export function formatResult<
 export function formatResult<Schema extends GenericSchema | GenericSchemaAsync>(
 	result: SafeParseResult<Schema>,
 	options: {
+		/** @deprecated This option will be removed in the next minor release, when the parsed value will always be included. */
 		includeValue: true;
 		formatIssues?: undefined;
 	},
@@ -41,6 +42,7 @@ export function formatResult<
 >(
 	result: SafeParseResult<Schema>,
 	options: {
+		/** @deprecated This option will be removed in the next minor release, when the parsed value will always be included. */
 		includeValue?: false;
 		formatIssues: (issues: InferIssue<Schema>[], name: string) => ErrorShape;
 	},
