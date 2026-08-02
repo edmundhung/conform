@@ -566,9 +566,11 @@ export function useConform<
 					},
 					update(options) {
 						if (!abortController.signal.aborted) {
+							const targetValue =
+								'targetValue' in options ? options.targetValue : options.value;
 							const submissionResult = report(result.submission, {
 								error: options.error,
-								targetValue: options.value,
+								targetValue,
 								reset: options.reset,
 								keepFiles: true,
 							});

@@ -1201,6 +1201,8 @@ export type SubmitContext<
 	value: Value;
 	update: (options: {
 		error?: Partial<FormError<ErrorShape>> | null | undefined;
+		targetValue?: FormShape | null | undefined;
+		/** @deprecated Use `targetValue` instead. This will be removed in the next minor release. */
 		value?: FormShape | null | undefined;
 		reset?: boolean | undefined;
 	}) => void;
