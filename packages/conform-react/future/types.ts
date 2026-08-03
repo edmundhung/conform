@@ -691,52 +691,44 @@ export type IntentHandlerPayload<
 
 export type SubmitIntent = (value?: string) => void;
 
+type ResetIntentOptions<FormShape> = {
+	defaultValue?: DefaultValue<
+		FormShape extends Record<string, any> ? FormShape : never
+	>;
+};
+
 export interface ResetIntent extends TypedIntentDefinition {
-	dispatch<
-		FormShape extends Record<string, any> = this['FormShape'] extends Record<
-			string,
-			any
-		>
-			? this['FormShape']
-			: never,
-	>(options?: {
-		defaultValue?: DefaultValue<FormShape>;
-	}): void;
+	dispatch(options?: ResetIntentOptions<this['FormShape']>): void;
 }
 
 export type ValidateIntent = (name?: string) => void;
 
-export type IsUntypedFormShape<FormShape> = unknown extends FormShape
-	? true
-	: string extends keyof FormShape
-		? true
-		: false;
+type UpdateIntentOptions<FormShape, FieldShape> =
+	| {
+			name?: undefined;
+			index?: undefined;
+			value: DefaultValue<NoInfer<FormShape>>;
+	  }
+	| {
+			name: FieldName<FieldShape>;
+			index?: undefined;
+			value: DefaultValue<NoInfer<FieldShape>>;
+	  }
+	| {
+			name: FieldName<
+				FieldShape extends Array<any> | null | undefined ? FieldShape : never
+			>;
+			index: number;
+			value: unknown extends FieldShape
+				? unknown
+				: NonNullable<NoInfer<FieldShape>> extends Array<infer ItemShape>
+					? DefaultValue<ItemShape>
+					: never;
+	  };
 
 export interface UpdateIntent extends TypedIntentDefinition {
-	dispatch<FieldShape = this['FormShape']>(
-		options: IsUntypedFormShape<this['FormShape']> extends true
-			? {
-					name?: string | undefined;
-					index?: number | undefined;
-					value: unknown;
-				}
-			:
-					| {
-							name?: FieldName<FieldShape>;
-							index?: undefined;
-							value: DefaultValue<FieldShape>;
-					  }
-					| {
-							name: FieldName<
-								FieldShape extends Array<any> | null | undefined
-									? FieldShape
-									: never
-							>;
-							index: number;
-							value: NonNullable<FieldShape> extends Array<infer ItemShape>
-								? DefaultValue<ItemShape>
-								: never;
-					  },
+	dispatch<FieldShape = unknown>(
+		options: UpdateIntentOptions<this['FormShape'], FieldShape>,
 	): void;
 }
 
@@ -744,7 +736,9 @@ export interface InsertIntent extends TypedIntentDefinition {
 	dispatch<FieldShape extends Array<any> | null | undefined>(options: {
 		name: FieldName<FieldShape>;
 		index?: number;
-		defaultValue?: NonNullable<FieldShape> extends Array<infer ItemShape>
+		defaultValue?: NonNullable<NoInfer<FieldShape>> extends Array<
+			infer ItemShape
+		>
 			? DefaultValue<ItemShape>
 			: never;
 		from?: string;
@@ -757,7 +751,9 @@ export interface RemoveIntent extends TypedIntentDefinition {
 		name: FieldName<FieldShape>;
 		index: number;
 		onInvalid?: 'revert' | 'insert';
-		defaultValue?: NonNullable<FieldShape> extends Array<infer ItemShape>
+		defaultValue?: NonNullable<NoInfer<FieldShape>> extends Array<
+			infer ItemShape
+		>
 			? DefaultValue<ItemShape>
 			: never;
 	}): void;
