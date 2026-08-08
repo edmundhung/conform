@@ -1,8 +1,21 @@
-import type { Constraint, Submission } from '@conform-to/dom';
+import type {
+	Constraint,
+	Submission as DomSubmission,
+	SubmissionResult as DomSubmissionResult,
+} from '@conform-to/dom';
 import type { FormError, ValidationAttributes } from '@conform-to/dom/future';
 import { expectTypeOf, test } from 'vitest';
 import { z, type ZodTypeAny } from 'zod';
-import { getZodConstraint, parseWithZod } from '@conform-to/zod/v3';
+import type {
+	Submission as DefaultSubmission,
+	SubmissionResult as DefaultSubmissionResult,
+} from '@conform-to/zod';
+import {
+	getZodConstraint,
+	parseWithZod,
+	type Submission,
+	type SubmissionResult,
+} from '@conform-to/zod/v3';
 import {
 	coerceFormValue,
 	coerceStructure,
@@ -53,6 +66,17 @@ test('parseWithZod', () => {
 			>
 		>
 	>();
+});
+
+test('submission types', () => {
+	type Schema = { name: string };
+
+	expectTypeOf<Submission<Schema>>().toEqualTypeOf<DomSubmission<Schema>>();
+	expectTypeOf<SubmissionResult>().toEqualTypeOf<DomSubmissionResult>();
+	expectTypeOf<DefaultSubmission<Schema>>().toEqualTypeOf<
+		DomSubmission<Schema>
+	>();
+	expectTypeOf<DefaultSubmissionResult>().toEqualTypeOf<DomSubmissionResult>();
 });
 
 test('configureCoercion', () => {

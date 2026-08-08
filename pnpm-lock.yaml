@@ -1005,12 +1005,24 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: ^16.0.3
         version: 16.0.3(rollup@2.80.0)
+      '@vitest/browser-playwright':
+        specifier: ^4.1.5
+        version: 4.1.5(playwright@1.49.1)(vite@8.1.5(@types/node@25.5.0)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.8.3))(vitest@4.1.5)
+      playwright:
+        specifier: ^1.49.1
+        version: 1.49.1
       rollup:
         specifier: ^2.80.0
         version: 2.80.0
       rollup-plugin-copy:
         specifier: ^3.4.0
         version: 3.5.0
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.5
+        version: 4.1.5(@types/node@25.5.0)(@vitest/browser-playwright@4.1.5)(vite@8.1.5(@types/node@25.5.0)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.8.3))
       yup:
         specifier: ^0.32.11
         version: 0.32.11

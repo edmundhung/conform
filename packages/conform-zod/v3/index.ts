@@ -2,6 +2,8 @@ import type { Constraint } from '@conform-to/dom';
 import type { ZodTypeAny } from 'zod/v3';
 import { getZodConstraint as baseGetZodConstraint } from './constraint';
 
+export type { Submission, SubmissionResult } from '@conform-to/dom';
+
 export function getZodConstraint(
 	schema: ZodTypeAny,
 ): Record<string, Constraint> {

@@ -1,0 +1,9 @@
+{
+	"extends": "../tsconfig",
+	"compilerOptions": {
+		"composite": false,
+		"noEmit": true,
+		"types": ["vitest/globals"]
+	},
+	"include": ["types.test-d.ts"]
+}
