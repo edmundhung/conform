@@ -178,6 +178,7 @@ test('literal default values in intents', () => {
 	const untypedIntent = {} as IntentDispatcher<Record<string, any>>;
 	const statusName = 'status' as FieldName<FormShape['status']>;
 	const itemsName = 'items' as FieldName<FormShape['items']>;
+	const dynamicName = 'status' as string | undefined;
 
 	assertType<void>(intent.reset({ defaultValue: { status: 'published' } }));
 	// @ts-expect-error programmatic reset should reject unsupported literals
@@ -212,6 +213,10 @@ test('literal default values in intents', () => {
 	);
 	// @ts-expect-error indexed branded names should remain typed on an untyped form
 	untypedIntent.update({ name: itemsName, index: 0, value: { role: 'owner' } });
+
+	assertType<void>(
+		intent.update({ name: dynamicName, value: { arbitrary: true } }),
+	);
 
 	assertType<void>(
 		intent.insert({ name: itemsName, defaultValue: { role: 'admin' } }),

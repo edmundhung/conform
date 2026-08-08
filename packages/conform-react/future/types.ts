@@ -719,11 +719,16 @@ type UpdateIntentOptions<FormShape, FieldShape> =
 				FieldShape extends Array<any> | null | undefined ? FieldShape : never
 			>;
 			index: number;
-			value: unknown extends FieldShape
+			value: unknown extends NoInfer<FieldShape>
 				? unknown
 				: NonNullable<NoInfer<FieldShape>> extends Array<infer ItemShape>
 					? DefaultValue<ItemShape>
 					: never;
+	  }
+	| {
+			name: FieldName<FieldShape> | undefined;
+			index?: undefined;
+			value: unknown extends NoInfer<FieldShape> ? unknown : never;
 	  };
 
 export interface UpdateIntent extends TypedIntentDefinition {
