@@ -1,6 +1,7 @@
 import { type Intent, type Submission, parse } from '@conform-to/dom';
 import * as yup from 'yup';
 
+export type { Submission, SubmissionResult } from '@conform-to/dom';
 export { getYupConstraint } from './constraint';
 
 export function parseWithYup<Schema extends yup.AnyObjectSchema>(

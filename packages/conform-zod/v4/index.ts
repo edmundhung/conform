@@ -2,6 +2,8 @@ import type { Constraint } from '@conform-to/dom';
 import type { $ZodType } from 'zod/v4/core';
 import { getZodConstraint as baseGetZodConstraint } from './constraint';
 
+export type { Submission, SubmissionResult } from '@conform-to/dom';
+
 export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 	return baseGetZodConstraint(schema, {
 		preserveBranchSpecificRequired: false,
