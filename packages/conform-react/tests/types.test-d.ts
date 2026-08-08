@@ -168,6 +168,150 @@ test('DefaultValue', () => {
 	assertType<DefaultValue<IntentObject>>({ intent: 'delete' });
 });
 
+test('literal default values in intents', () => {
+	type FormShape = {
+		status: 'draft' | 'published';
+		items: Array<{ role: 'admin' | 'member' }>;
+	};
+
+	const intent = {} as IntentDispatcher<FormShape>;
+	const untypedIntent = {} as IntentDispatcher<Record<string, any>>;
+	const statusName = 'status' as FieldName<FormShape['status']>;
+	const itemsName = 'items' as FieldName<FormShape['items']>;
+	const dynamicName = 'status' as string | undefined;
+
+	assertType<void>(intent.reset({ defaultValue: { status: 'published' } }));
+	// @ts-expect-error programmatic reset should reject unsupported literals
+	intent.reset({ defaultValue: { status: 'archived' } });
+	assertType<string>(
+		intent.reset.serialize({ defaultValue: { status: 'published' } }),
+	);
+	// @ts-expect-error serialized reset should reject unsupported literals
+	intent.reset.serialize({ defaultValue: { status: 'archived' } });
+
+	assertType<void>(intent.update({ value: { status: 'published' } }));
+	// @ts-expect-error whole-form updates should reject unsupported literals
+	intent.update({ value: { status: 'archived' } });
+	assertType<string>(
+		intent.update.serialize({ value: { status: 'published' } }),
+	);
+	// @ts-expect-error serialized whole-form updates should reject unsupported literals
+	intent.update.serialize({ value: { status: 'archived' } });
+
+	assertType<void>(intent.update({ name: statusName, value: 'draft' }));
+	// @ts-expect-error branded field updates should reject unsupported literals
+	intent.update({ name: statusName, value: 'archived' });
+	assertType<string>(
+		intent.update.serialize({ name: statusName, value: 'draft' }),
+	);
+	// @ts-expect-error serialized branded field updates should reject unsupported literals
+	intent.update.serialize({ name: statusName, value: 'archived' });
+
+	assertType<void>(
+		intent.update({ name: itemsName, index: 0, value: { role: 'member' } }),
+	);
+	// @ts-expect-error indexed field updates should reject unsupported literals
+	intent.update({ name: itemsName, index: 0, value: { role: 'owner' } });
+	assertType<string>(
+		intent.update.serialize({
+			name: itemsName,
+			index: 0,
+			value: { role: 'member' },
+		}),
+	);
+	intent.update.serialize({
+		name: itemsName,
+		index: 0,
+		// @ts-expect-error serialized indexed updates should reject unsupported literals
+		value: { role: 'owner' },
+	});
+
+	assertType<void>(
+		untypedIntent.update({ name: statusName, value: 'published' }),
+	);
+	// @ts-expect-error branded names should remain typed on an untyped form
+	untypedIntent.update({ name: statusName, value: 'archived' });
+	assertType<string>(
+		untypedIntent.update.serialize({ name: statusName, value: 'published' }),
+	);
+	// @ts-expect-error serialized branded names should remain typed on an untyped form
+	untypedIntent.update.serialize({ name: statusName, value: 'archived' });
+
+	assertType<void>(
+		untypedIntent.update({
+			name: itemsName,
+			index: 0,
+			value: { role: 'admin' },
+		}),
+	);
+	// @ts-expect-error indexed branded names should remain typed on an untyped form
+	untypedIntent.update({ name: itemsName, index: 0, value: { role: 'owner' } });
+
+	assertType<void>(
+		intent.update({ name: dynamicName, value: { arbitrary: true } }),
+	);
+	assertType<string>(
+		intent.update.serialize({
+			name: dynamicName,
+			value: { arbitrary: true },
+		}),
+	);
+
+	assertType<void>(
+		intent.insert({ name: itemsName, defaultValue: { role: 'admin' } }),
+	);
+	// @ts-expect-error programmatic inserts should reject unsupported literals
+	intent.insert({ name: itemsName, defaultValue: { role: 'owner' } });
+	assertType<string>(
+		intent.insert.serialize({
+			name: itemsName,
+			defaultValue: { role: 'admin' },
+		}),
+	);
+	intent.insert.serialize({
+		name: itemsName,
+		// @ts-expect-error serialized inserts should reject unsupported literals
+		defaultValue: { role: 'owner' },
+	});
+
+	assertType<void>(
+		intent.remove({
+			name: itemsName,
+			index: 0,
+			onInvalid: 'insert',
+			defaultValue: { role: 'member' },
+		}),
+	);
+	intent.remove({
+		name: itemsName,
+		index: 0,
+		onInvalid: 'insert',
+		// @ts-expect-error programmatic fallback inserts should reject unsupported literals
+		defaultValue: { role: 'owner' },
+	});
+	assertType<string>(
+		intent.remove.serialize({
+			name: itemsName,
+			index: 0,
+			onInvalid: 'insert',
+			defaultValue: { role: 'member' },
+		}),
+	);
+	intent.remove.serialize({
+		name: itemsName,
+		index: 0,
+		onInvalid: 'insert',
+		// @ts-expect-error serialized fallback inserts should reject unsupported literals
+		defaultValue: { role: 'owner' },
+	});
+
+	// DOM-derived metadata remains intentionally broad
+	const metadata = {} as FieldMetadata<FormShape['status']>;
+
+	assertType<string>(metadata.defaultValue);
+	assertType<unknown>(metadata.defaultPayload);
+});
+
 test('FormOptions', () => {
 	type TestSchema = { name: string; email: string };
 
