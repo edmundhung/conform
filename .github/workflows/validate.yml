@@ -24,29 +24,8 @@ on:
         default: '7'
 
 jobs:
-  resolve-typescript:
-    name: Resolve TypeScript
-    runs-on: ubuntu-22.04
-    outputs:
-      version: ${{ steps.resolve.outputs.version }}
-    env:
-      TYPESCRIPT_SPEC: ${{ inputs.typescript }}
-    steps:
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Resolve exact version
-        id: resolve
-        run: |
-          versions="$(npm view "typescript@$TYPESCRIPT_SPEC" version --json)"
-          version="$(jq -er 'if type == "array" then last else . end' <<< "$versions")"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          printf 'Requested `%s`; resolved `%s`.\n' "$TYPESCRIPT_SPEC" "$version" >> "$GITHUB_STEP_SUMMARY"
-
   examples:
-    name: Examples — TS ${{ needs.resolve-typescript.outputs.version }}
-    needs: resolve-typescript
+    name: Examples — TS ${{ inputs.typescript }}
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repo
@@ -77,8 +56,11 @@ jobs:
           pnpm --filter react-router-example exec react-router typegen
       - name: Typecheck examples
         # Astro supports TypeScript 5 only and the legacy Remix example will be removed.
+        env:
+          TYPESCRIPT_SPEC: ${{ inputs.typescript }}
         run: |
-          pnpm --package="typescript@${{ needs.resolve-typescript.outputs.version }}" dlx tsc \
+          pnpm --package="typescript@$TYPESCRIPT_SPEC" dlx tsc --version
+          pnpm --package="typescript@$TYPESCRIPT_SPEC" dlx tsc \
             --build \
             examples/chakra-ui \
             examples/headless-ui \
