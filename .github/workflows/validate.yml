@@ -8,10 +8,10 @@ on:
         required: false
         default: ''
       typescript:
-        description: 'JSON array of TypeScript versions, ranges, or tags (default: ["5.8", "7"])'
+        description: 'JSON array of TypeScript versions, ranges, or tags (optional; e.g. ["5.8", "7"])'
         type: string
         required: false
-        default: '["5.8", "7"]'
+        default: ''
   workflow_call:
     inputs:
       preview:
@@ -20,10 +20,10 @@ on:
         required: false
         default: ''
       typescript:
-        description: 'JSON array of TypeScript versions, ranges, or tags (default: ["5.8", "7"])'
+        description: 'JSON array of TypeScript versions, ranges, or tags (optional; e.g. ["5.8", "7"])'
         type: string
         required: false
-        default: '["5.8", "7"]'
+        default: ''
 
 jobs:
   examples:
@@ -60,6 +60,7 @@ jobs:
 
   typecheck:
     name: Typecheck — TS ${{ matrix.typescript }}
+    if: inputs.typescript != ''
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
