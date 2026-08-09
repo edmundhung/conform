@@ -3,9 +3,10 @@ on:
   workflow_dispatch:
     inputs:
       preview:
-        description: 'Commit SHA / PR Number'
+        description: 'Commit SHA / PR Number (optional)'
         type: string
-        required: true
+        required: false
+        default: ''
       typescript:
         description: 'JSON array of TypeScript versions, ranges, or tags (default: ["5.8", "7"])'
         type: string
@@ -14,9 +15,10 @@ on:
   workflow_call:
     inputs:
       preview:
-        description: 'Commit SHA / PR Number'
+        description: 'Commit SHA / PR Number (optional)'
         type: string
-        required: true
+        required: false
+        default: ''
       typescript:
         description: 'JSON array of TypeScript versions, ranges, or tags (default: ["5.8", "7"])'
         type: string
@@ -26,6 +28,7 @@ on:
 jobs:
   examples:
     name: Examples
+    if: inputs.preview != ''
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repo
@@ -76,7 +79,11 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm i
+      - name: Build packages
+        if: inputs.preview == ''
+        run: pnpm build
       - name: Install pre-release
+        if: inputs.preview != ''
         env:
           PNPM_CONFIG_BLOCK_EXOTIC_SUBDEPS: 'false'
         run: >
@@ -108,6 +115,7 @@ jobs:
 
   epicstack:
     name: Epic Stack
+    if: inputs.preview != ''
     runs-on: ubuntu-22.04
     steps:
       - name: ⎔ Setup node
