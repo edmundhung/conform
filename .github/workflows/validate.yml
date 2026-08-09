@@ -3,24 +3,24 @@ on:
   workflow_dispatch:
     inputs:
       preview:
-        description: 'Commit SHA / PR Number (optional)'
+        description: 'Commit SHA / PR Number'
         type: string
         required: false
         default: ''
       typescript:
-        description: 'JSON array of TypeScript versions, ranges, or tags (optional; e.g. ["5.8", "7"])'
+        description: 'JSON array of TypeScript versions, ranges, or tags (e.g. ["5.8", "7"])'
         type: string
         required: false
         default: ''
   workflow_call:
     inputs:
       preview:
-        description: 'Commit SHA / PR Number (optional)'
+        description: 'Commit SHA / PR Number'
         type: string
         required: false
         default: ''
       typescript:
-        description: 'JSON array of TypeScript versions, ranges, or tags (optional; e.g. ["5.8", "7"])'
+        description: 'JSON array of TypeScript versions, ranges, or tags (e.g. ["5.8", "7"])'
         type: string
         required: false
         default: ''
