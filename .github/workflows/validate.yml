@@ -7,10 +7,10 @@ on:
         type: string
         required: true
       typescript:
-        description: 'TypeScript version, range, or tag'
+        description: 'Comma-separated TypeScript versions, ranges, or tags (default: 5.8, 7)'
         type: string
         required: false
-        default: '7'
+        default: '5.8, 7'
   workflow_call:
     inputs:
       preview:
@@ -18,10 +18,10 @@ on:
         type: string
         required: true
       typescript:
-        description: 'TypeScript version, range, or tag'
+        description: 'Comma-separated TypeScript versions, ranges, or tags (default: 5.8, 7)'
         type: string
         required: false
-        default: '7'
+        default: '5.8, 7'
 
 jobs:
   examples:
@@ -86,21 +86,42 @@ jobs:
       - name: Typecheck examples
         # Astro supports TypeScript 5 only and the legacy Remix example will be removed.
         env:
-          TYPESCRIPT_SPEC: ${{ inputs.typescript }}
+          TYPESCRIPT_VERSIONS: ${{ inputs.typescript }}
         run: |
-          pnpm --package="typescript@$TYPESCRIPT_SPEC" dlx tsc --version
-          pnpm --package="typescript@$TYPESCRIPT_SPEC" dlx tsc \
-            --build \
-            examples/chakra-ui \
-            examples/headless-ui \
-            examples/material-ui \
-            examples/nextjs \
-            examples/radix-ui \
-            examples/react-aria \
-            examples/react-router \
-            examples/react-spa \
-            examples/shadcn-ui \
-            --pretty false
+          status=0
+          IFS=',' read -ra versions <<< "$TYPESCRIPT_VERSIONS"
+
+          for version in "${versions[@]}"; do
+            version="$(printf '%s' "$version" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+
+            if [[ -z "$version" ]]; then
+              continue
+            fi
+
+            echo "::group::TypeScript $version"
+
+            if ! pnpm --package="typescript@$version" dlx tsc --version ||
+              ! pnpm --package="typescript@$version" dlx tsc \
+                --build \
+                --force \
+                examples/chakra-ui \
+                examples/headless-ui \
+                examples/material-ui \
+                examples/nextjs \
+                examples/radix-ui \
+                examples/react-aria \
+                examples/react-router \
+                examples/react-spa \
+                examples/shadcn-ui \
+                --pretty false
+            then
+              status=1
+            fi
+
+            echo "::endgroup::"
+          done
+
+          exit "$status"
 
   epicstack:
     name: Epic Stack
