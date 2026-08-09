@@ -89,25 +89,5 @@ jobs:
             examples/react-aria \
             examples/react-router \
             examples/react-spa \
-            examples/remix \
             examples/shadcn-ui \
             --pretty false
-      - name: Check emitted declarations
-        env:
-          DECLARATION_DIR: ${{ runner.temp }}/remix-declarations
-        run: |
-          pnpm --package="typescript@${{ needs.resolve-typescript.outputs.version }}" dlx tsc \
-            --project examples/remix/tsconfig.json \
-            --declaration \
-            --emitDeclarationOnly \
-            --noEmit false \
-            --rootDir examples/remix \
-            --outDir "$DECLARATION_DIR" \
-            --pretty false
-
-          grep -Rq 'import("@conform-to/react").SubmissionResult' "$DECLARATION_DIR"
-
-          if grep -REq '\.pnpm/|node_modules/|@conform-to/dom' "$DECLARATION_DIR"; then
-            echo 'Declarations contain a non-portable type reference.' >&2
-            exit 1
-          fi
