@@ -5,17 +5,30 @@ on:
       preview:
         description: 'Commit SHA / PR Number'
         type: string
-        required: true
+        required: false
+        default: ''
+      typescript:
+        description: 'JSON array of TypeScript versions, ranges, or tags (e.g. ["5.8", "7"])'
+        type: string
+        required: false
+        default: ''
   workflow_call:
     inputs:
       preview:
         description: 'Commit SHA / PR Number'
         type: string
-        required: true
+        required: false
+        default: ''
+      typescript:
+        description: 'JSON array of TypeScript versions, ranges, or tags (e.g. ["5.8", "7"])'
+        type: string
+        required: false
+        default: ''
 
 jobs:
   examples:
     name: Examples
+    if: inputs.preview != ''
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repo
@@ -45,8 +58,65 @@ jobs:
       - name: Run tests
         run: pnpm --filter './examples/*' run --if-present test
 
+  typecheck:
+    name: Typecheck — TS ${{ matrix.typescript }}
+    if: inputs.typescript != ''
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        typescript: ${{ fromJSON(inputs.typescript) }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Enable Corepack
+        run: |
+          npm i -g corepack@latest --force
+          corepack enable
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm i
+      - name: Build packages
+        if: inputs.preview == ''
+        run: pnpm build
+      - name: Install pre-release
+        if: inputs.preview != ''
+        env:
+          PNPM_CONFIG_BLOCK_EXOTIC_SUBDEPS: 'false'
+        run: >
+          pnpm --filter './examples/*' add
+          https://pkg.pr.new/@conform-to/react@${{ inputs.preview }}
+          https://pkg.pr.new/@conform-to/zod@${{ inputs.preview }}
+      - name: Generate framework types
+        run: |
+          pnpm --filter nextjs-example exec next typegen
+          pnpm --filter react-router-example exec react-router typegen
+      - name: Typecheck examples
+        # Astro supports TypeScript 5 only and the legacy Remix example will be removed.
+        env:
+          TYPESCRIPT_SPEC: ${{ matrix.typescript }}
+        run: |
+          pnpm --package="typescript@$TYPESCRIPT_SPEC" dlx tsc --version
+          pnpm --package="typescript@$TYPESCRIPT_SPEC" dlx tsc \
+            --build \
+            examples/chakra-ui \
+            examples/headless-ui \
+            examples/material-ui \
+            examples/nextjs \
+            examples/radix-ui \
+            examples/react-aria \
+            examples/react-router \
+            examples/react-spa \
+            examples/shadcn-ui \
+            --pretty false
+
   epicstack:
     name: Epic Stack
+    if: inputs.preview != ''
     runs-on: ubuntu-22.04
     steps:
       - name: ⎔ Setup node
