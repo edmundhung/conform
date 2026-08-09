@@ -6,32 +6,22 @@ on:
         description: 'Commit SHA / PR Number'
         type: string
         required: true
-      typescript_min:
-        description: 'Minimum TypeScript version, range, or tag (default: 5.8)'
+      typescript:
+        description: 'JSON array of TypeScript versions, ranges, or tags (default: ["5.8", "7"])'
         type: string
         required: false
-        default: '5.8'
-      typescript_max:
-        description: 'Maximum TypeScript version, range, or tag (default: 7)'
-        type: string
-        required: false
-        default: '7'
+        default: '["5.8", "7"]'
   workflow_call:
     inputs:
       preview:
         description: 'Commit SHA / PR Number'
         type: string
         required: true
-      typescript_min:
-        description: 'Minimum TypeScript version, range, or tag (default: 5.8)'
+      typescript:
+        description: 'JSON array of TypeScript versions, ranges, or tags (default: ["5.8", "7"])'
         type: string
         required: false
-        default: '5.8'
-      typescript_max:
-        description: 'Maximum TypeScript version, range, or tag (default: 7)'
-        type: string
-        required: false
-        default: '7'
+        default: '["5.8", "7"]'
 
 jobs:
   examples:
@@ -71,9 +61,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        typescript:
-          - ${{ inputs.typescript_min }}
-          - ${{ inputs.typescript_max }}
+        typescript: ${{ fromJSON(inputs.typescript) }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
