@@ -3,24 +3,24 @@ on:
   workflow_dispatch:
     inputs:
       preview:
-        description: 'Commit SHA / PR Number (optional)'
+        description: 'Commit SHA / PR Number (required for validation)'
         type: string
         required: false
         default: ''
       typescript:
-        description: 'JSON array of TypeScript versions, ranges, or tags (optional; e.g. ["5.8", "7"])'
+        description: 'JSON array of TypeScript versions, ranges, or tags (optional; requires preview; e.g. ["5.8", "7"])'
         type: string
         required: false
         default: ''
   workflow_call:
     inputs:
       preview:
-        description: 'Commit SHA / PR Number (optional)'
+        description: 'Commit SHA / PR Number (required for validation)'
         type: string
         required: false
         default: ''
       typescript:
-        description: 'JSON array of TypeScript versions, ranges, or tags (optional; e.g. ["5.8", "7"])'
+        description: 'JSON array of TypeScript versions, ranges, or tags (optional; requires preview; e.g. ["5.8", "7"])'
         type: string
         required: false
         default: ''
@@ -60,7 +60,7 @@ jobs:
 
   typecheck:
     name: Typecheck — TS ${{ matrix.typescript }}
-    if: inputs.typescript != ''
+    if: inputs.preview != '' && inputs.typescript != ''
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -80,11 +80,7 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm i
-      - name: Build packages
-        if: inputs.preview == ''
-        run: pnpm build
       - name: Install pre-release
-        if: inputs.preview != ''
         env:
           PNPM_CONFIG_BLOCK_EXOTIC_SUBDEPS: 'false'
         run: >
