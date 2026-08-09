@@ -25,7 +25,7 @@ on:
 
 jobs:
   examples:
-    name: Examples — TS ${{ inputs.typescript }}
+    name: Examples
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repo
@@ -43,6 +43,35 @@ jobs:
         run: pnpm i
       - name: Build packages
         run: pnpm build
+      - name: Install pre-release
+        env:
+          PNPM_CONFIG_BLOCK_EXOTIC_SUBDEPS: 'false'
+        run: >
+          pnpm --filter './examples/*' add
+          https://pkg.pr.new/@conform-to/react@${{ inputs.preview }}
+          https://pkg.pr.new/@conform-to/zod@${{ inputs.preview }}
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps
+      - name: Run tests
+        run: pnpm --filter './examples/*' run --if-present test
+
+  example-types:
+    name: Example Types — TS ${{ inputs.typescript }}
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Enable Corepack
+        run: |
+          npm i -g corepack@latest --force
+          corepack enable
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm i
       - name: Install pre-release
         env:
           PNPM_CONFIG_BLOCK_EXOTIC_SUBDEPS: 'false'
@@ -72,10 +101,6 @@ jobs:
             examples/react-spa \
             examples/shadcn-ui \
             --pretty false
-      - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps
-      - name: Run tests
-        run: pnpm --filter './examples/*' run --if-present test
 
   epicstack:
     name: Epic Stack
