@@ -411,6 +411,12 @@ export function useConform<
 
 	const handleSubmit = useCallback(
 		(event: React.FormEvent<HTMLFormElement>) => {
+			// Submit events from a form rendered in a portal bubble through the
+			// React tree. Ignore them unless they originated from this form.
+			if (event.target !== event.currentTarget) {
+				return;
+			}
+
 			const abortController = new AbortController();
 
 			// Keep track of the abort controller so we can cancel the previous request if a new one is made

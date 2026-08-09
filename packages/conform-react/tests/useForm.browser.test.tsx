@@ -2,6 +2,7 @@
 import { describe, test, expect, vi, beforeAll, afterAll } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { Locator, userEvent, server } from 'vitest/browser';
+import { createPortal } from 'react-dom';
 import {
 	type FormValue,
 	type FormError,
@@ -490,6 +491,46 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 			await expect.element(title).toHaveValue('Updated title');
 		},
 	);
+
+	test('ignores submit events dispatched by a form rendered in a portal', async (ctx) => {
+		const portalRoot = document.createElement('div');
+		const handleValidate = vi.fn(() => ({ error: null }));
+		const handleSubmit = vi.fn((event: React.FormEvent<HTMLFormElement>) => {
+			event.preventDefault();
+		});
+
+		document.body.appendChild(portalRoot);
+		ctx.onTestFinished(() => portalRoot.remove());
+
+		function FormWithPortal() {
+			const { form } = useForm({
+				onValidate: handleValidate,
+				onSubmit: handleSubmit,
+			});
+
+			return (
+				<form {...form.props}>
+					<input name="outer" defaultValue="outer value" />
+					{createPortal(
+						<form onSubmit={(event) => event.preventDefault()}>
+							<input name="inner" defaultValue="inner value" />
+							<button type="submit">Submit inner form</button>
+						</form>,
+						portalRoot,
+					)}
+				</form>
+			);
+		}
+
+		const screen = render(<FormWithPortal />);
+
+		await userEvent.click(
+			screen.getByRole('button', { name: 'Submit inner form' }),
+		);
+
+		expect(handleValidate).not.toHaveBeenCalled();
+		expect(handleSubmit).not.toHaveBeenCalled();
+	});
 
 	test('shouldValidate: onSubmit (default)', async () => {
 		const screen = render(<Form />);
