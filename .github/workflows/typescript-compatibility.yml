@@ -1,10 +1,10 @@
-name: Example Type Compatibility
+name: TypeScript Compatibility
 
 on:
   push:
     branches: [main, next]
     paths:
-      - '.github/workflows/consumer-types.yml'
+      - '.github/workflows/typescript-compatibility.yml'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'packages/**'
@@ -12,7 +12,7 @@ on:
   pull_request:
     branches: [main, next]
     paths:
-      - '.github/workflows/consumer-types.yml'
+      - '.github/workflows/typescript-compatibility.yml'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'packages/**'
@@ -24,7 +24,7 @@ on:
       typescript:
         description: 'TypeScript version, range, or tag'
         required: false
-        default: 'latest'
+        default: '7'
         type: string
 
 permissions:
@@ -37,7 +37,7 @@ jobs:
     outputs:
       version: ${{ steps.resolve.outputs.version }}
     env:
-      TYPESCRIPT_SPEC: ${{ inputs.typescript || 'latest' }}
+      TYPESCRIPT_SPEC: ${{ inputs.typescript || '7' }}
     steps:
       - name: Setup Node
         uses: actions/setup-node@v4
