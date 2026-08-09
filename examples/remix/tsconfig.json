@@ -5,11 +5,12 @@
 		"isolatedModules": true,
 		"esModuleInterop": true,
 		"jsx": "react-jsx",
-		"moduleResolution": "node",
+		"module": "Node16",
+		"moduleResolution": "Node16",
 		"resolveJsonModule": true,
+		"skipLibCheck": true,
 		"target": "ES2019",
 		"strict": true,
-		"baseUrl": ".",
 		"paths": {
 			"~/*": ["./app/*"]
 		},
