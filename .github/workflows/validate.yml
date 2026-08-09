@@ -6,22 +6,32 @@ on:
         description: 'Commit SHA / PR Number'
         type: string
         required: true
-      typescript:
-        description: 'Comma-separated TypeScript versions, ranges, or tags (default: 5.8, 7)'
+      typescript_min:
+        description: 'Minimum TypeScript version, range, or tag (default: 5.8)'
         type: string
         required: false
-        default: '5.8, 7'
+        default: '5.8'
+      typescript_max:
+        description: 'Maximum TypeScript version, range, or tag (default: 7)'
+        type: string
+        required: false
+        default: '7'
   workflow_call:
     inputs:
       preview:
         description: 'Commit SHA / PR Number'
         type: string
         required: true
-      typescript:
-        description: 'Comma-separated TypeScript versions, ranges, or tags (default: 5.8, 7)'
+      typescript_min:
+        description: 'Minimum TypeScript version, range, or tag (default: 5.8)'
         type: string
         required: false
-        default: '5.8, 7'
+        default: '5.8'
+      typescript_max:
+        description: 'Maximum TypeScript version, range, or tag (default: 7)'
+        type: string
+        required: false
+        default: '7'
 
 jobs:
   examples:
@@ -56,8 +66,14 @@ jobs:
         run: pnpm --filter './examples/*' run --if-present test
 
   typecheck:
-    name: Typecheck — TS ${{ inputs.typescript }}
+    name: Typecheck — TS ${{ matrix.typescript }}
     runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        typescript:
+          - ${{ inputs.typescript_min }}
+          - ${{ inputs.typescript_max }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -86,42 +102,21 @@ jobs:
       - name: Typecheck examples
         # Astro supports TypeScript 5 only and the legacy Remix example will be removed.
         env:
-          TYPESCRIPT_VERSIONS: ${{ inputs.typescript }}
+          TYPESCRIPT_SPEC: ${{ matrix.typescript }}
         run: |
-          status=0
-          IFS=',' read -ra versions <<< "$TYPESCRIPT_VERSIONS"
-
-          for version in "${versions[@]}"; do
-            version="$(printf '%s' "$version" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-
-            if [[ -z "$version" ]]; then
-              continue
-            fi
-
-            echo "::group::TypeScript $version"
-
-            if ! pnpm --package="typescript@$version" dlx tsc --version ||
-              ! pnpm --package="typescript@$version" dlx tsc \
-                --build \
-                --force \
-                examples/chakra-ui \
-                examples/headless-ui \
-                examples/material-ui \
-                examples/nextjs \
-                examples/radix-ui \
-                examples/react-aria \
-                examples/react-router \
-                examples/react-spa \
-                examples/shadcn-ui \
-                --pretty false
-            then
-              status=1
-            fi
-
-            echo "::endgroup::"
-          done
-
-          exit "$status"
+          pnpm --package="typescript@$TYPESCRIPT_SPEC" dlx tsc --version
+          pnpm --package="typescript@$TYPESCRIPT_SPEC" dlx tsc \
+            --build \
+            examples/chakra-ui \
+            examples/headless-ui \
+            examples/material-ui \
+            examples/nextjs \
+            examples/radix-ui \
+            examples/react-aria \
+            examples/react-router \
+            examples/react-spa \
+            examples/shadcn-ui \
+            --pretty false
 
   epicstack:
     name: Epic Stack
