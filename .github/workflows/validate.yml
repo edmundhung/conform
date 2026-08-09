@@ -6,16 +6,47 @@ on:
         description: 'Commit SHA / PR Number'
         type: string
         required: true
+      typescript:
+        description: 'TypeScript version, range, or tag'
+        type: string
+        required: false
+        default: '7'
   workflow_call:
     inputs:
       preview:
         description: 'Commit SHA / PR Number'
         type: string
         required: true
+      typescript:
+        description: 'TypeScript version, range, or tag'
+        type: string
+        required: false
+        default: '7'
 
 jobs:
+  resolve-typescript:
+    name: Resolve TypeScript
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+    env:
+      TYPESCRIPT_SPEC: ${{ inputs.typescript }}
+    steps:
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Resolve exact version
+        id: resolve
+        run: |
+          versions="$(npm view "typescript@$TYPESCRIPT_SPEC" version --json)"
+          version="$(jq -er 'if type == "array" then last else . end' <<< "$versions")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          printf 'Requested `%s`; resolved `%s`.\n' "$TYPESCRIPT_SPEC" "$version" >> "$GITHUB_STEP_SUMMARY"
+
   examples:
-    name: Examples
+    name: Examples — TS ${{ needs.resolve-typescript.outputs.version }}
+    needs: resolve-typescript
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repo
@@ -40,6 +71,25 @@ jobs:
           pnpm --filter './examples/*' add
           https://pkg.pr.new/@conform-to/react@${{ inputs.preview }}
           https://pkg.pr.new/@conform-to/zod@${{ inputs.preview }}
+      - name: Generate framework types
+        run: |
+          pnpm --filter nextjs-example exec next typegen
+          pnpm --filter react-router-example exec react-router typegen
+      - name: Typecheck examples
+        # Astro supports TypeScript 5 only and the legacy Remix example will be removed.
+        run: |
+          pnpm --package="typescript@${{ needs.resolve-typescript.outputs.version }}" dlx tsc \
+            --build \
+            examples/chakra-ui \
+            examples/headless-ui \
+            examples/material-ui \
+            examples/nextjs \
+            examples/radix-ui \
+            examples/react-aria \
+            examples/react-router \
+            examples/react-spa \
+            examples/shadcn-ui \
+            --pretty false
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps
       - name: Run tests
