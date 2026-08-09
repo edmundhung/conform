@@ -25,6 +25,9 @@ on:
         required: false
         default: ''
 
+permissions:
+  contents: read
+
 jobs:
   examples:
     name: Examples
@@ -32,9 +35,11 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - name: Setup pnpm and Node
-        uses: pnpm/setup@v2
+        uses: pnpm/setup@4700d737c3d7a2e7199f3d42a920f0bf7f34e411 # v2.0.1
         with:
           runtime: node@22
           cache: true
@@ -62,9 +67,11 @@ jobs:
         typescript: ${{ fromJSON(inputs.typescript) }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - name: Setup pnpm and Node
-        uses: pnpm/setup@v2
+        uses: pnpm/setup@4700d737c3d7a2e7199f3d42a920f0bf7f34e411 # v2.0.1
         with:
           runtime: node@22
           cache: true
@@ -108,7 +115,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: ⎔ Setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
 
@@ -127,7 +134,7 @@ jobs:
 
       - name: Cache Database
         id: db-cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: prisma/data.db
           key: db-cache-schema_${{ hashFiles('./prisma/schema.prisma')
@@ -154,7 +161,7 @@ jobs:
         run: npx playwright test
 
       - name: Upload report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: playwright-report

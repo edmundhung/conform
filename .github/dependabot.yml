@@ -1,6 +1,21 @@
 version: 2
 
 updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Europe/London
+    open-pull-requests-limit: 3
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+    commit-message:
+      prefix: 'chore(ci)'
+
   # pnpm manages the root, packages, guide, playground, and every example as
   # one workspace with a shared lockfile, so Dependabot must run from the root.
   - package-ecosystem: npm
