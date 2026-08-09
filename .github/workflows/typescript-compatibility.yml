@@ -2,7 +2,7 @@ name: TypeScript Compatibility
 
 on:
   push:
-    branches: [main, next]
+    branches: [main]
     paths:
       - '.github/workflows/typescript-compatibility.yml'
       - 'package.json'
@@ -10,15 +10,13 @@ on:
       - 'packages/**'
       - 'examples/**'
   pull_request:
-    branches: [main, next]
+    branches: [main]
     paths:
       - '.github/workflows/typescript-compatibility.yml'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'packages/**'
       - 'examples/**'
-  schedule:
-    - cron: '0 8 * * 1'
   workflow_dispatch:
     inputs:
       typescript:
