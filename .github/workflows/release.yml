@@ -15,18 +15,10 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-      - name: Enable Corepack
-        run: |
-          npm i -g corepack@latest
-          corepack enable
-      - name: Setup node
-        uses: actions/setup-node@v4
+      - name: Setup pnpm and Node
+        uses: pnpm/setup@v2
         with:
-          node-version: 24
-          cache: 'pnpm'
-          registry-url: 'https://registry.npmjs.org'
-      - name: Install dependencies
-        run: pnpm i
+          runtime: node@24
       - name: Build packages
         run: pnpm build
       - name: Create Release Pull Request or Publish to npm
