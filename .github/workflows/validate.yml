@@ -33,17 +33,11 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-      - name: Setup pnpm
+      - name: Setup pnpm and Node
         uses: pnpm/setup@v2
         with:
-          install: false
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'pnpm'
-      - name: Install dependencies
-        run: pnpm i
+          runtime: node@22
+          cache: true
       - name: Build packages
         run: pnpm build
       - name: Install pre-release
@@ -69,17 +63,11 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-      - name: Setup pnpm
+      - name: Setup pnpm and Node
         uses: pnpm/setup@v2
         with:
-          install: false
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'pnpm'
-      - name: Install dependencies
-        run: pnpm i
+          runtime: node@22
+          cache: true
       - name: Build packages
         if: inputs.preview == ''
         run: pnpm build
