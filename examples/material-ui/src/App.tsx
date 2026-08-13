@@ -1,4 +1,4 @@
-import { coerceFormValue } from '@conform-to/zod/v3/future';
+import { coerceFormValue } from '@conform-to/zod/v4/future';
 import { z } from 'zod';
 import {
 	Button,
@@ -12,17 +12,13 @@ import {
 	FormLabel,
 	Radio,
 	MenuItem,
-} from '@mui/material';
-import { useState } from 'react';
-import {
 	TextField,
-	Autocomplete,
 	Checkbox,
 	RadioGroup,
 	Switch,
-	Rating,
-	Slider,
-} from './form';
+} from '@mui/material';
+import { useState } from 'react';
+import { Autocomplete, NumberField, Rating, Slider } from './form';
 import { useForm } from './forms';
 
 const schema = coerceFormValue(
@@ -31,6 +27,7 @@ const schema = coerceFormValue(
 		description: z.string(),
 		language: z.string(),
 		movie: z.string(),
+		quantity: z.number().min(10).max(40),
 		subscribe: z.boolean(),
 		active: z.string(),
 		enabled: z.boolean(),
@@ -70,7 +67,7 @@ export default function App() {
 	return (
 		<Container maxWidth="sm">
 			<form {...form.props}>
-				<Stack spacing={4} marginY={4}>
+				<Stack spacing={4} sx={{ my: 4 }}>
 					<header>
 						<Typography variant="h6" component="h1">
 							Material UI Example
@@ -87,6 +84,7 @@ export default function App() {
 						type="email"
 						{...fields.email.textFieldProps}
 						// Equivalent to:
+						// id={fields.email.id}
 						// name={fields.email.name}
 						// defaultValue={fields.email.defaultValue}
 						// error={!fields.email.valid}
@@ -94,13 +92,12 @@ export default function App() {
 					/>
 
 					<TextField
-						label="Description (TextField - multline)"
-						inputProps={{
-							minLength: 10,
-						}}
+						label="Description (TextField - multiline)"
+						slotProps={{ htmlInput: { minLength: 10 } }}
 						multiline
 						{...fields.description.textFieldProps}
 						// Equivalent to:
+						// id={fields.description.id}
 						// name={fields.description.name}
 						// defaultValue={fields.description.defaultValue}
 						// error={!fields.description.valid}
@@ -112,6 +109,7 @@ export default function App() {
 						select
 						{...fields.language.textFieldProps}
 						// Equivalent to:
+						// id={fields.language.id}
 						// name={fields.language.name}
 						// defaultValue={fields.language.defaultValue}
 						// error={!fields.language.valid}
@@ -128,9 +126,27 @@ export default function App() {
 						options={['The Godfather', 'Pulp Fiction']}
 						{...fields.movie.autocompleteProps}
 						// Equivalent to:
+						// id={fields.movie.id}
 						// name={fields.movie.name}
 						// defaultValue={fields.movie.defaultValue}
 						// error={fields.movie.errors}
+						// aria-invalid={fields.movie.ariaInvalid}
+						// aria-describedby={fields.movie.ariaDescribedBy}
+					/>
+
+					<NumberField
+						label="Quantity (NumberField)"
+						min={10}
+						max={40}
+						{...fields.quantity.numberFieldProps}
+						// Equivalent to:
+						// id={fields.quantity.id}
+						// name={fields.quantity.name}
+						// defaultValue={fields.quantity.defaultValue}
+						// error={!fields.quantity.valid}
+						// helperText={fields.quantity.errors}
+						// aria-invalid={fields.quantity.ariaInvalid}
+						// aria-describedby={fields.quantity.ariaDescribedBy}
 					/>
 
 					<FormControl
@@ -148,26 +164,41 @@ export default function App() {
 										// name={fields.subscribe.name}
 										// value="on"
 										// defaultChecked={fields.subscribe.defaultChecked}
+										// slotProps={{ input: {
+										//   id: fields.subscribe.id,
+										//   'aria-invalid': fields.subscribe.ariaInvalid,
+										//   'aria-describedby': fields.subscribe.ariaDescribedBy,
+										// } }}
 									/>
 								}
 								label="Newsletter"
 							/>
 						</FormGroup>
-						<FormHelperText>{fields.subscribe.errors}</FormHelperText>
+						<FormHelperText id={fields.subscribe.errorId}>
+							{fields.subscribe.errors}
+						</FormHelperText>
 					</FormControl>
 
 					<FormControl variant="standard" error={!fields.active.valid}>
-						<FormLabel>Active (Radio)</FormLabel>
+						<FormLabel id={`${fields.active.id}-label`}>
+							Active (Radio)
+						</FormLabel>
 						<RadioGroup
 							{...fields.active.radioGroupProps}
 							// Equivalent to:
+							// id={fields.active.id}
 							// name={fields.active.name}
 							// defaultValue={fields.active.defaultValue}
+							// aria-invalid={fields.active.ariaInvalid}
+							// aria-describedby={fields.active.ariaDescribedBy}
+							// aria-labelledby={`${fields.active.id}-label`}
 						>
 							<FormControlLabel value="yes" control={<Radio />} label="Yes" />
 							<FormControlLabel value="no" control={<Radio />} label="No" />
 						</RadioGroup>
-						<FormHelperText>{fields.active.errors}</FormHelperText>
+						<FormHelperText id={fields.active.errorId}>
+							{fields.active.errors}
+						</FormHelperText>
 					</FormControl>
 
 					<FormControl
@@ -185,50 +216,77 @@ export default function App() {
 										// name={fields.enabled.name}
 										// value="on"
 										// defaultChecked={fields.enabled.defaultChecked}
+										// slotProps={{ input: {
+										//   id: fields.enabled.id,
+										//   'aria-invalid': fields.enabled.ariaInvalid,
+										//   'aria-describedby': fields.enabled.ariaDescribedBy,
+										// } }}
 									/>
 								}
 							/>
 						</FormGroup>
-						<FormHelperText>{fields.enabled.errors}</FormHelperText>
+						<FormHelperText id={fields.enabled.errorId}>
+							{fields.enabled.errors}
+						</FormHelperText>
+					</FormControl>
+
+					<FormControl variant="standard" error={Boolean(fields.score.errors)}>
+						<FormLabel id={`${fields.score.id}-label`}>
+							Score (Rating)
+						</FormLabel>
+						<div>
+							<Rating
+								{...fields.score.ratingProps}
+								// Equivalent to:
+								// id={fields.score.id}
+								// name={fields.score.name}
+								// defaultValue={fields.score.defaultValue}
+								// aria-invalid={fields.score.ariaInvalid}
+								// aria-describedby={fields.score.ariaDescribedBy}
+								// aria-labelledby={`${fields.score.id}-label`}
+							/>
+						</div>
+						<FormHelperText id={fields.score.errorId}>
+							{fields.score.errors}
+						</FormHelperText>
 					</FormControl>
 
 					<FormControl
 						variant="standard"
 						error={Boolean(fields.progress.errors)}
 					>
-						<FormLabel>Progress (Slider)</FormLabel>
+						<FormLabel id={`${fields.progress.id}-label`}>
+							Progress (Slider)
+						</FormLabel>
 						<Slider
 							{...fields.progress.sliderProps}
 							// Equivalent to:
+							// id={fields.progress.id}
 							// name={fields.progress.name}
 							// defaultValue={fields.progress.defaultValue}
+							// aria-invalid={fields.progress.ariaInvalid}
+							// aria-describedby={fields.progress.ariaDescribedBy}
+							// aria-labelledby={`${fields.progress.id}-label`}
 						/>
-						<FormHelperText>{fields.progress.errors}</FormHelperText>
-					</FormControl>
-
-					<FormControl variant="standard" error={Boolean(fields.score.errors)}>
-						<FormLabel>Score (Rating)</FormLabel>
-						<div>
-							<Rating
-								{...fields.score.ratingProps}
-								// Equivalent to:
-								// name={fields.score.name}
-								// defaultValue={fields.score.defaultValue}
-							/>
-						</div>
-						<FormHelperText>{fields.score.errors}</FormHelperText>
+						<FormHelperText id={fields.progress.errorId}>
+							{fields.progress.errors}
+						</FormHelperText>
 					</FormControl>
 
 					{submittedValue ? (
 						<div>
-							<Typography variant="body1" marginBottom={2}>
+							<Typography variant="body1" sx={{ mb: 2 }}>
 								Value submitted
 							</Typography>
 							<pre>{JSON.stringify(submittedValue, null, 2)}</pre>
 						</div>
 					) : null}
 
-					<Stack direction="row" justifyContent="flex-end" spacing={2}>
+					<Stack
+						direction="row"
+						spacing={2}
+						sx={{ justifyContent: 'flex-end' }}
+					>
 						<Button
 							type="button"
 							variant="outlined"
