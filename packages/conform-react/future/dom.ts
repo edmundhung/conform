@@ -116,7 +116,7 @@ export function resolveControlPayload(
 		return options;
 	}
 
-	if (input instanceof HTMLInputElement) {
+	if (isGlobalInstance(input, 'HTMLInputElement')) {
 		switch (input.type) {
 			case 'file': {
 				return input.files ? Array.from(input.files) : [];
@@ -125,9 +125,9 @@ export function resolveControlPayload(
 			case 'checkbox':
 				return input.checked ? input.value : null;
 		}
-	} else if (input instanceof HTMLSelectElement && input.multiple) {
+	} else if (isGlobalInstance(input, 'HTMLSelectElement') && input.multiple) {
 		return Array.from(input.selectedOptions).map((option) => option.value);
-	} else if (input instanceof HTMLFieldSetElement) {
+	} else if (isGlobalInstance(input, 'HTMLFieldSetElement')) {
 		if (input.elements.length === 0) {
 			return null;
 		}
@@ -204,7 +204,10 @@ export function focusFirstInvalidField<ErrorShape>(
 
 	for (const element of ctx.formElement.elements) {
 		if (
-			!(isFieldElement(element) || element instanceof HTMLFieldSetElement) ||
+			!(
+				isFieldElement(element) ||
+				isGlobalInstance(element, 'HTMLFieldSetElement')
+			) ||
 			element.name === '' ||
 			!hasFieldError(ctx.error, element.name)
 		) {

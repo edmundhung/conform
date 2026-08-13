@@ -74,6 +74,8 @@ export function getFormData(
 	form: HTMLFormElement,
 	submitter?: HTMLElement | null,
 ): FormData {
+	const FormData =
+		form.ownerDocument.defaultView?.FormData ?? globalThis.FormData;
 	const payload = new FormData(form, submitter);
 
 	if (submitter) {

@@ -34,6 +34,19 @@ A configuration object with the following properties:
 
 Optional form identifier. If not provided, a unique ID is automatically generated with [useId()](https://react.dev/reference/react/useId).
 
+### `formRef?: RefObject<HTMLFormElement | null>`
+
+Optional user-owned reference to the form element. Pass the same ref to the `<form>` when it is rendered outside the global document, such as in an iframe or shadow root.
+
+```tsx
+const formRef = useRef<HTMLFormElement>(null);
+const { form } = useForm({ formRef });
+
+return <form ref={formRef} {...form.props} />;
+```
+
+When omitted, Conform resolves the form through its ID in the global document.
+
 ### `key?: string`
 
 Optional key for form state reset. When the key changes, the form resets to its initial state.
