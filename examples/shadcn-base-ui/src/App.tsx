@@ -1,0 +1,348 @@
+import { coerceFormValue } from '@conform-to/zod/v4/future';
+import { AtSignIcon } from 'lucide-react';
+import { useState } from 'react';
+import { z } from 'zod/v4';
+
+import {
+	DatePicker,
+	FormCheckbox,
+	FormCombobox,
+	FormRadioGroup,
+	FormSelect,
+	FormSwitch,
+	InputOTP,
+	MultiCombobox,
+} from './components/form-controls';
+import { Button } from './components/ui/button';
+import {
+	Field,
+	FieldContent,
+	FieldDescription,
+	FieldError,
+	FieldGroup,
+	FieldLabel,
+	FieldLegend,
+	FieldSet,
+} from './components/ui/field';
+import {
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+	InputGroupText,
+} from './components/ui/input-group';
+import {
+	NativeSelect,
+	NativeSelectOption,
+} from './components/ui/native-select';
+import { RadioGroupItem } from './components/ui/radio-group';
+import { Slider } from './components/ui/slider';
+import { Textarea } from './components/ui/textarea';
+import { useForm } from './forms';
+
+const countries = [
+	{ label: 'Afghanistan', value: 'AF' },
+	{ label: 'Åland Islands', value: 'AX' },
+	{ label: 'Italy', value: 'IT' },
+	{ label: 'Japan', value: 'JP' },
+	{ label: 'United States', value: 'US' },
+];
+
+const genderValues = ['male', 'female', 'other'] as const;
+const jobValues = ['developer', 'designer', 'manager'] as const;
+const accountTypeValues = ['personal', 'business'] as const;
+
+const jobs = [
+	{ label: 'Developer', value: 'developer' },
+	{ label: 'Designer', value: 'designer' },
+	{ label: 'Manager', value: 'manager' },
+];
+
+const interests = [
+	{ label: 'React', value: 'react' },
+	{ label: 'Vue', value: 'vue' },
+	{ label: 'Svelte', value: 'svelte' },
+	{ label: 'Angular', value: 'angular' },
+	{ label: 'Next', value: 'next' },
+	{ label: 'Nuxt', value: 'nuxt' },
+];
+
+const schema = coerceFormValue(
+	z.object({
+		name: z.string().min(3),
+		dateOfBirth: z.date(),
+		country: z.string(),
+		gender: z.enum(genderValues),
+		agreeToTerms: z.boolean(),
+		job: z.enum(jobValues),
+		age: z.number().min(18),
+		isAdult: z.boolean(),
+		description: z.string().min(10),
+		accountType: z.enum(accountTypeValues),
+		interests: z.array(z.string()).min(3),
+		code: z.string().length(6),
+	}),
+);
+
+export function App() {
+	const [resetKey, setResetKey] = useState(0);
+	const [submittedValue, setSubmittedValue] = useState<z.output<
+		typeof schema
+	> | null>(null);
+	const [searchParams, setSearchParams] = useState(
+		() => new URLSearchParams(window.location.search),
+	);
+	const { form, fields } = useForm(schema, {
+		defaultValue: searchParams,
+		onSubmit(event, { formData, value }) {
+			event.preventDefault();
+
+			const url = new URL(document.URL);
+			const nextSearchParams = new URLSearchParams(
+				Array.from(formData).filter(
+					(entry): entry is [string, string] => typeof entry[1] === 'string',
+				),
+			);
+			url.search = nextSearchParams.toString();
+			window.history.pushState(null, '', url);
+
+			setSearchParams(nextSearchParams);
+			setSubmittedValue(value);
+		},
+	});
+
+	return (
+		<main className="mx-auto flex min-h-svh w-full max-w-2xl flex-col gap-6 p-6 md:p-10">
+			<div className="space-y-1">
+				<h1 className="text-2xl font-semibold">shadcn/ui with Base UI</h1>
+				<p className="text-sm text-muted-foreground">
+					The Base UI counterpart to the Radix-based shadcn example.
+				</p>
+			</div>
+
+			<form
+				{...form.props}
+				method="POST"
+				className="space-y-6"
+				onChange={() => setSubmittedValue(null)}
+				onReset={() => {
+					setSubmittedValue(null);
+					setResetKey((key) => key + 1);
+				}}
+			>
+				<FieldGroup key={resetKey}>
+					<Field data-invalid={fields.name.ariaInvalid}>
+						<FieldLabel htmlFor={fields.name.id}>Name</FieldLabel>
+						<InputGroup>
+							<InputGroupAddon>
+								<AtSignIcon />
+							</InputGroupAddon>
+							<InputGroupInput {...fields.name.inputProps} />
+							<InputGroupAddon align="inline-end">
+								<InputGroupText>Public</InputGroupText>
+							</InputGroupAddon>
+						</InputGroup>
+						<FieldDescription id={fields.name.descriptionId}>
+							Use at least three characters.
+						</FieldDescription>
+						<FieldError id={fields.name.errorId}>
+							{fields.name.errors}
+						</FieldError>
+					</Field>
+
+					<Field data-invalid={fields.description.ariaInvalid}>
+						<FieldLabel htmlFor={fields.description.id}>Description</FieldLabel>
+						<Textarea {...fields.description.textareaProps} />
+						<FieldDescription id={fields.description.descriptionId}>
+							Tell us about yourself in at least ten characters.
+						</FieldDescription>
+						<FieldError id={fields.description.errorId}>
+							{fields.description.errors}
+						</FieldError>
+					</Field>
+
+					<Field data-invalid={fields.accountType.ariaInvalid}>
+						<FieldLabel htmlFor={fields.accountType.id}>
+							Account type
+						</FieldLabel>
+						<NativeSelect {...fields.accountType.nativeSelectProps}>
+							<NativeSelectOption value="">
+								Choose an account
+							</NativeSelectOption>
+							<NativeSelectOption value="personal">Personal</NativeSelectOption>
+							<NativeSelectOption value="business">Business</NativeSelectOption>
+						</NativeSelect>
+						<FieldDescription id={fields.accountType.descriptionId}>
+							This uses a browser-native select.
+						</FieldDescription>
+						<FieldError id={fields.accountType.errorId}>
+							{fields.accountType.errors}
+						</FieldError>
+					</Field>
+
+					<FieldSet data-invalid={fields.gender.ariaInvalid}>
+						<FieldLegend id={`${fields.gender.id}-label`}>Gender</FieldLegend>
+						<FieldDescription id={fields.gender.descriptionId}>
+							Choose the option that best fits.
+						</FieldDescription>
+						<FormRadioGroup
+							{...fields.gender.radioGroupProps}
+							className="grid-cols-3"
+						>
+							{genderValues.map((value) => (
+								<Field key={value} orientation="horizontal">
+									<RadioGroupItem
+										id={`${fields.gender.id}-${value}`}
+										value={value}
+										{...fields.gender.radioItemProps}
+									/>
+									<FieldLabel htmlFor={`${fields.gender.id}-${value}`}>
+										{value[0]?.toUpperCase() + value.slice(1)}
+									</FieldLabel>
+								</Field>
+							))}
+						</FormRadioGroup>
+						<FieldError id={fields.gender.errorId}>
+							{fields.gender.errors}
+						</FieldError>
+					</FieldSet>
+
+					<Field
+						data-invalid={fields.agreeToTerms.ariaInvalid}
+						orientation="horizontal"
+					>
+						<FormCheckbox {...fields.agreeToTerms.checkboxProps} />
+						<FieldContent>
+							<FieldLabel htmlFor={fields.agreeToTerms.id}>
+								Agree to terms
+							</FieldLabel>
+							<FieldDescription id={fields.agreeToTerms.descriptionId}>
+								Required to submit the form.
+							</FieldDescription>
+							<FieldError id={fields.agreeToTerms.errorId}>
+								{fields.agreeToTerms.errors}
+							</FieldError>
+						</FieldContent>
+					</Field>
+
+					<Field data-invalid={fields.job.ariaInvalid}>
+						<FieldLabel id={`${fields.job.id}-label`} htmlFor={fields.job.id}>
+							Job
+						</FieldLabel>
+						<FormSelect items={jobs} {...fields.job.selectProps} />
+						<FieldDescription id={fields.job.descriptionId}>
+							Base UI supplies the hidden form input.
+						</FieldDescription>
+						<FieldError id={fields.job.errorId}>{fields.job.errors}</FieldError>
+					</Field>
+
+					<Field data-invalid={fields.country.ariaInvalid}>
+						<FieldLabel htmlFor={fields.country.id}>Country</FieldLabel>
+						<FormCombobox items={countries} {...fields.country.comboboxProps} />
+						<FieldDescription id={fields.country.descriptionId}>
+							Searchable, but serialized as the two-letter country code.
+						</FieldDescription>
+						<FieldError id={fields.country.errorId}>
+							{fields.country.errors}
+						</FieldError>
+					</Field>
+
+					<Field data-invalid={fields.age.ariaInvalid}>
+						<FieldLabel id={`${fields.age.id}-label`}>Age</FieldLabel>
+						<Slider min={0} max={100} step={1} {...fields.age.sliderProps} />
+						<FieldDescription id={fields.age.descriptionId}>
+							You must be at least 18.
+						</FieldDescription>
+						<FieldError id={fields.age.errorId}>{fields.age.errors}</FieldError>
+					</Field>
+
+					<Field
+						data-invalid={fields.isAdult.ariaInvalid}
+						orientation="horizontal"
+					>
+						<FieldContent>
+							<FieldLabel htmlFor={fields.isAdult.id}>Is adult</FieldLabel>
+							<FieldDescription id={fields.isAdult.descriptionId}>
+								Confirms the slider value.
+							</FieldDescription>
+							<FieldError id={fields.isAdult.errorId}>
+								{fields.isAdult.errors}
+							</FieldError>
+						</FieldContent>
+						<FormSwitch {...fields.isAdult.switchProps} />
+					</Field>
+
+					<Field data-invalid={fields.dateOfBirth.ariaInvalid}>
+						<FieldLabel
+							id={`${fields.dateOfBirth.id}-label`}
+							htmlFor={fields.dateOfBirth.id}
+						>
+							Date of Birth
+						</FieldLabel>
+						<DatePicker {...fields.dateOfBirth.datePickerProps} />
+						<FieldDescription id={fields.dateOfBirth.descriptionId}>
+							A calendar backed by a Conform BaseControl.
+						</FieldDescription>
+						<FieldError id={fields.dateOfBirth.errorId}>
+							{fields.dateOfBirth.errors}
+						</FieldError>
+					</Field>
+
+					<Field data-invalid={fields.interests.ariaInvalid}>
+						<FieldLabel
+							id={`${fields.interests.id}-label`}
+							htmlFor={fields.interests.id}
+						>
+							Interests
+						</FieldLabel>
+						<MultiCombobox
+							items={interests}
+							{...fields.interests.multiComboboxProps}
+						/>
+						<FieldDescription id={fields.interests.descriptionId}>
+							Choose at least three. Each value is a separate FormData entry.
+						</FieldDescription>
+						<FieldError id={fields.interests.errorId}>
+							{fields.interests.errors}
+						</FieldError>
+					</Field>
+
+					<Field data-invalid={fields.code.ariaInvalid}>
+						<FieldLabel id={`${fields.code.id}-label`} htmlFor={fields.code.id}>
+							Code
+						</FieldLabel>
+						<InputOTP {...fields.code.inputOTPProps} />
+						<FieldDescription id={fields.code.descriptionId}>
+							Enter the six-digit verification code.
+						</FieldDescription>
+						<FieldError id={fields.code.errorId}>
+							{fields.code.errors}
+						</FieldError>
+					</Field>
+				</FieldGroup>
+
+				{submittedValue ? (
+					<section
+						aria-labelledby="submitted-value-heading"
+						className="space-y-2"
+					>
+						<h2 id="submitted-value-heading" className="font-medium">
+							Value submitted
+						</h2>
+						<pre className="overflow-x-auto rounded-lg bg-muted p-4 text-xs">
+							{JSON.stringify(submittedValue, null, 2)}
+						</pre>
+					</section>
+				) : null}
+
+				<div className="flex gap-2">
+					<Button type="submit">Submit</Button>
+					<Button type="reset" variant="outline">
+						Reset
+					</Button>
+				</div>
+			</form>
+		</main>
+	);
+}
+
+export default App;
