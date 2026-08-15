@@ -25,8 +25,8 @@ export default defineConfig({
 		},
 	],
 	webServer: {
-		command: 'pnpm run build && pnpm run preview --port 5682',
-		port: 5682,
+		command: 'pnpm run build && pnpm run preview --port 5678',
+		port: 5678,
 		reuseExistingServer: !process.env.CI,
 	},
 });
