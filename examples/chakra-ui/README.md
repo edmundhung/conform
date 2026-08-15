@@ -157,7 +157,7 @@ This preserves `shouldValidate: "onBlur"` without validating while the user move
 
 ## Apply ARIA Attributes to the Accessible Control
 
-The named base control owns serialization, but validation state must also reach the Chakra element exposed to the user. The adapters pass `invalid` and `required` to the compound root, assign Conform's field ID to the interactive element, and associate it with `field.ariaDescribedBy`.
+The named base control owns serialization, but validation state must also reach the Chakra element exposed to the user. Most adapters pass `invalid` and `required` to the compound root, assign Conform's field ID to the interactive element, and associate it with `field.ariaDescribedBy`. Slider instead passes native `required` to `Slider.HiddenInput` and `aria-required` to `Slider.Thumb`.
 
 ```tsx
 <Field.Root invalid={!field.valid} required={field.required}>
