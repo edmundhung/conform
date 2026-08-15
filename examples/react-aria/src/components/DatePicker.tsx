@@ -7,9 +7,7 @@ import {
 	CalendarGrid,
 	DateInput,
 	DatePicker as AriaDatePicker,
-	DatePickerProps as AriaDatePickerProps,
 	DateSegment,
-	DateValue,
 	Dialog,
 	FieldError,
 	Group,
@@ -18,9 +16,13 @@ import {
 	Popover,
 	Text,
 } from 'react-aria-components';
+import type {
+	DatePickerProps as AriaDatePickerProps,
+	DateValue,
+} from 'react-aria-components';
 
 import './DatePicker.css';
-import { useRef } from 'react';
+import { useCallback, useRef } from 'react';
 
 export interface DatePickerProps<T extends DateValue> extends Omit<
 	AriaDatePickerProps<T>,
@@ -41,12 +43,15 @@ export function DatePicker({
 	firstDayOfWeek,
 	...props
 }: DatePickerProps<CalendarDateTime>) {
-	const labelRef = useRef<HTMLLabelElement>(null);
+	const groupRef = useRef<HTMLDivElement>(null);
+	const focusFirstSegment = useCallback(() => {
+		groupRef.current
+			?.querySelector<HTMLElement>('[role="spinbutton"]')
+			?.focus();
+	}, []);
 	const control = useControl({
 		defaultValue,
-		onFocus() {
-			labelRef.current?.click();
-		},
+		onFocus: focusFirstSegment,
 	});
 
 	return (
@@ -56,8 +61,8 @@ export function DatePicker({
 			onChange={(value) => control.change(value?.toString() ?? '')}
 			onBlur={() => control.blur()}
 		>
-			<Label ref={labelRef}>{label}</Label>
-			<Group>
+			<Label>{label}</Label>
+			<Group ref={groupRef}>
 				<DateInput>{(segment) => <DateSegment segment={segment} />}</DateInput>
 				<Button>▼</Button>
 			</Group>

@@ -1,4 +1,4 @@
-import { coerceFormValue } from '@conform-to/zod/v3/future';
+import { coerceFormValue } from '@conform-to/zod/v4/future';
 import { useState } from 'react';
 import { z } from 'zod';
 import { DateRangePicker } from './components/DateRangePicker';
@@ -10,25 +10,42 @@ import { DatePicker } from './components/DatePicker';
 import { RadioGroup, Radio } from './components/RadioGroup';
 import { CheckboxGroup } from './components/CheckboxGroup';
 import { Select, SelectItem } from './components/Select';
-import { ComboBox, ComboBoxItem } from './components/ComboBox';
+import {
+	ComboBox,
+	ComboBoxItem,
+	MultiSelectComboBox,
+} from './components/ComboBox';
 import { FileTrigger } from './components/FileTrigger';
+import { Switch } from './components/Switch';
 import { useForm } from './forms';
 
 const schema = coerceFormValue(
 	z.object({
-		email: z.string(),
-		price: z.number(),
-		language: z.enum(['en', 'de', 'ja']),
-		colors: z.enum(['red', 'green', 'blue']).array().min(1),
-		date: z.date(),
-		range: z.object({
-			start: z.string(),
-			end: z.string(),
+		email: z.string({ error: 'Email is required' }),
+		price: z.number({ error: 'Price is required' }),
+		language: z.enum(['en', 'de', 'ja'], {
+			error: 'Choose a supported language',
 		}),
-		category: z.string(),
-		author: z.string(),
-		profile: z.instanceof(File, { message: 'Required' }),
-		acceptTerms: z.boolean(),
+		colors: z
+			.enum(['red', 'green', 'blue'])
+			.array()
+			.min(1, 'Choose at least one color'),
+		date: z.date({ error: 'Publish date is required' }),
+		range: z.object({
+			start: z.string({ error: 'Event dates are required' }),
+			end: z.string({ error: 'Event dates are required' }),
+		}),
+		category: z.string({ error: 'Category is required' }),
+		author: z.string({ error: 'Author is required' }),
+		topics: z
+			.enum(['accessibility', 'forms', 'validation'])
+			.array()
+			.min(1, 'Choose at least one topic'),
+		profile: z
+			.instanceof(File, { error: 'Profile picture is required' })
+			.refine((file) => file.name !== '', 'Profile picture is required'),
+		notifications: z.boolean({ error: 'Choose whether to get notifications' }),
+		acceptTerms: z.boolean({ error: 'Accept the terms to continue' }),
 	}),
 );
 
@@ -36,11 +53,29 @@ export default function App() {
 	const [submittedValue, setSubmittedValue] = useState<z.output<
 		typeof schema
 	> | null>(null);
+	const [submittedFormData, setSubmittedFormData] = useState<Array<
+		[string, string]
+	> | null>(null);
 	const [searchParams, setSearchParams] = useState(
 		() => new URLSearchParams(window.location.search),
 	);
 	const { form, fields, intent } = useForm(schema, {
-		defaultValue: searchParams,
+		defaultValue: {
+			email: searchParams.get('email'),
+			price: searchParams.get('price'),
+			language: searchParams.get('language'),
+			colors: searchParams.getAll('colors'),
+			date: searchParams.get('date'),
+			range: {
+				start: searchParams.get('range.start'),
+				end: searchParams.get('range.end'),
+			},
+			category: searchParams.get('category'),
+			author: searchParams.get('author'),
+			topics: searchParams.getAll('topics'),
+			notifications: searchParams.get('notifications'),
+			acceptTerms: searchParams.get('acceptTerms'),
+		},
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 
@@ -56,18 +91,31 @@ export default function App() {
 			window.history.pushState(null, '', url);
 
 			setSearchParams(searchParams);
+			setSubmittedFormData(
+				Array.from(formData, ([name, value]) => [
+					name,
+					typeof value === 'string' ? value : value.name,
+				]),
+			);
 			setSubmittedValue(value);
 		},
 	});
 
 	return (
 		<main>
-			<form {...form.props} onChange={() => setSubmittedValue(null)}>
+			<form
+				{...form.props}
+				onChange={() => {
+					setSubmittedValue(null);
+					setSubmittedFormData(null);
+				}}
+			>
 				<div>
 					<h3>React Aria Example</h3>
 					<p>
-						This shows you how to integrate Conform with React Aria Components,
-						such as NumberField, ComboBox and FileTrigger.
+						This shows how Conform integrates with current React Aria
+						Components, including multi-select ComboBox, Switch, and
+						FileTrigger.
 					</p>
 				</div>
 
@@ -99,6 +147,7 @@ export default function App() {
 				<div>
 					<RadioGroup
 						label="Language"
+						description="Choose the language used for generated content."
 						{...fields.language.radioGroupProps}
 						// Equivalent to:
 						// name={fields.language.name}
@@ -106,9 +155,15 @@ export default function App() {
 						// isInvalid={!fields.language.valid}
 						// errors={fields.language.errors}
 					>
-						<Radio value="en">English</Radio>
-						<Radio value="de">German</Radio>
-						<Radio value="ja">Japanese</Radio>
+						<Radio value="en" description="English content and messages">
+							English
+						</Radio>
+						<Radio value="de" description="German content and messages">
+							German
+						</Radio>
+						<Radio value="ja" description="Japanese content and messages">
+							Japanese
+						</Radio>
 						<Radio value="invalid">Invalid</Radio>
 					</RadioGroup>
 				</div>
@@ -191,6 +246,23 @@ export default function App() {
 				</div>
 
 				<div>
+					<MultiSelectComboBox
+						label="Topics"
+						description="Select one or more topics. Each value is submitted with the same field name."
+						{...fields.topics.multiSelectComboBoxProps}
+						// Equivalent to:
+						// name={fields.topics.name}
+						// defaultValue={fields.topics.defaultOptions}
+						// isInvalid={!fields.topics.valid}
+						// errors={fields.topics.errors}
+					>
+						<ComboBoxItem id="accessibility">Accessibility</ComboBoxItem>
+						<ComboBoxItem id="forms">Forms</ComboBoxItem>
+						<ComboBoxItem id="validation">Validation</ComboBoxItem>
+					</MultiSelectComboBox>
+				</div>
+
+				<div>
 					<FileTrigger
 						label="Profile"
 						{...fields.profile.fileTriggerProps}
@@ -204,12 +276,28 @@ export default function App() {
 				</div>
 
 				<div>
+					<Switch
+						description="Receive an email when the submission is processed."
+						{...fields.notifications.switchProps}
+						// Equivalent to:
+						// name={fields.notifications.name}
+						// defaultSelected={fields.notifications.defaultValue === 'on'}
+						// isInvalid={!fields.notifications.valid}
+						// errors={fields.notifications.errors}
+					>
+						Email notifications
+					</Switch>
+				</div>
+
+				<div>
 					<Checkbox
+						description="Required before this form can be submitted."
 						{...fields.acceptTerms.checkboxProps}
 						// Equivalent to:
 						// name={fields.acceptTerms.name}
 						// defaultSelected={fields.acceptTerms.defaultValue === 'on'}
 						// isInvalid={!fields.acceptTerms.valid}
+						// errors={fields.acceptTerms.errors}
 					>
 						Accept Terms and Conditions
 					</Checkbox>
@@ -218,7 +306,13 @@ export default function App() {
 				{submittedValue ? (
 					<div>
 						<h4>Value submitted</h4>
-						<pre>{JSON.stringify(submittedValue, null, 2)}</pre>
+						<pre data-testid="submitted-value">
+							{JSON.stringify(submittedValue, null, 2)}
+						</pre>
+						<h4>FormData submitted</h4>
+						<pre data-testid="submitted-form-data">
+							{JSON.stringify(submittedFormData, null, 2)}
+						</pre>
 					</div>
 				) : null}
 

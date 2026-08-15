@@ -1,279 +1,349 @@
 import { test, expect, type Page } from '@playwright/test';
 
 test.describe('react-aria', () => {
-	async function getForm(page: Page, searchParams?: URLSearchParams) {
-		await page.goto(`/?${searchParams}`);
+	test.describe('form', () => {
+		async function getForm(page: Page, searchParams = new URLSearchParams()) {
+			await page.goto(`/?${searchParams}`);
 
-		return {
-			container: page.locator('form'),
-			heading: page.getByText('React Aria Example'),
-			submitButton: page.locator('form').getByText('Submit'),
-			resetButton: page.locator('form').getByText('Reset'),
-			submittedValue: () =>
-				page.locator('form').locator('pre').innerText().then(JSON.parse),
-			email: page.locator('form').getByLabel('Email'),
-			price: page
-				.locator('form')
-				.getByLabel('Price')
-				.and(page.locator('form').locator('input')),
-			language: page.locator('form').getByLabel('Language'),
-			colors: page.locator('form').getByLabel('Colors'),
-			date: page.locator('form').getByLabel('Publish Date').first(),
-			range: page.locator('form').getByLabel('Event Dates').first(),
-			category: page
-				.locator('form')
-				.getByLabel('Category')
-				.and(page.locator('button')),
-			author: page.locator('form').getByLabel('Author').first(),
-			profile: page.locator('form').getByLabel('Profile'),
-			acceptTerms: page
-				.locator('form')
-				.getByLabel('Accept Terms and Conditions'),
-		};
-	}
+			const container = page.locator('form');
 
-	test('focus', async ({ page }) => {
-		const form = await getForm(page);
+			return {
+				container,
+				heading: page.getByText('React Aria Example'),
+				submitButton: container.getByRole('button', { name: 'Submit' }),
+				resetButton: container.getByRole('button', { name: 'Reset' }),
+				submittedValue: () =>
+					container.getByTestId('submitted-value').innerText().then(JSON.parse),
+				submittedFormData: () =>
+					container
+						.getByTestId('submitted-form-data')
+						.innerText()
+						.then(JSON.parse),
+				email: container.getByLabel('Email', { exact: true }),
+				price: container.getByLabel('Price').and(container.locator('input')),
+				language: container.getByLabel('Language'),
+				colors: container.getByLabel('Colors'),
+				date: container.getByLabel('Publish Date').first(),
+				range: container.getByLabel('Event Dates').first(),
+				category: container
+					.getByLabel('Category')
+					.and(container.locator('button')),
+				author: container.getByLabel('Author').first(),
+				topics: container.getByLabel('Topics').first(),
+				topicOption: (name: string) => page.getByRole('option', { name }),
+				topicsControl: container.locator('select[name="topics"]'),
+				selectedTopics: container.locator('.selected-values'),
+				profile: container.getByLabel('Profile'),
+				profileInput: container.locator('input[name="profile"]'),
+				notifications: container.getByRole('switch', {
+					name: 'Email notifications',
+				}),
+				acceptTerms: container.getByRole('checkbox', {
+					name: 'Accept Terms and Conditions',
+				}),
+			};
+		}
 
-		await form.submitButton.click();
-		await expect(form.email).toBeFocused();
-		await form.email.fill('hello@example.com');
-		await form.submitButton.click();
-		await expect(form.price).toBeFocused();
-		await form.price.fill('12345.67');
-		await form.submitButton.click();
-		await expect(form.language.getByRole('radio').first()).toBeFocused();
-		await form.container.press('Enter');
-		await form.submitButton.click();
-		await expect(form.colors.getByRole('checkbox').first()).toBeFocused();
-		await form.container.press('Enter');
-		await form.submitButton.click();
-		await expect(form.date.getByRole('spinbutton').first()).toBeFocused();
-		await form.date.pressSequentially('04012025123456p');
-		await form.submitButton.click();
-		await expect(form.range.getByRole('spinbutton').first()).toBeFocused();
-		await form.range.pressSequentially('0501202505312025');
-		await form.submitButton.click();
-		await expect(form.category).toBeFocused();
-		await form.container.press('Enter');
-		await form.container.press('Enter');
-		await form.submitButton.click();
-		await expect(form.author).toBeFocused();
-		await form.container.press('ArrowDown');
-		await form.container.press('Enter');
-		await form.submitButton.click();
-		await expect(form.profile).toBeFocused();
-		await form.container.locator('input[name="profile"]').setInputFiles({
-			name: 'example.txt',
-			buffer: Buffer.from('Hello World'),
-			mimeType: 'text/plain',
-		});
-		await form.submitButton.click();
-		await expect(form.acceptTerms).toBeFocused();
-		await form.container.getByText('Accept Terms and Conditions').click();
-		await form.submitButton.click();
+		async function chooseTopic(
+			form: Awaited<ReturnType<typeof getForm>>,
+			name: string,
+			isSelected = true,
+		) {
+			await expect
+				.poll(async () => {
+					if ((await form.topics.getAttribute('aria-expanded')) !== 'true') {
+						await form.topics.press('ArrowDown');
+					}
 
-		await expect.poll(form.submittedValue).toEqual({
-			email: 'hello@example.com',
-			price: 12345.67,
-			language: 'en',
-			colors: ['red'],
-			date: '2025-04-01T12:34:56.000Z',
-			range: {
-				end: '2025-05-31',
-				start: '2025-05-01',
-			},
-			category: 'announcement',
-			author: 'edmundhung',
-			profile: {},
-			acceptTerms: true,
-		});
-	});
+					return form.topics.getAttribute('aria-expanded');
+				})
+				.toBe('true');
+			const option = form.topicOption(name);
 
-	test('blur', async ({ page }) => {
-		const form = await getForm(page);
+			await expect(option).toBeVisible();
+			await option.click({ force: true });
+			if (isSelected) {
+				await expect(form.selectedTopics).toContainText(name);
+			} else {
+				await expect(form.selectedTopics).not.toContainText(name);
+			}
+		}
 
-		await form.email.click();
-		await expect(form.email).toHaveAccessibleDescription('');
-		await form.heading.click();
-		await expect(form.email).toHaveAccessibleDescription('Required');
+		async function fillRequiredFields(
+			page: Page,
+			form: Awaited<ReturnType<typeof getForm>>,
+		) {
+			await form.email.fill('hello@example.com');
+			await form.price.fill('12345.67');
+			await form.container.getByText('English', { exact: true }).click();
+			await form.colors.getByRole('checkbox').first().press('Space');
+			await form.date.getByRole('spinbutton').first().click();
+			await form.date.pressSequentially('04012025123456p');
+			await form.range.getByRole('spinbutton').first().click();
+			await form.range.pressSequentially('0501202505312025');
+			await form.category.click();
+			await page.getByRole('option', { name: 'Announcement' }).click();
+			await form.author.fill('edmundhung');
+			await form.author.press('Escape');
+			await chooseTopic(form, 'Accessibility');
+			await chooseTopic(form, 'Forms');
+			await form.topics.press('Escape');
+			await form.profileInput.setInputFiles({
+				name: 'avatar.txt',
+				buffer: Buffer.from('Hello World'),
+				mimeType: 'text/plain',
+			});
+			await form.notifications.press('Space');
+			await form.acceptTerms.press('Space');
+		}
 
-		await form.price.click();
-		await expect(form.price).toHaveAccessibleDescription('');
-		await form.heading.click();
-		await expect(form.price).toHaveAccessibleDescription('Required');
+		test('focuses each invalid integration and submits', async ({ page }) => {
+			const form = await getForm(page);
 
-		await form.container.getByText('Invalid').click();
-		await expect(form.language).toHaveAccessibleDescription('');
-		await form.heading.click();
-		await expect(form.language).toHaveAccessibleDescription(
-			`Invalid enum value. Expected 'en' | 'de' | 'ja', received 'invalid'`,
-		);
+			await form.submitButton.click();
+			await expect(form.email).toBeFocused();
+			await form.email.fill('hello@example.com');
+			await form.submitButton.click();
+			await expect(form.price).toBeFocused();
+			await form.price.fill('12345.67');
+			await form.submitButton.click();
+			await expect(form.language.getByRole('radio').first()).toBeFocused();
+			await form.container.getByText('English', { exact: true }).click();
+			await form.submitButton.click();
+			await expect(form.colors.getByRole('checkbox').first()).toBeFocused();
+			await form.colors.getByRole('checkbox').first().press('Space');
+			await form.submitButton.click();
+			await expect(form.date.getByRole('spinbutton').first()).toBeFocused();
+			await form.date.pressSequentially('04012025123456p');
+			await form.submitButton.click();
+			await expect(form.range.getByRole('spinbutton').first()).toBeFocused();
+			await form.range.pressSequentially('0501202505312025');
+			await form.submitButton.click();
+			await expect(form.category).toBeFocused();
+			await form.category.press('Enter');
+			await page.getByRole('option', { name: 'Announcement' }).press('Enter');
+			await form.submitButton.click();
+			await expect(form.author).toBeFocused();
+			await form.author.fill('edmundhung');
+			await form.author.press('Escape');
+			await form.submitButton.click();
+			await expect(form.topics).toBeFocused();
+			await chooseTopic(form, 'Accessibility');
+			await form.topics.press('Escape');
+			await form.submitButton.click();
+			await expect(form.profile).toBeFocused();
+			await form.profileInput.setInputFiles({
+				name: 'avatar.txt',
+				buffer: Buffer.from('Hello World'),
+				mimeType: 'text/plain',
+			});
+			await form.submitButton.click();
+			await expect(form.notifications).toBeFocused();
+			await form.notifications.press('Space');
+			await form.submitButton.click();
+			await expect(form.acceptTerms).toBeFocused();
+			await form.acceptTerms.press('Space');
+			await form.submitButton.click();
 
-		await form.container.getByText('Green').click();
-		await expect(form.colors).toHaveAccessibleDescription('');
-		await form.container.getByText('Green').click();
-		await expect(form.colors).toHaveAccessibleDescription(
-			'Array must contain at least 1 element(s)',
-		);
-
-		await form.date.click();
-		await expect(form.date).toHaveAccessibleDescription('');
-		await form.heading.click();
-		await expect(form.date).toHaveAccessibleDescription('Required');
-
-		await form.range.click();
-		await expect(form.range).toHaveAccessibleDescription('');
-		await form.heading.click();
-		await expect(form.range).toHaveAccessibleDescription('Required');
-
-		await form.category.click();
-		await expect(form.category).toHaveAccessibleDescription('');
-		await form.category.press('Escape');
-		await form.heading.click();
-		await expect(form.category).toHaveAccessibleDescription('Required');
-
-		await form.author.click();
-		await expect(form.author).toHaveAccessibleDescription('');
-		await form.heading.click();
-		await expect(form.author).toHaveAccessibleDescription('Required');
-
-		await form.profile.click();
-		await expect(form.profile).toHaveAccessibleDescription('');
-		await form.heading.click();
-		await expect(form.profile).toHaveAccessibleDescription('Required');
-
-		await form.container.getByText('Accept Terms and Conditions').click();
-		await expect(form.acceptTerms).not.toHaveAttribute('aria-invalid', 'true');
-		await form.container.getByText('Accept Terms and Conditions').click();
-		await expect(form.acceptTerms).toHaveAttribute('aria-invalid', 'true');
-	});
-
-	test('reset', async ({ page }) => {
-		const form = await getForm(page);
-
-		await form.email.fill('hello@example.com');
-		await form.price.fill('12345.67');
-		await form.container.getByText('Japanese').click();
-		await form.container.getByText('Blue').click();
-		await form.container.getByText('Red').click();
-		await form.date.pressSequentially('01012025123456');
-		await form.range.pressSequentially('0101202501022025');
-		await form.category.click();
-		await page.getByRole('option', { name: 'Blog' }).click();
-		await form.author.fill('test');
-		await form.container.locator('input[name="profile"]').setInputFiles({
-			name: 'example.txt',
-			buffer: Buffer.from('Hello World'),
-			mimeType: 'text/plain',
-		});
-		await form.container.getByText('Accept Terms and Conditions').click();
-
-		await expect(form.email).toHaveAccessibleDescription('');
-		await expect(form.price).toHaveAccessibleDescription('');
-		await expect(form.language).toHaveAccessibleDescription('');
-		await expect(form.colors).toHaveAccessibleDescription('');
-		await expect(form.date).toHaveAccessibleDescription('');
-		await expect(form.range).toHaveAccessibleDescription('');
-		await expect(form.category).toHaveAccessibleDescription('');
-		await expect(form.author).toHaveAccessibleDescription('');
-		await expect(form.profile).toHaveAccessibleDescription('');
-		await expect(form.acceptTerms).not.toHaveAttribute('aria-invalid', 'true');
-
-		await form.resetButton.click();
-		await form.submitButton.click();
-
-		await expect(form.email).toHaveAccessibleDescription('Required');
-		await expect(form.price).toHaveAccessibleDescription('Required');
-		await expect(form.language).toHaveAccessibleDescription('Required');
-		await expect(form.colors).toHaveAccessibleDescription(
-			'Array must contain at least 1 element(s)',
-		);
-		await expect(form.date).toHaveAccessibleDescription('Required');
-		await expect(form.range).toHaveAccessibleDescription('Required');
-		await expect(form.category).toHaveAccessibleDescription('Required');
-		await expect(form.author).toHaveAccessibleDescription('Required');
-		await expect(form.profile).toHaveAccessibleDescription('Required');
-		await expect(form.acceptTerms).toHaveAttribute('aria-invalid', 'true');
-	});
-
-	test('default value', async ({ page }) => {
-		const searchParams = new URLSearchParams([
-			['email', 'hello@example.com'],
-			['price', '12345.67'],
-			['language', 'en'],
-			['colors', 'red'],
-			['colors', 'blue'],
-			['date', '2025-04-01T00:00:00'],
-			['range.start', '2025-05-01'],
-			['range.end', '2025-05-31'],
-			['category', 'guide'],
-			['author', 'edmund'],
-			['acceptTerms', 'on'],
-		]);
-		const form = await getForm(page, searchParams);
-
-		await form.submitButton.click();
-		await expect(form.profile).toHaveAccessibleDescription('Required');
-		await form.container.locator('input[name="profile"]').setInputFiles({
-			name: 'example.txt',
-			buffer: Buffer.from('Hello World'),
-			mimeType: 'text/plain',
-		});
-		await expect(form.profile).toHaveAccessibleDescription('');
-
-		await form.submitButton.click();
-		await expect.poll(form.submittedValue).toEqual({
-			email: 'hello@example.com',
-			price: 12345.67,
-			language: 'en',
-			colors: ['red', 'blue'],
-			date: '2025-04-01T00:00:00.000Z',
-			range: {
-				start: '2025-05-01',
-				end: '2025-05-31',
-			},
-			category: 'guide',
-			author: 'edmund',
-			profile: {},
-			acceptTerms: true,
+			await expect.poll(form.submittedValue).toEqual({
+				email: 'hello@example.com',
+				price: 12345.67,
+				language: 'en',
+				colors: ['red'],
+				date: '2025-04-01T12:34:56.000Z',
+				range: {
+					start: '2025-05-01',
+					end: '2025-05-31',
+				},
+				category: 'announcement',
+				author: 'edmundhung',
+				topics: ['accessibility'],
+				profile: {},
+				notifications: true,
+				acceptTerms: true,
+			});
 		});
 
-		await form.email.fill('test@example.com');
-		await form.price.fill('9.87');
-		await form.container.getByText('Japanese').click();
-		await form.container.getByText('Red').click(); // Uncheck red
-		await form.date.pressSequentially('01012025123456');
-		await form.range.pressSequentially('0101202501022025');
-		await form.category.click();
-		await page.getByRole('option', { name: 'Announcement' }).click();
-		await form.author.fill('test');
-		await form.container.getByText('Accept Terms and Conditions').click();
+		test('exposes accessible descriptions and errors', async ({ page }) => {
+			const form = await getForm(page);
 
-		await form.resetButton.click();
+			await form.submitButton.click();
+			await form.email.click();
+			await form.heading.click();
+			await expect(form.email).toHaveAccessibleDescription('Email is required');
 
-		// We do not persist the file input value, so it will be empty
-		await form.container.locator('input[name="profile"]').setInputFiles({
-			name: 'example.txt',
-			buffer: Buffer.from('Hello World'),
-			mimeType: 'text/plain',
+			await form.container.getByText('Invalid', { exact: true }).click();
+			await form.heading.click();
+			await expect(form.language).toHaveAccessibleDescription(
+				/Choose a supported language/,
+			);
+
+			await form.topics.click();
+			await form.heading.click();
+			await expect(form.topics).toHaveAccessibleDescription(
+				/Choose at least one topic/,
+			);
+
+			await expect(form.notifications).toHaveAccessibleDescription(
+				/Choose whether to get notifications|Required/,
+			);
+
+			await expect(form.acceptTerms).toHaveAccessibleDescription(
+				/Accept the terms to continue|Required/,
+			);
 		});
 
-		await form.submitButton.click();
-		await expect.poll(form.submittedValue).toEqual({
-			email: 'hello@example.com',
-			price: 12345.67,
-			language: 'en',
-			colors: ['red', 'blue'],
-			date: '2025-04-01T00:00:00.000Z',
-			range: {
-				start: '2025-05-01',
-				end: '2025-05-31',
-			},
-			category: 'guide',
-			author: 'edmund',
-			profile: {},
-			acceptTerms: true,
+		test('serializes and resets a multi-select ComboBox', async ({ page }) => {
+			for (const reset of ['conform', 'browser']) {
+				const form = await getForm(page);
+
+				await expect(form.selectedTopics).toHaveText('None');
+				await chooseTopic(form, 'Accessibility');
+				await chooseTopic(form, 'Forms');
+				await form.topics.press('Escape');
+
+				await expect
+					.poll(() =>
+						form.topicsControl.evaluate((select: HTMLSelectElement) =>
+							Array.from(
+								new FormData(select.form ?? undefined).getAll('topics'),
+							),
+						),
+					)
+					.toEqual(['accessibility', 'forms']);
+
+				if (reset === 'conform') {
+					await form.resetButton.click();
+				} else {
+					await form.container.evaluate((element: HTMLFormElement) =>
+						element.reset(),
+					);
+				}
+
+				await expect(form.selectedTopics).toHaveText('None');
+				await expect
+					.poll(() =>
+						form.topicsControl.evaluate((select: HTMLSelectElement) =>
+							Array.from(
+								new FormData(select.form ?? undefined).getAll('topics'),
+							),
+						),
+					)
+					.toEqual([]);
+			}
+		});
+
+		test('resets Switch and file input state', async ({ page }) => {
+			for (const reset of ['conform', 'browser']) {
+				const form = await getForm(page);
+
+				await form.notifications.press('Space');
+				await form.profileInput.setInputFiles({
+					name: 'avatar.txt',
+					buffer: Buffer.from('Hello World'),
+					mimeType: 'text/plain',
+				});
+				await expect(form.notifications).toBeChecked();
+				await expect(
+					form.container.getByText('avatar.txt (11 bytes)'),
+				).toBeVisible();
+
+				if (reset === 'conform') {
+					await form.resetButton.click();
+				} else {
+					await form.container.evaluate((element: HTMLFormElement) =>
+						element.reset(),
+					);
+				}
+
+				await expect(form.notifications).not.toBeChecked();
+				await expect
+					.poll(() =>
+						form.profileInput.evaluate(
+							(input: HTMLInputElement) => input.files?.length ?? 0,
+						),
+					)
+					.toBe(0);
+				await expect(
+					form.container.getByText('avatar.txt (11 bytes)'),
+				).not.toBeVisible();
+			}
+		});
+
+		test('restores default values, including multi-select and Switch', async ({
+			page,
+		}) => {
+			const searchParams = new URLSearchParams([
+				['email', 'hello@example.com'],
+				['price', '12345.67'],
+				['language', 'en'],
+				['colors', 'red'],
+				['colors', 'blue'],
+				['date', '2025-04-01T00:00:00'],
+				['range.start', '2025-05-01'],
+				['range.end', '2025-05-31'],
+				['category', 'guide'],
+				['author', 'edmundhung'],
+				['topics', 'accessibility'],
+				['topics', 'forms'],
+				['notifications', 'on'],
+				['acceptTerms', 'on'],
+			]);
+			const form = await getForm(page, searchParams);
+
+			await expect(form.selectedTopics).toContainText('Accessibility');
+			await expect(form.selectedTopics).toContainText('Forms');
+			await expect(form.notifications).toBeChecked();
+
+			await chooseTopic(form, 'Accessibility', false);
+			await form.topics.press('Escape');
+			await form.notifications.press('Space');
+			await form.email.fill('changed@example.com');
+			await form.resetButton.click();
+
+			await expect(form.email).toHaveValue('hello@example.com');
+			await expect(form.selectedTopics).toContainText('Accessibility');
+			await expect(form.selectedTopics).toContainText('Forms');
+			await expect(form.selectedTopics).not.toContainText('Validation');
+			await expect(form.notifications).toBeChecked();
+		});
+
+		test('submits native FormData including arrays and files', async ({
+			page,
+		}) => {
+			const form = await getForm(page);
+			await fillRequiredFields(page, form);
+
+			const expectedFormData = [
+				['email', 'hello@example.com'],
+				['price', '12345.67'],
+				['language', 'en'],
+				['colors', 'red'],
+				['date', '2025-04-01T12:34:56'],
+				['range.start', '2025-05-01'],
+				['range.end', '2025-05-31'],
+				['category', 'announcement'],
+				['author', 'edmundhung'],
+				['topics', 'accessibility'],
+				['topics', 'forms'],
+				['profile', 'avatar.txt'],
+				['notifications', 'on'],
+				['acceptTerms', 'on'],
+			];
+
+			await expect
+				.poll(() =>
+					form.container.evaluate((element: HTMLFormElement) =>
+						Array.from(new FormData(element), ([name, value]) => [
+							name,
+							typeof value === 'string' ? value : value.name,
+						]),
+					),
+				)
+				.toEqual(expectedFormData);
+
+			await form.submitButton.click();
+			await expect.poll(form.submittedFormData).toEqual(expectedFormData);
 		});
 	});
 });

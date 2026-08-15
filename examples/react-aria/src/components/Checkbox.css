@@ -1,6 +1,23 @@
 @import './theme.css';
 
-.react-aria-Checkbox {
+.react-aria-CheckboxField {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+
+	.react-aria-FieldError,
+	[slot='description'] {
+		font-size: 12px;
+		margin-left: 1.714rem;
+	}
+
+	.react-aria-FieldError {
+		color: var(--invalid-color);
+	}
+}
+
+.react-aria-CheckboxButton {
 	--selected-color: var(--highlight-background);
 	--selected-color-pressed: var(--highlight-background-pressed);
 	--checkmark-color: var(--highlight-foreground);

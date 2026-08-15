@@ -1,6 +1,23 @@
 @import './theme.css';
 
-.react-aria-Switch {
+.react-aria-SwitchField {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+
+	.react-aria-FieldError,
+	[slot='description'] {
+		font-size: 12px;
+		margin-left: 2.571rem;
+	}
+
+	.react-aria-FieldError {
+		color: var(--invalid-color);
+	}
+}
+
+.react-aria-SwitchButton {
 	display: flex;
 	align-items: center;
 	gap: 0.571rem;

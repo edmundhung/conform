@@ -9,7 +9,19 @@
 	color: var(--text-color);
 }
 
-.react-aria-Radio {
+.react-aria-RadioField {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+
+	[slot='description'] {
+		font-size: 12px;
+		margin-left: 1.857rem;
+	}
+}
+
+.react-aria-RadioButton {
 	display: flex;
 	align-items: center;
 	gap: 0.571rem;
@@ -76,7 +88,7 @@
 	}
 }
 
-.react-aria-Radio {
+.react-aria-RadioButton {
 	&[data-disabled] {
 		color: var(--text-color-disabled);
 

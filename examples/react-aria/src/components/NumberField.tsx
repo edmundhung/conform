@@ -7,9 +7,9 @@ import {
 	Input,
 	Label,
 	NumberField as AriaNumberField,
-	NumberFieldProps as AriaNumberFieldProps,
 	Text,
 } from 'react-aria-components';
+import type { NumberFieldProps as AriaNumberFieldProps } from 'react-aria-components';
 
 import './NumberField.css';
 
@@ -21,7 +21,6 @@ export interface NumberFieldProps extends Omit<
 	description?: string;
 	defaultValue?: string;
 	errors?: string[];
-	inputRef?: React.Ref<HTMLInputElement>;
 }
 
 export function NumberField({

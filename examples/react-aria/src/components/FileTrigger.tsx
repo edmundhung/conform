@@ -1,16 +1,16 @@
 import {
 	FileTrigger as AriaFileTrigger,
-	FileTriggerProps as AriaFileTriggerProps,
 	FieldError,
 	FieldErrorContext,
 	Label,
 	Text,
 } from 'react-aria-components';
+import type { FileTriggerProps as AriaFileTriggerProps } from 'react-aria-components';
 import { Button } from './Button';
 
 import './DateField.css';
 import { useControl } from '@conform-to/react/future';
-import { useId, useRef } from 'react';
+import { useCallback, useId, useRef } from 'react';
 
 export interface FileTriggerProps extends AriaFileTriggerProps {
 	label?: string;
@@ -32,11 +32,10 @@ export function FileTrigger({
 }: FileTriggerProps) {
 	const id = useId();
 	const buttonRef = useRef<HTMLButtonElement>(null);
+	const focusButton = useCallback(() => buttonRef.current?.focus(), []);
 	const control = useControl({
 		defaultValue,
-		onFocus() {
-			buttonRef.current?.focus();
-		},
+		onFocus: focusButton,
 	});
 
 	return (
@@ -79,7 +78,12 @@ export function FileTrigger({
 						color: 'var(--invalid-color)',
 					}}
 				/>
-				<input type="file" ref={control.register} name={props.name} hidden />
+				<input
+					type="file"
+					ref={control.register}
+					name={props.name}
+					className="file-input-control"
+				/>
 			</AriaFileTrigger>
 		</FieldErrorContext.Provider>
 	);

@@ -8,24 +8,26 @@ import {
 	type InferCustomFieldMetadata,
 	type InferCustomFormMetadata,
 } from '@conform-to/react/future';
-import { getConstraints } from '@conform-to/zod/v3/future';
+import { getConstraints } from '@conform-to/zod/v4/future';
 import type { TextField } from './components/TextField';
 import type { NumberField } from './components/NumberField';
 import type { RadioGroup } from './components/RadioGroup';
 import type { CheckboxGroup } from './components/CheckboxGroup';
 import type { DatePicker } from './components/DatePicker';
 import type { Select } from './components/Select';
-import type { ComboBox } from './components/ComboBox';
+import type { ComboBox, MultiSelectComboBox } from './components/ComboBox';
 import type { FileTrigger } from './components/FileTrigger';
 import type { Checkbox } from './components/Checkbox';
 import type { DateRangePicker } from './components/DateRangePicker';
-import type { ZodTypeAny, ZodErrorMap, input, output } from 'zod';
+import type { Switch } from './components/Switch';
+import type { ZodType, input, output } from 'zod';
+import type { $ZodErrorMap } from 'zod/v4/core';
 
 declare module '@conform-to/react/future' {
 	interface CustomSchemaTypes<Schema> {
-		input: Schema extends ZodTypeAny ? input<Schema> : never;
-		output: Schema extends ZodTypeAny ? output<Schema> : never;
-		options: Schema extends ZodTypeAny ? { errorMap?: ZodErrorMap } : never;
+		input: Schema extends ZodType ? input<Schema> : never;
+		output: Schema extends ZodType ? output<Schema> : never;
+		options: Schema extends ZodType ? { error?: $ZodErrorMap } : never;
 	}
 }
 
@@ -105,6 +107,14 @@ const forms = configureForms({
 					errors: metadata.errors,
 				} satisfies Partial<React.ComponentProps<typeof ComboBox>>;
 			},
+			get multiSelectComboBoxProps() {
+				return {
+					name: metadata.name,
+					defaultValue: metadata.defaultOptions,
+					isInvalid: !metadata.valid,
+					errors: metadata.errors,
+				} satisfies Partial<React.ComponentProps<typeof MultiSelectComboBox>>;
+			},
 			get fileTriggerProps() {
 				return {
 					name: metadata.name,
@@ -117,7 +127,16 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultSelected: metadata.defaultValue === 'on',
 					isInvalid: !metadata.valid,
+					errors: metadata.errors,
 				} satisfies Partial<React.ComponentProps<typeof Checkbox>>;
+			},
+			get switchProps() {
+				return {
+					name: metadata.name,
+					defaultSelected: metadata.defaultValue === 'on',
+					isInvalid: !metadata.valid,
+					errors: metadata.errors,
+				} satisfies Partial<React.ComponentProps<typeof Switch>>;
 			},
 			get dateRangePickerProps() {
 				return when(

@@ -119,7 +119,8 @@
 		color: var(--invalid-color);
 	}
 
-	[slot='description'] {
+	[slot='description'],
+	.selected-values {
 		font-size: 12px;
 	}
 }

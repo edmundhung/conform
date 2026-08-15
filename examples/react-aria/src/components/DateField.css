@@ -2,6 +2,19 @@
 @import './Button.css';
 @import './theme.css';
 
+.file-input-control {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
 .react-aria-DateField {
 	color: var(--text-color);
 	display: flex;

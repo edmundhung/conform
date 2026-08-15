@@ -3,10 +3,12 @@ import {
 	Calendar as AriaCalendar,
 	CalendarCell,
 	CalendarGrid,
-	CalendarProps as AriaCalendarProps,
-	DateValue,
 	Heading,
 	Text,
+} from 'react-aria-components';
+import type {
+	CalendarProps as AriaCalendarProps,
+	DateValue,
 } from 'react-aria-components';
 
 import './Calendar.css';

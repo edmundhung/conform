@@ -1,10 +1,17 @@
 import { useControl } from '@conform-to/react/future';
+import { useCallback } from 'react';
 import {
 	FieldError,
 	Label,
+	RadioButton,
+	RadioField,
 	RadioGroup as AriaRadioGroup,
-	RadioGroupProps as AriaRadioGroupProps,
 	Text,
+} from 'react-aria-components';
+import type {
+	LabelProps,
+	RadioFieldProps,
+	RadioGroupProps as AriaRadioGroupProps,
 } from 'react-aria-components';
 
 import './RadioGroup.css';
@@ -13,7 +20,7 @@ export interface RadioGroupProps extends Omit<
 	AriaRadioGroupProps,
 	'children' | 'defaultValue'
 > {
-	children?: React.ReactNode;
+	children?: LabelProps['children'];
 	label?: string;
 	defaultValue?: string | undefined;
 	description?: string;
@@ -31,18 +38,26 @@ export function RadioGroup({
 	...props
 }: RadioGroupProps) {
 	const control = useControl({ defaultValue });
+	const registerControl = control.register;
+	const register = useCallback(
+		(element: HTMLDivElement | null) =>
+			registerControl(element?.querySelectorAll('input')),
+		[registerControl],
+	);
 
 	return (
 		<AriaRadioGroup
 			{...props}
-			ref={(wrapper) => control.register(wrapper?.querySelectorAll('input'))}
+			ref={register}
 			value={control.value ?? null}
 			onChange={(value) => {
 				control.change(value);
 				onChange?.(value);
 			}}
 			onBlur={(event) => {
-				control.blur();
+				if (!event.currentTarget.contains(event.relatedTarget)) {
+					control.blur();
+				}
 				onBlur?.(event);
 			}}
 		>
@@ -54,4 +69,16 @@ export function RadioGroup({
 	);
 }
 
-export { Radio } from 'react-aria-components';
+export interface RadioProps extends Omit<RadioFieldProps, 'children'> {
+	children: LabelProps['children'];
+	description?: string;
+}
+
+export function Radio({ children, description, ...props }: RadioProps) {
+	return (
+		<RadioField {...props}>
+			<RadioButton>{children}</RadioButton>
+			{description ? <Text slot="description">{description}</Text> : null}
+		</RadioField>
+	);
+}

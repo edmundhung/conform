@@ -4,8 +4,8 @@ import {
 	Label,
 	Text,
 	TextField as AriaTextField,
-	TextFieldProps as AriaTextFieldProps,
 } from 'react-aria-components';
+import type { TextFieldProps as AriaTextFieldProps } from 'react-aria-components';
 
 import './TextField.css';
 import { useControl } from '@conform-to/react/future';

@@ -1,58 +1,42 @@
 # React Aria Example
 
-[React Aria](https://react-spectrum.adobe.com/react-aria/index.html) is a library of unstyled React components and hooks that helps you build accessible, high quality UI components for your application or design system.
+> This guide focuses on behavior specific to React Aria Components. See [Integrating with UI Libraries](../../docs/integration/ui-libraries.md) for the general concept and the [`useControl`](../../docs/api/react/future/useControl.md) API.
 
-This example demonstrates how to integrate Conform with React Aria using custom metadata.
+[React Aria Components](https://react-spectrum.adobe.com/react-aria/components.html) provides accessible, unstyled components for building application and design-system interfaces.
 
-## Understanding the Integration
+This example integrates Conform with React 19 and React Aria Components 1.19 using custom metadata. It covers TextField, NumberField, RadioGroup, CheckboxGroup, DatePicker, DateRangePicker, Select, single and multi-select ComboBox, FileTrigger, Switch, and Checkbox.
 
-The main application ([`App.tsx`](./src/App.tsx)) uses explicit prop assignment for educational purposes, making it easy to see how field metadata maps to React Aria component props:
+## Conform integration
 
-```tsx
-<TextField
-  label="Email"
-  type="email"
-  name={fields.email.name}
-  defaultValue={fields.email.defaultValue}
-  isInvalid={!fields.email.valid}
-  errors={fields.email.errors}
-/>
-```
+- [`forms.ts`](./src/forms.ts) extends Conform's custom field metadata with typed props for each React Aria component.
+- `useControl` and `BaseControl` keep React Aria state synchronized with native form controls, so Conform validation, focus, `FormData`, and reset intents share one source of truth.
+- Zod 4 validation uses `@conform-to/zod/v4/future` and maps errors to React Aria's `FieldError` composition.
+- Checkbox, Radio, and Switch descriptions use `Text slot="description"`, keeping help text and validation errors in their accessible descriptions.
 
-While this is clear and straightforward for learning, it becomes repetitive in production applications.
+## Multi-select ComboBox
 
-## Custom Metadata
-
-The example also showcases metadata customization for a more DRY approach. Check [`forms.ts`](./src/forms.ts) to see how custom metadata is configured using `configureForms`:
+The Topics field demonstrates React Aria's multi-select ComboBox with Conform array metadata:
 
 ```tsx
-import { configureForms } from '@conform-to/react/future';
-
-const result = configureForms({
-  extendFieldMetadata(metadata) {
-    return {
-      get textFieldProps() {
-        return {
-          name: metadata.name,
-          defaultValue: metadata.defaultValue,
-          isInvalid: !metadata.valid,
-          errors: metadata.errors,
-        } satisfies Partial<React.ComponentProps<typeof TextField>>;
-      },
-      // ... other component props
-    };
-  },
-});
-
-export const useForm = result.useForm;
+<MultiSelectComboBox {...fields.topics.multiSelectComboBoxProps} label="Topics">
+  <ComboBoxItem id="accessibility">Accessibility</ComboBoxItem>
+  <ComboBoxItem id="forms">Forms</ComboBoxItem>
+</MultiSelectComboBox>
 ```
 
-Then use the custom metadata with full type safety:
+Its hidden multiple `BaseControl` serializes selections as repeated entries:
 
-```tsx
-<TextField {...fields.email.textFieldProps} />
+```txt
+topics=accessibility
+topics=forms
 ```
+
+The same native control also restores the current Conform default value after Conform and native form resets. Playwright coverage verifies array and file submission, validation focus and descriptions, Switch behavior, and reset behavior across Chromium, Firefox, and WebKit.
 
 ## Demo
 
-Try it out on [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/react-aria).
+<!-- sandbox src="/examples/react-aria" -->
+
+Try the example on [StackBlitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/react-aria).
+
+<!-- /sandbox -->

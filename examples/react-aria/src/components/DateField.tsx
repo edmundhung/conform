@@ -1,12 +1,14 @@
 import {
 	DateField as AriaDateField,
-	DateFieldProps as AriaDateFieldProps,
 	DateInput,
 	DateSegment,
-	DateValue,
 	FieldError,
 	Label,
 	Text,
+} from 'react-aria-components';
+import type {
+	DateFieldProps as AriaDateFieldProps,
+	DateValue,
 	ValidationResult,
 } from 'react-aria-components';
 
