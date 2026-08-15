@@ -61,7 +61,7 @@ test.describe('react-aria', () => {
 			const option = form.topicOption(name);
 
 			await expect(option).toBeVisible();
-			await option.click({ force: true });
+			await option.dispatchEvent('click');
 			if (isSelected) {
 				await expect(form.selectedTopics).toContainText(name);
 			} else {

@@ -19,17 +19,18 @@ import { FileTrigger } from './components/FileTrigger';
 import { Switch } from './components/Switch';
 import { useForm } from './forms';
 
+const languageSchema = z.enum(['en', 'de', 'ja'], {
+	error: 'Choose a supported language',
+});
+const colorSchema = z.enum(['red', 'green', 'blue']);
+const topicSchema = z.enum(['accessibility', 'forms', 'validation']);
+
 const schema = coerceFormValue(
 	z.object({
 		email: z.string({ error: 'Email is required' }),
 		price: z.number({ error: 'Price is required' }),
-		language: z.enum(['en', 'de', 'ja'], {
-			error: 'Choose a supported language',
-		}),
-		colors: z
-			.enum(['red', 'green', 'blue'])
-			.array()
-			.min(1, 'Choose at least one color'),
+		language: languageSchema,
+		colors: colorSchema.array().min(1, 'Choose at least one color'),
 		date: z.date({ error: 'Publish date is required' }),
 		range: z.object({
 			start: z.string({ error: 'Event dates are required' }),
@@ -37,10 +38,7 @@ const schema = coerceFormValue(
 		}),
 		category: z.string({ error: 'Category is required' }),
 		author: z.string({ error: 'Author is required' }),
-		topics: z
-			.enum(['accessibility', 'forms', 'validation'])
-			.array()
-			.min(1, 'Choose at least one topic'),
+		topics: topicSchema.array().min(1, 'Choose at least one topic'),
 		profile: z
 			.instanceof(File, { error: 'Profile picture is required' })
 			.refine((file) => file.name !== '', 'Profile picture is required'),
@@ -48,6 +46,26 @@ const schema = coerceFormValue(
 		acceptTerms: z.boolean({ error: 'Accept the terms to continue' }),
 	}),
 );
+
+function parseSearchParam<Schema extends z.ZodType>(
+	schema: Schema,
+	value: string | null,
+): z.output<Schema> | null {
+	const result = schema.safeParse(value);
+
+	return result.success ? result.data : null;
+}
+
+function parseSearchParams<Schema extends z.ZodType>(
+	schema: Schema,
+	values: string[],
+): Array<z.output<Schema>> {
+	return values.flatMap((value) => {
+		const result = schema.safeParse(value);
+
+		return result.success ? [result.data] : [];
+	});
+}
 
 export default function App() {
 	const [submittedValue, setSubmittedValue] = useState<z.output<
@@ -63,8 +81,8 @@ export default function App() {
 		defaultValue: {
 			email: searchParams.get('email'),
 			price: searchParams.get('price'),
-			language: searchParams.get('language'),
-			colors: searchParams.getAll('colors'),
+			language: parseSearchParam(languageSchema, searchParams.get('language')),
+			colors: parseSearchParams(colorSchema, searchParams.getAll('colors')),
 			date: searchParams.get('date'),
 			range: {
 				start: searchParams.get('range.start'),
@@ -72,7 +90,7 @@ export default function App() {
 			},
 			category: searchParams.get('category'),
 			author: searchParams.get('author'),
-			topics: searchParams.getAll('topics'),
+			topics: parseSearchParams(topicSchema, searchParams.getAll('topics')),
 			notifications: searchParams.get('notifications'),
 			acceptTerms: searchParams.get('acceptTerms'),
 		},
