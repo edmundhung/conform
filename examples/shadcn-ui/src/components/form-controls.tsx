@@ -45,7 +45,15 @@ import { Switch as ShadcnSwitch } from './ui/switch';
 import { Slider as ShadcnSlider } from './ui/slider';
 import { Checkbox as ShadcnCheckbox } from './ui/checkbox';
 import { cn } from '../lib/utils';
-import { Field, FieldDescription, FieldError, FieldLabel } from './ui/field';
+import {
+	Field,
+	FieldDescription,
+	FieldError,
+	FieldGroup,
+	FieldLabel,
+	FieldLegend,
+	FieldSet,
+} from './ui/field';
 import { Input } from './ui/input';
 import {
 	InputGroup,
@@ -657,7 +665,7 @@ function InputOTP({
 			<ShadcnInputOTP
 				id={id}
 				ref={inputOTPRef}
-				value={control.value}
+				value={control.value ?? ''}
 				onChange={(value) => control.change(value)}
 				onBlur={() => control.blur()}
 				maxLength={length}
@@ -859,7 +867,10 @@ export {
 	Field,
 	FieldDescription,
 	FieldError,
+	FieldGroup,
 	FieldLabel,
+	FieldLegend,
+	FieldSet,
 	Button,
 	Input,
 	InputGroup,

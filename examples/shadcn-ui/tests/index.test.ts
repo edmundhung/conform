@@ -232,6 +232,10 @@ test.describe('shadcn-ui', () => {
 			await expect(
 				form.interests.getByRole('checkbox').last(),
 			).toHaveAccessibleDescription('Invalid input');
+			await expect(form.interests.getByRole('checkbox').last()).toHaveAttribute(
+				'aria-invalid',
+				'true',
+			);
 
 			await form.members.click();
 			await expect(form.members).toHaveAccessibleDescription('');
@@ -380,6 +384,43 @@ test.describe('shadcn-ui', () => {
 				],
 				code: '543210',
 			};
+			async function changeEveryControl(options: {
+				age: 'drag' | 'home';
+				description: string;
+				interests?: boolean;
+				code: string;
+			}) {
+				await form.name.fill('Example');
+				await form.dateOfBirth.click();
+				await page.getByText('15').click();
+				await form.country.click();
+				await page.getByText('Japan').click();
+				await form.gender.getByRole('radio', { name: 'female' }).click();
+				await form.agreeToTerms.click();
+				await form.job.click();
+				await page.getByRole('option', { name: 'Designer' }).click();
+				if (options.age === 'drag') {
+					await form.age.dragTo(page.getByText('60'));
+				} else {
+					await form.age.press('Home');
+				}
+				await form.isAdult.click();
+				await form.description.fill(options.description);
+				await form.accountType.getByRole('radio', { name: 'Business' }).click();
+				await form.categories.getByRole('button', { name: 'Blog' }).click();
+				await form.categories.getByRole('button', { name: 'Guide' }).click();
+				if (options.interests) {
+					await form.interests.getByRole('checkbox', { name: 'React' }).click();
+					await form.interests.getByRole('checkbox', { name: 'Vue' }).click();
+					await form.interests
+						.getByRole('checkbox', { name: 'Angular' })
+						.click();
+				}
+				await form.members.click();
+				await page.getByText('Alice Chen').click();
+				await form.members.press('Escape');
+				await form.code.fill(options.code);
+			}
 
 			await expect.poll(form.formData).toEqual(Array.from(searchParams));
 
@@ -420,60 +461,24 @@ test.describe('shadcn-ui', () => {
 				['members[0].role', 'designer'],
 			]);
 
-			await form.name.fill('Example');
-			await form.dateOfBirth.click();
-			await page.getByText('15').click();
-			await form.country.click();
-			await page.getByText('Japan').click();
-			await form.country.click();
-			await form.gender.getByRole('radio', { name: 'female' }).click();
-			await form.agreeToTerms.click();
-			await form.job.click();
-			await page.getByRole('option', { name: 'Designer' }).click();
-			await form.age.dragTo(page.getByText('60'));
-			await form.isAdult.click();
-			await form.description.fill(
-				'Foo barLorem ipsum dolor sit amet, consectetur adipiscing elit. Donec egestas metus at consequat lobortis.',
-			);
-			await form.accountType.getByRole('radio', { name: 'Business' }).click();
-			await form.categories.getByRole('button', { name: 'Blog' }).click();
-			await form.categories.getByRole('button', { name: 'Guide' }).click();
-			await form.interests.getByRole('checkbox', { name: 'React' }).click();
-			await form.interests.getByRole('checkbox', { name: 'Vue' }).click();
-			await form.interests.getByRole('checkbox', { name: 'Angular' }).click();
-			await form.members.click();
-			await page.getByText('Alice Chen').click();
-			await form.members.press('Escape');
-			await form.code.click();
-			await form.code.press('Backspace');
-			await form.code.press('Backspace');
-			await form.code.press('Backspace');
-			await form.code.pressSequentially('123');
+			await changeEveryControl({
+				age: 'drag',
+				description:
+					'Foo barLorem ipsum dolor sit amet, consectetur adipiscing elit. Donec egestas metus at consequat lobortis.',
+				interests: true,
+				code: '123',
+			});
 
 			await form.resetButton.click();
 			await expect.poll(form.formData).toEqual(Array.from(searchParams));
 			await form.submitButton.click();
 			await expect.poll(form.submittedValue).toEqual(submittedValue);
 
-			await form.name.fill('Example');
-			await form.dateOfBirth.click();
-			await page.getByText('15').click();
-			await form.country.click();
-			await page.getByText('Japan').click();
-			await form.gender.getByRole('radio', { name: 'female' }).click();
-			await form.agreeToTerms.click();
-			await form.job.click();
-			await page.getByRole('option', { name: 'Designer' }).click();
-			await form.age.press('Home');
-			await form.isAdult.click();
-			await form.description.fill('Changed description');
-			await form.accountType.getByRole('radio', { name: 'Business' }).click();
-			await form.categories.getByRole('button', { name: 'Blog' }).click();
-			await form.categories.getByRole('button', { name: 'Guide' }).click();
-			await form.members.click();
-			await page.getByText('Alice Chen').click();
-			await form.members.press('Escape');
-			await form.code.fill('123456');
+			await changeEveryControl({
+				age: 'home',
+				description: 'Changed description',
+				code: '123456',
+			});
 
 			await form.container.evaluate((element) =>
 				(element as HTMLFormElement).reset(),

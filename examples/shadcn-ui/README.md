@@ -2,13 +2,13 @@
 
 > This guide focuses on behavior specific to shadcn/ui's Radix base. See [Integrating with UI Libraries](../../docs/integration/ui-libraries.md) for the general concept and the [`useControl`](../../docs/api/react/future/useControl.md) API.
 
-This Vite example uses the current shadcn/ui Radix registry with React 19, Tailwind CSS 4, and Zod 4. It keeps the generated shadcn components in [`src/components/ui`](./src/components/ui) and the Conform-specific adapters in [`src/components/form.tsx`](./src/components/form.tsx).
+This Vite example uses the current shadcn/ui Radix registry with React 19, Tailwind CSS 4, and Zod 4. It keeps the generated shadcn components in [`src/components/ui`](./src/components/ui) and the Conform-specific adapters in [`src/components/form-controls.tsx`](./src/components/form-controls.tsx).
 
-It covers Input, Textarea, DatePicker, Combobox, RadioGroup, Checkbox, Select, Slider, Switch, single and multiple toggle groups, InputOTP, and TeamMemberSelect. It also uses the current shadcn Field, InputGroup, and NativeSelect composition.
+It covers Input, Textarea, DatePicker, Combobox, RadioGroup, Checkbox, Select, Slider, Switch, single and multiple toggle groups, InputOTP, and TeamMemberSelect. It also uses the current shadcn Field, FieldSet, InputGroup, and NativeSelect composition.
 
 ## Use Native Controls Where Possible
 
-`Input`, `InputGroupInput`, `Textarea`, and `NativeSelect` render native form controls. They can receive Conform's `id`, `name`, default value, and ARIA metadata directly without `useControl`.
+`InputGroupInput` (composed from Input) and `Textarea` receive Conform's `id`, `name`, default value, and ARIA metadata directly without `useControl`. NativeSelect is native too; this form uses it for TeamMemberSelect's local role filter because the schema fields are reserved for the controls being compared.
 
 The other controls expose a custom value or interaction model and use a small adapter built with `useControl`.
 
@@ -117,7 +117,7 @@ The hidden base control owns the field name and value. `aria-invalid`, `aria-des
 RadioGroup, Slider, and toggle groups use an explicit label ID:
 
 ```tsx
-<FieldLabel id={`${fields.gender.id}-label`}>Gender</FieldLabel>
+<FieldLegend id={`${fields.gender.id}-label`}>Gender</FieldLegend>
 <RadioGroup {...fields.gender.radioGroupProps} />
 ```
 

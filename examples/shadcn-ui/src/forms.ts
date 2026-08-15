@@ -20,7 +20,7 @@ import type {
 	MultiToggleGroup,
 	InputOTP,
 	TeamMemberSelect,
-} from './components/form';
+} from './components/form-controls';
 
 const forms = configureForms({
 	getConstraints,
