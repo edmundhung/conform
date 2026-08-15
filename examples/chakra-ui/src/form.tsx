@@ -163,14 +163,19 @@ export function ExampleSlider({
 					if (isFocusLeaving(event)) control.blur();
 				}}
 				invalid={props.invalid}
-				aria-describedby={props['aria-describedby']}
 			>
 				<Slider.Control>
 					<Slider.Track>
 						<Slider.Range />
 					</Slider.Track>
-					<Slider.Thumb ref={thumbRef} index={0}>
-						<Slider.HiddenInput />
+					<Slider.Thumb
+						ref={thumbRef}
+						index={0}
+						aria-describedby={props['aria-describedby']}
+						aria-invalid={props.invalid}
+						aria-required={props.required}
+					>
+						<Slider.HiddenInput required={props.required} />
 					</Slider.Thumb>
 				</Slider.Control>
 			</Slider.Root>
@@ -198,24 +203,28 @@ export function ExampleRadioGroup({
 	});
 
 	return (
-		<RadioGroup.Root
-			ref={(root) => {
-				rootRef.current = root;
-				control.register(root?.querySelectorAll('input'));
-			}}
-			name={name}
-			value={control.value ?? ''}
-			onValueChange={({ value }) => control.change(value)}
-			onBlur={(event) => {
-				if (isFocusLeaving(event)) control.blur();
-			}}
-			invalid={props.invalid}
-			required={props.required}
-			aria-labelledby={props['aria-labelledby']}
-			aria-describedby={props['aria-describedby']}
-		>
-			{children}
-		</RadioGroup.Root>
+		<>
+			<BaseControl
+				name={name}
+				ref={control.register}
+				defaultValue={control.defaultValue ?? ''}
+			/>
+			<RadioGroup.Root
+				ref={rootRef}
+				value={control.value ?? ''}
+				onValueChange={({ value }) => control.change(value)}
+				onBlur={(event) => {
+					if (isFocusLeaving(event)) control.blur();
+				}}
+				invalid={props.invalid}
+				required={props.required}
+				aria-invalid={props.invalid}
+				aria-labelledby={props['aria-labelledby']}
+				aria-describedby={props['aria-describedby']}
+			>
+				{children}
+			</RadioGroup.Root>
+		</>
 	);
 }
 
@@ -250,6 +259,7 @@ export function ExampleEditable({
 					if (isFocusLeaving(event)) control.blur();
 				}}
 				invalid={props.invalid}
+				required={props.required}
 			>
 				<Editable.Preview
 					ref={previewRef}
@@ -276,21 +286,48 @@ export function ExampleCheckbox({
 	children,
 	...props
 }: ExampleCheckboxProps) {
+	const inputRef = useRef<HTMLInputElement>(null);
+	const control = useControl({
+		defaultChecked,
+		value,
+		onFocus() {
+			inputRef.current?.focus();
+		},
+	});
+
 	return (
-		<Checkbox.Root
-			ids={{ hiddenInput: props.id }}
-			name={name}
-			value={value}
-			defaultChecked={defaultChecked}
-			invalid={props.invalid}
-			required={props.required}
-		>
-			<Checkbox.HiddenInput aria-describedby={props['aria-describedby']} />
-			<Checkbox.Control>
-				<Checkbox.Indicator />
-			</Checkbox.Control>
-			<Checkbox.Label>{children}</Checkbox.Label>
-		</Checkbox.Root>
+		<>
+			<BaseControl
+				type="checkbox"
+				name={name}
+				value={value}
+				defaultChecked={defaultChecked ?? false}
+				ref={control.register}
+			/>
+			<Checkbox.Root
+				ids={{ hiddenInput: props.id }}
+				checked={control.checked ?? false}
+				onBlur={(event) => {
+					if (isFocusLeaving(event)) control.blur();
+				}}
+				invalid={props.invalid}
+				required={props.required}
+			>
+				<Checkbox.HiddenInput
+					ref={inputRef}
+					defaultChecked={defaultChecked}
+					onChange={(event) => {
+						// Native change does not fire during form.reset().
+						control.change(event.currentTarget.checked);
+					}}
+					aria-describedby={props['aria-describedby']}
+				/>
+				<Checkbox.Control>
+					<Checkbox.Indicator />
+				</Checkbox.Control>
+				<Checkbox.Label>{children}</Checkbox.Label>
+			</Checkbox.Root>
+		</>
 	);
 }
 
@@ -303,21 +340,48 @@ export function ExampleSwitch({
 	children,
 	...props
 }: ExampleSwitchProps) {
+	const inputRef = useRef<HTMLInputElement>(null);
+	const control = useControl({
+		defaultChecked,
+		value,
+		onFocus() {
+			inputRef.current?.focus();
+		},
+	});
+
 	return (
-		<Switch.Root
-			ids={{ hiddenInput: props.id }}
-			name={name}
-			value={value}
-			defaultChecked={defaultChecked}
-			invalid={props.invalid}
-			required={props.required}
-		>
-			<Switch.HiddenInput aria-describedby={props['aria-describedby']} />
-			<Switch.Control>
-				<Switch.Thumb />
-			</Switch.Control>
-			{children ? <Switch.Label>{children}</Switch.Label> : null}
-		</Switch.Root>
+		<>
+			<BaseControl
+				type="checkbox"
+				name={name}
+				value={value}
+				defaultChecked={defaultChecked ?? false}
+				ref={control.register}
+			/>
+			<Switch.Root
+				ids={{ hiddenInput: props.id }}
+				checked={control.checked ?? false}
+				onBlur={(event) => {
+					if (isFocusLeaving(event)) control.blur();
+				}}
+				invalid={props.invalid}
+				required={props.required}
+			>
+				<Switch.HiddenInput
+					ref={inputRef}
+					defaultChecked={defaultChecked}
+					onChange={(event) => {
+						// Native change does not fire during form.reset().
+						control.change(event.currentTarget.checked);
+					}}
+					aria-describedby={props['aria-describedby']}
+				/>
+				<Switch.Control>
+					<Switch.Thumb />
+				</Switch.Control>
+				{children ? <Switch.Label>{children}</Switch.Label> : null}
+			</Switch.Root>
+		</>
 	);
 }
 
@@ -357,12 +421,13 @@ export function ExampleTagsInput({
 				required={props.required}
 				addOnPaste
 			>
-				<TagsInput.HiddenInput />
+				{/* BaseControl is the only form input; omit TagsInput.HiddenInput. */}
 				<TagsInput.Control>
 					<TagsInput.Items />
 					<TagsInput.Input
 						ref={inputRef}
 						placeholder="Type a tag and press Enter"
+						aria-required={props.required}
 						aria-describedby={props['aria-describedby']}
 					/>
 				</TagsInput.Control>
@@ -395,9 +460,15 @@ export function ExampleFileUpload({ name, ...props }: ExampleFileUploadProps) {
 				invalid={props.invalid}
 				required={props.required}
 			>
-				<FileUpload.HiddenInput aria-describedby={props['aria-describedby']} />
+				<FileUpload.HiddenInput />
 				<FileUpload.Trigger asChild>
-					<Button ref={triggerRef} type="button" variant="outline">
+					<Button
+						ref={triggerRef}
+						type="button"
+						variant="outline"
+						aria-describedby={props['aria-describedby']}
+						aria-invalid={props.invalid}
+					>
 						Choose file
 					</Button>
 				</FileUpload.Trigger>

@@ -6,16 +6,15 @@
 
 This example demonstrates how to integrate Conform with Chakra UI 3.36 using React 19, Zod 4, and custom metadata. It covers Input, NativeSelect, Textarea, Checkbox, Switch, RadioGroup, NumberInput, PinInput, Slider, Editable, TagsInput, and FileUpload.
 
-## Choose the Native Control When Available
+## Choose Native Controls When Available
 
 Every field needs one canonical named form control. Use the native control rendered by Chakra when it already provides the required value, reset, focus, and `FormData` behavior. Otherwise, render a Conform `BaseControl` and leave Chakra's internal controls unnamed.
 
 | Chakra component | Canonical form control | Integration |
 | --- | --- | --- |
 | Input, NativeSelect, Textarea | The Chakra component itself | Pass Conform's native input props directly |
-| Checkbox, Switch | Chakra `HiddenInput` | Give the Chakra root a name and initial checked state |
-| RadioGroup | Chakra `ItemHiddenInput` collection | Register the named radio inputs with `useControl` |
-| NumberInput, PinInput, Slider, Editable | Text `BaseControl` | Synchronize a string value with `useControl` |
+| Checkbox, Switch | Checkbox `BaseControl` | Synchronize checked state through `control.checked` |
+| RadioGroup, NumberInput, PinInput, Slider, Editable | Text `BaseControl` | Synchronize a string value through `control.value` |
 | TagsInput | Multiple select `BaseControl` | Synchronize `string[]` through `control.options` |
 | FileUpload | File `BaseControl` | Synchronize `File[]` through `control.files` |
 
@@ -32,25 +31,7 @@ Native controls need no adapter. For example, Input receives its name, initial v
 />
 ```
 
-Checkbox and Switch use Chakra's native hidden input. They stay uncontrolled so browser reset behavior remains available:
-
-```tsx
-<Checkbox.Root
-  name={name}
-  value="on"
-  defaultChecked={defaultChecked}
-  required={required}
-  invalid={invalid}
->
-  <Checkbox.HiddenInput aria-describedby={ariaDescribedBy} />
-  <Checkbox.Control>
-    <Checkbox.Indicator />
-  </Checkbox.Control>
-  <Checkbox.Label>Newsletter</Checkbox.Label>
-</Checkbox.Root>
-```
-
-## Use One Named Base Control
+## Use a Single Named Control
 
 Compound controls such as NumberInput expose controlled state but do not provide the complete native behavior needed by the form. Their adapters render one named `BaseControl` registered with `useControl`:
 
@@ -83,24 +64,31 @@ return (
 
 The Chakra root remains unnamed, so the base control is the only submitted value. It gives Conform one place to manage reset, focus, validation events, and `FormData` serialization without duplicate entries.
 
-RadioGroup is the exception because Chakra already renders the appropriate native radio inputs. Its adapter registers that collection instead of adding another base control:
+Checkbox and Switch follow the same pattern with a checkbox `BaseControl`. Their Chakra hidden inputs remain unnamed and send user changes to Conform through the native `change` event:
 
 ```tsx
-<RadioGroup.Root
-  ref={(root) => control.register(root?.querySelectorAll('input'))}
+<BaseControl
+  type="checkbox"
   name={name}
-  value={control.value ?? ''}
-  onValueChange={({ value }) => control.change(value)}
->
-  <RadioGroup.Item value="yes">
-    <RadioGroup.ItemHiddenInput />
-    <RadioGroup.ItemIndicator />
-    <RadioGroup.ItemText>Yes</RadioGroup.ItemText>
-  </RadioGroup.Item>
-</RadioGroup.Root>
+  value="on"
+  defaultChecked={defaultChecked ?? false}
+  ref={control.register}
+/>
+<Switch.Root checked={control.checked ?? false}>
+  <Switch.HiddenInput
+    ref={inputRef}
+    defaultChecked={defaultChecked}
+    onChange={(event) => control.change(event.currentTarget.checked)}
+  />
+  <Switch.Control>
+    <Switch.Thumb />
+  </Switch.Control>
+</Switch.Root>
 ```
 
-## Translate Chakra Value Shapes
+Using the native event avoids writing a stale Chakra reset callback back into the canonical control while submitted values become the new defaults. RadioGroup also uses a text `BaseControl`; its `ItemHiddenInput` elements remain focusable for keyboard interaction but use an empty name so they do not duplicate the submitted value.
+
+## Handle Chakra Value Shapes
 
 `useControl` exposes the native shape represented by the registered control. Each adapter translates only where Chakra uses a different shape:
 
@@ -110,7 +98,7 @@ RadioGroup is the exception because Chakra already renders the appropriate nativ
 | PinInput | Array of characters | Join or split `control.value` |
 | Slider | Array of numbers | First number serialized as a string |
 | Checkbox, Switch | Boolean state | Native checked value, usually `"on"` |
-| RadioGroup | Selected string | `control.value` from the registered radio collection |
+| RadioGroup | Selected string | `control.value` from a text input |
 | TagsInput | Array of strings | `control.options` from a multiple select |
 | FileUpload | Array of files | `control.files` from a file input |
 
@@ -135,6 +123,8 @@ When Conform focuses a hidden base control after an invalid submission, the adap
 
 | Component | Focus target |
 | --- | --- |
+| Checkbox | `Checkbox.HiddenInput` |
+| Switch | `Switch.HiddenInput` |
 | NumberInput | `NumberInput.Input` |
 | PinInput | First `PinInput.Input` |
 | Slider | First `Slider.Thumb` |
@@ -143,9 +133,9 @@ When Conform focuses a hidden base control after an invalid submission, the adap
 | TagsInput | `TagsInput.Input` |
 | FileUpload | `FileUpload.Trigger` |
 
-The `onFocus` option passed to `useControl` performs this delegation. Native Input, NativeSelect, Textarea, Checkbox, and Switch already expose a focusable native control.
+The `onFocus` option passed to `useControl` performs this delegation. Native Input, NativeSelect, and Textarea already expose their canonical focusable control.
 
-## Match Compound Interaction Boundaries
+## Match Chakra Interaction Boundaries
 
 Blur events bubble when focus moves between parts of NumberInput, PinInput, RadioGroup, Editable, TagsInput, and FileUpload. Notify Conform only when focus leaves the whole component:
 
@@ -165,7 +155,7 @@ function isFocusLeaving(event: React.FocusEvent<HTMLElement>) {
 
 This preserves `shouldValidate: "onBlur"` without validating while the user moves between internal controls.
 
-## Apply Validation Attributes to the Accessible Control
+## Apply ARIA Attributes to the Accessible Control
 
 The named base control owns serialization, but validation state must also reach the Chakra element exposed to the user. The adapters pass `invalid` and `required` to the compound root, assign Conform's field ID to the interactive element, and associate it with `field.ariaDescribedBy`.
 
@@ -184,13 +174,13 @@ The named base control owns serialization, but validation state must also reach 
 </Field.Root>
 ```
 
-For RadioGroup, the fieldset legend labels the group through `aria-labelledby`. Checkbox, Switch, and FileUpload apply the error description to their native hidden input.
+For RadioGroup, the fieldset legend labels the group through `aria-labelledby`. Checkbox and Switch apply the error description to their focusable Chakra hidden input. FileUpload's hidden file input is `aria-hidden`, so its visible trigger receives the description and invalid state instead.
 
 ## Preserve Defaults and Reset Behavior
 
-Pass `control.defaultValue` to every `BaseControl`, rather than repeating the original field metadata. Conform updates this reset baseline after form-key changes, update intents, and progressive-enhancement results while `control.change()` continues to represent the live value.
+String and array adapters pass `control.defaultValue` to their `BaseControl`; checked adapters pass the latest `defaultChecked` metadata to both `useControl` and their checkbox base control. Conform updates these reset baselines after update intents and progressive-enhancement results while `control.change()` continues to represent the live value.
 
-This demo writes serializable submitted values to the URL and treats that snapshot as a new set of defaults. `App.tsx` keys the form with the URL snapshot so native-backed Chakra controls are recreated when new defaults replace their mounted default props. Calling `intent.reset()` restores every native or base control from the same Conform defaults.
+This demo writes serializable submitted values to the URL and treats that snapshot as a new set of defaults. Calling `intent.reset()` or the browser's native `form.reset()` restores every native or base control from the same Conform defaults without remounting the form.
 
 ## Custom Metadata
 

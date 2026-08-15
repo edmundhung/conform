@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 test.describe('chakra-ui', () => {
 	test.describe('form', () => {
 		async function getForm(page: Page, searchParams?: URLSearchParams) {
-			await page.goto(`/?${searchParams ?? ''}`);
+			await page.goto(searchParams ? `/?${searchParams}` : '/');
 			const form = page.locator('form');
 
 			return {
@@ -41,6 +41,7 @@ test.describe('chakra-ui', () => {
 				tagsInput: form.getByPlaceholder('Type a tag and press Enter'),
 				fileInput: form.locator('input[type="file"]:not([name])'),
 				fileTrigger: form.getByRole('button', { name: 'Choose file' }),
+				heading: page.getByRole('heading', { name: 'Chakra UI Example' }),
 				resetButton: form.getByRole('button', { name: 'Reset' }),
 				submitButton: form.getByRole('button', { name: 'Submit' }),
 				submittedValue: () =>
@@ -174,64 +175,76 @@ test.describe('chakra-ui', () => {
 				['tags', 'react'],
 				['tags', 'chakra'],
 			]);
-			const controls = await getForm(page, defaults);
 
-			await controls.email.fill('changed@example.com');
-			await controls.quantity.fill('9');
-			await setPin(controls.pin, '9876');
-			await setEditable(
-				controls.editablePreview,
-				controls.editableInput,
-				'Changed title',
-			);
-			await controls.subscribeControl.click();
-			await controls.enabledControl.click();
-			await controls.slider.press('ArrowRight');
-			await controls.radioNo.click();
-			await controls.tagsInput.fill('zod');
-			await controls.tagsInput.press('Enter');
-			await controls.fileInput.setInputFiles({
-				name: 'reset.txt',
-				mimeType: 'text/plain',
-				buffer: Buffer.from('reset'),
-			});
+			for (const reset of ['conform', 'browser']) {
+				const controls = await getForm(page, defaults);
 
-			await controls.resetButton.click();
+				await controls.email.fill('changed@example.com');
+				await controls.quantity.fill('9');
+				await setPin(controls.pin, '9876');
+				await setEditable(
+					controls.editablePreview,
+					controls.editableInput,
+					'Changed title',
+				);
+				await controls.subscribeControl.click();
+				await controls.enabledControl.click();
+				await controls.slider.press('ArrowRight');
+				await controls.radioNo.click();
+				await controls.tagsInput.fill('zod');
+				await controls.tagsInput.press('Enter');
+				await controls.fileInput.setInputFiles({
+					name: 'reset.txt',
+					mimeType: 'text/plain',
+					buffer: Buffer.from('reset'),
+				});
 
-			await expect(controls.email).toHaveValue('default@example.com');
-			await expect(controls.quantity).toHaveValue('2');
-			await expectPin(controls.pin, '1234');
-			await expect(controls.editablePreview).toHaveText('Default title');
-			await expect(controls.subscribe).toBeChecked();
-			await expect(controls.enabled).toBeChecked();
-			await expect(controls.slider).toHaveAttribute('aria-valuenow', '4');
-			await expect(controls.radioYes.getByRole('radio')).toBeChecked();
-			await expect(
-				controls.form
-					.locator('[data-scope="tags-input"][data-part="item-text"]')
-					.filter({ hasText: 'zod' }),
-			).toHaveCount(0);
-			await expect(
-				controls.form
-					.locator('[data-scope="file-upload"][data-part="item-name"]')
-					.filter({ hasText: 'reset.txt' }),
-			).toHaveCount(0);
+				if (reset === 'conform') {
+					await controls.resetButton.click();
+				} else {
+					await controls.form.evaluate((form) =>
+						(form as HTMLFormElement).reset(),
+					);
+				}
 
-			expect(await getFormData(controls.form)).toEqual([
-				['email', 'default@example.com'],
-				['language', 'english'],
-				['description', 'Default description'],
-				['quantity', '2'],
-				['pin', '1234'],
-				['title', 'Default title'],
-				['subscribe', 'on'],
-				['enabled', 'on'],
-				['progress', '4'],
-				['active', 'yes'],
-				['tags', 'react'],
-				['tags', 'chakra'],
-				['attachment', { name: '', size: 0, type: 'application/octet-stream' }],
-			]);
+				await expect(controls.email).toHaveValue('default@example.com');
+				await expect(controls.quantity).toHaveValue('2');
+				await expectPin(controls.pin, '1234');
+				await expect(controls.editablePreview).toHaveText('Default title');
+				await expect(controls.subscribe).toBeChecked();
+				await expect(controls.enabled).toBeChecked();
+				await expect(controls.slider).toHaveAttribute('aria-valuenow', '4');
+				await expect(controls.radioYes.getByRole('radio')).toBeChecked();
+				await expect(
+					controls.form
+						.locator('[data-scope="tags-input"][data-part="item-text"]')
+						.filter({ hasText: 'zod' }),
+				).toHaveCount(0);
+				await expect(
+					controls.form
+						.locator('[data-scope="file-upload"][data-part="item-name"]')
+						.filter({ hasText: 'reset.txt' }),
+				).toHaveCount(0);
+
+				expect(await getFormData(controls.form)).toEqual([
+					['email', 'default@example.com'],
+					['language', 'english'],
+					['description', 'Default description'],
+					['quantity', '2'],
+					['pin', '1234'],
+					['title', 'Default title'],
+					['subscribe', 'on'],
+					['enabled', 'on'],
+					['progress', '4'],
+					['active', 'yes'],
+					['tags', 'react'],
+					['tags', 'chakra'],
+					[
+						'attachment',
+						{ name: '', size: 0, type: 'application/octet-stream' },
+					],
+				]);
+			}
 		});
 
 		test('reset after submission', async ({ page }) => {
@@ -328,6 +341,82 @@ test.describe('chakra-ui', () => {
 				['tags', 'react'],
 				['attachment', { name: '', size: 0, type: 'application/octet-stream' }],
 			]);
+		});
+
+		test('blur validation', async ({ page }) => {
+			const controls = await getForm(page);
+
+			await controls.quantity.focus();
+			await controls.heading.click();
+			await expect(controls.quantity).toHaveAccessibleDescription(
+				'Quantity is required',
+			);
+
+			await controls.pin.first().focus();
+			await controls.pin.nth(1).focus();
+			await expect(controls.pin.first()).toHaveAccessibleDescription('');
+			await controls.heading.click();
+			await expect(controls.pin.first()).toHaveAccessibleDescription(
+				'PIN is required',
+			);
+
+			await controls.editablePreview.dblclick();
+			await expect(controls.editableInput).toHaveAttribute('required', '');
+			await controls.heading.click();
+			await expect(controls.editablePreview).toHaveAccessibleDescription(
+				'Title is required',
+			);
+
+			await controls.subscribe.focus();
+			await controls.heading.click();
+			await expect(controls.subscribe).toHaveAccessibleDescription(
+				'Newsletter consent is required',
+			);
+
+			await controls.enabled.focus();
+			await controls.heading.click();
+			await expect(controls.enabled).toHaveAccessibleDescription(
+				'Enable this setting',
+			);
+
+			await controls.slider.focus();
+			await expect(controls.slider).toHaveAttribute('aria-invalid', 'false');
+			await expect(controls.slider).toHaveAttribute('aria-required', 'true');
+			await expect(controls.slider.locator('input')).toHaveAttribute(
+				'required',
+				'',
+			);
+			await controls.heading.click();
+			await expect(controls.slider).toHaveAttribute('aria-invalid', 'true');
+			await expect(controls.slider).toHaveAccessibleDescription(
+				'Progress is required',
+			);
+
+			await controls.radioYes.getByRole('radio').focus();
+			await controls.radioNo.getByRole('radio').focus();
+			await expect(controls.radioGroup).toHaveAccessibleDescription('');
+			await controls.heading.click();
+			await expect(controls.radioGroup).toHaveAttribute('aria-invalid', 'true');
+			await expect(controls.radioGroup).toHaveAccessibleDescription(
+				'Choose an active state',
+			);
+
+			await controls.tagsInput.focus();
+			await expect(controls.tagsInput).toHaveAttribute('aria-required', 'true');
+			await controls.heading.click();
+			await expect(controls.tagsInput).toHaveAccessibleDescription(
+				'Add at least one topic',
+			);
+
+			await controls.fileTrigger.focus();
+			await controls.heading.click();
+			await expect(controls.fileTrigger).toHaveAttribute(
+				'aria-invalid',
+				'true',
+			);
+			await expect(controls.fileTrigger).toHaveAccessibleDescription(
+				'Choose a file',
+			);
 		});
 
 		test('slider pointer input', async ({ page }) => {

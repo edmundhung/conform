@@ -70,10 +70,8 @@ export default function App() {
 	const [searchParams, setSearchParams] = useState(
 		() => new URLSearchParams(window.location.search),
 	);
-	const defaultValueKey = searchParams.toString();
 	const { form, fields, intent } = useForm(schema, {
 		// The URL is the source of the form's defaults in this client-only example.
-		key: defaultValueKey,
 		defaultValue: searchParams,
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();
@@ -96,8 +94,7 @@ export default function App() {
 
 	return (
 		<Container maxW="2xl" py={8}>
-			{/* Chakra's uncontrolled controls need a fresh instance for new defaults. */}
-			<form key={defaultValueKey} {...form.props}>
+			<form {...form.props} onChange={() => setSubmittedValue(null)}>
 				<Stack gap={8}>
 					<header>
 						<Heading mb={4}>Chakra UI Example</Heading>
@@ -306,12 +303,13 @@ export default function App() {
 						>
 							<Stack gap={5} direction="row">
 								<RadioGroup.Item value="yes">
-									<RadioGroup.ItemHiddenInput />
+									{/* BaseControl is the only named field. */}
+									<RadioGroup.ItemHiddenInput name="" />
 									<RadioGroup.ItemIndicator />
 									<RadioGroup.ItemText>Yes</RadioGroup.ItemText>
 								</RadioGroup.Item>
 								<RadioGroup.Item value="no">
-									<RadioGroup.ItemHiddenInput />
+									<RadioGroup.ItemHiddenInput name="" />
 									<RadioGroup.ItemIndicator />
 									<RadioGroup.ItemText>No</RadioGroup.ItemText>
 								</RadioGroup.Item>
