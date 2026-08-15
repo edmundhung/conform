@@ -7,7 +7,7 @@ import {
 	type InferCustomFieldMetadata,
 	type InferCustomFormMetadata,
 } from '@conform-to/react/future';
-import { getConstraints } from '@conform-to/zod/v3/future';
+import { getConstraints } from '@conform-to/zod/v4/future';
 import type {
 	DatePicker,
 	ComboBox,
@@ -34,6 +34,7 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
 					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-invalid': metadata.ariaInvalid,
 				} satisfies Partial<React.ComponentProps<'input'>>;
 			},
 			get textareaProps() {
@@ -42,6 +43,7 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
 					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-invalid': metadata.ariaInvalid,
 				} satisfies Partial<React.ComponentProps<'textarea'>>;
 			},
 			get datePickerProps() {
@@ -50,6 +52,7 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
 					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-invalid': metadata.ariaInvalid,
 				} satisfies Partial<React.ComponentProps<typeof DatePicker>>;
 			},
 			get comboBoxProps() {
@@ -58,6 +61,7 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
 					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-invalid': metadata.ariaInvalid,
 				} satisfies Partial<React.ComponentProps<typeof ComboBox>>;
 			},
 			get radioGroupProps() {
@@ -66,6 +70,8 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
 					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-labelledby': `${metadata.id}-label`,
 				} satisfies Partial<React.ComponentProps<typeof RadioGroup>>;
 			},
 			get checkboxProps() {
@@ -75,6 +81,7 @@ const forms = configureForms({
 					value: 'on',
 					defaultChecked: metadata.defaultChecked,
 					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-invalid': metadata.ariaInvalid,
 				} satisfies Partial<React.ComponentProps<typeof Checkbox>>;
 			},
 			get selectProps() {
@@ -83,6 +90,7 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
 					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-invalid': metadata.ariaInvalid,
 				} satisfies Partial<React.ComponentProps<typeof Select>>;
 			},
 			get sliderProps() {
@@ -91,6 +99,8 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
 					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-labelledby': `${metadata.id}-label`,
 				} satisfies Partial<React.ComponentProps<typeof Slider>>;
 			},
 			get switchProps() {
@@ -100,22 +110,27 @@ const forms = configureForms({
 					value: 'on',
 					defaultChecked: metadata.defaultChecked,
 					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-invalid': metadata.ariaInvalid,
 				} satisfies Partial<React.ComponentProps<typeof Switch>>;
 			},
 			get singleToggleGroupProps() {
 				return {
+					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
-					'aria-labelledby': metadata.id,
+					'aria-labelledby': `${metadata.id}-label`,
 					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-invalid': metadata.ariaInvalid,
 				} satisfies Partial<React.ComponentProps<typeof SingleToggleGroup>>;
 			},
 			get multiToggleGroupProps() {
 				return {
+					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultOptions,
-					'aria-labelledby': metadata.id,
+					'aria-labelledby': `${metadata.id}-label`,
 					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-invalid': metadata.ariaInvalid,
 				} satisfies Partial<React.ComponentProps<typeof MultiToggleGroup>>;
 			},
 			get inputOTPProps() {
@@ -124,6 +139,7 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
 					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-invalid': metadata.ariaInvalid,
 				} satisfies Partial<React.ComponentProps<typeof InputOTP>>;
 			},
 			get teamMemberSelectProps() {
@@ -132,6 +148,7 @@ const forms = configureForms({
 					defaultValue: metadata.defaultPayload,
 					'aria-labelledby': metadata.id,
 					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-invalid': metadata.ariaInvalid,
 				} satisfies Partial<React.ComponentProps<typeof TeamMemberSelect>>;
 			},
 		};

@@ -1,12 +1,13 @@
-import { coerceFormValue } from '@conform-to/zod/v3/future';
+import { coerceFormValue } from '@conform-to/zod/v4/future';
 import { useState } from 'react';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import {
 	Field,
 	FieldError,
 	Button,
-	Label,
-	Input,
+	FieldLabel,
+	InputGroup,
+	InputGroupInput,
 	Textarea,
 	DatePicker,
 	ComboBox,
@@ -72,7 +73,7 @@ export default function App() {
 
 	return (
 		<div className="flex flex-col gap-6 p-10">
-			<h1 className="text-2xl">Shadcn UI Example</h1>
+			<h1 className="text-2xl">shadcn/ui with Radix</h1>
 			<form
 				{...form.props}
 				method="POST"
@@ -80,20 +81,22 @@ export default function App() {
 				className="flex flex-col gap-4 items-start"
 			>
 				<Field>
-					<Label htmlFor={fields.name.id}>Name</Label>
-					<Input
-						type="text"
-						{...fields.name.inputProps}
-						// Equivalent to:
-						// id={fields.name.id}
-						// name={fields.name.name}
-						// defaultValue={fields.name.defaultValue}
-						// aria-describedby={fields.name.ariaDescribedBy}
-					/>
+					<FieldLabel htmlFor={fields.name.id}>Name</FieldLabel>
+					<InputGroup>
+						<InputGroupInput
+							type="text"
+							{...fields.name.inputProps}
+							// Equivalent to:
+							// id={fields.name.id}
+							// name={fields.name.name}
+							// defaultValue={fields.name.defaultValue}
+							// aria-describedby={fields.name.ariaDescribedBy}
+						/>
+					</InputGroup>
 					<FieldError id={fields.name.errorId}>{fields.name.errors}</FieldError>
 				</Field>
 				<Field>
-					<Label htmlFor={fields.dateOfBirth.id}>Date of Birth</Label>
+					<FieldLabel htmlFor={fields.dateOfBirth.id}>Date of Birth</FieldLabel>
 					<DatePicker
 						{...fields.dateOfBirth.datePickerProps}
 						// Equivalent to:
@@ -107,7 +110,7 @@ export default function App() {
 					</FieldError>
 				</Field>
 				<Field>
-					<Label htmlFor={fields.country.id}>Country</Label>
+					<FieldLabel htmlFor={fields.country.id}>Country</FieldLabel>
 					<ComboBox
 						{...fields.country.comboBoxProps}
 						// Equivalent to:
@@ -121,7 +124,7 @@ export default function App() {
 					</FieldError>
 				</Field>
 				<Field>
-					<Label htmlFor={fields.gender.id}>Gender</Label>
+					<FieldLabel id={`${fields.gender.id}-label`}>Gender</FieldLabel>
 					<RadioGroup
 						items={[
 							{ value: 'male', label: 'male' },
@@ -134,6 +137,7 @@ export default function App() {
 						// id={fields.gender.id}
 						// name={fields.gender.name}
 						// defaultValue={fields.gender.defaultValue}
+						// aria-labelledby={`${fields.gender.id}-label`}
 						// aria-describedby={fields.gender.ariaDescribedBy}
 					/>
 					<FieldError id={fields.gender.errorId}>
@@ -151,14 +155,16 @@ export default function App() {
 							// defaultChecked={fields.agreeToTerms.defaultChecked}
 							// aria-describedby={fields.agreeToTerms.ariaDescribedBy}
 						/>
-						<Label htmlFor={fields.agreeToTerms.id}>Agree to terms</Label>
+						<FieldLabel htmlFor={fields.agreeToTerms.id}>
+							Agree to terms
+						</FieldLabel>
 					</div>
 					<FieldError id={fields.agreeToTerms.errorId}>
 						{fields.agreeToTerms.errors}
 					</FieldError>
 				</Field>
 				<Field>
-					<Label htmlFor={fields.job.id}>Job</Label>
+					<FieldLabel htmlFor={fields.job.id}>Job</FieldLabel>
 					<Select
 						placeholder="Select a job"
 						items={[
@@ -176,20 +182,23 @@ export default function App() {
 					<FieldError id={fields.job.errorId}>{fields.job.errors}</FieldError>
 				</Field>
 				<Field>
-					<Label htmlFor={fields.age.id}>Age</Label>
+					<FieldLabel id={`${fields.age.id}-label`} htmlFor={fields.age.id}>
+						Age
+					</FieldLabel>
 					<Slider
 						{...fields.age.sliderProps}
 						// Equivalent to:
 						// id={fields.age.id}
 						// name={fields.age.name}
 						// defaultValue={fields.age.defaultValue}
+						// aria-labelledby={`${fields.age.id}-label`}
 						// aria-describedby={fields.age.ariaDescribedBy}
 					/>
 					<FieldError id={fields.age.errorId}>{fields.age.errors}</FieldError>
 				</Field>
 				<Field>
 					<div className="flex items-center gap-2">
-						<Label htmlFor={fields.isAdult.id}>Is adult</Label>
+						<FieldLabel htmlFor={fields.isAdult.id}>Is adult</FieldLabel>
 						<Switch
 							{...fields.isAdult.switchProps}
 							// Equivalent to:
@@ -205,7 +214,7 @@ export default function App() {
 					</FieldError>
 				</Field>
 				<Field>
-					<Label htmlFor={fields.description.id}>Description</Label>
+					<FieldLabel htmlFor={fields.description.id}>Description</FieldLabel>
 					<Textarea
 						{...fields.description.textareaProps}
 						// Equivalent to:
@@ -219,7 +228,9 @@ export default function App() {
 					</FieldError>
 				</Field>
 				<Field>
-					<Label id={fields.accountType.id}>Account type</Label>
+					<FieldLabel id={`${fields.accountType.id}-label`}>
+						Account type
+					</FieldLabel>
 					<SingleToggleGroup
 						items={[
 							{ value: 'personal', label: 'Personal' },
@@ -227,9 +238,10 @@ export default function App() {
 						]}
 						{...fields.accountType.singleToggleGroupProps}
 						// Equivalent to:
+						// id={fields.accountType.id}
 						// name={fields.accountType.name}
 						// defaultValue={fields.accountType.defaultValue}
-						// aria-labelledby={fields.accountType.id}
+						// aria-labelledby={`${fields.accountType.id}-label`}
 						// aria-describedby={fields.accountType.ariaDescribedBy}
 					/>
 					<FieldError id={fields.accountType.errorId}>
@@ -237,7 +249,9 @@ export default function App() {
 					</FieldError>
 				</Field>
 				<Field>
-					<Label id={fields.categories.id}>Categories</Label>
+					<FieldLabel id={`${fields.categories.id}-label`}>
+						Categories
+					</FieldLabel>
 					<MultiToggleGroup
 						items={[
 							{ value: 'blog', label: 'Blog' },
@@ -246,9 +260,10 @@ export default function App() {
 						]}
 						{...fields.categories.multiToggleGroupProps}
 						// Equivalent to:
+						// id={fields.categories.id}
 						// name={fields.categories.name}
 						// defaultValue={fields.categories.defaultOptions}
-						// aria-labelledby={fields.categories.id}
+						// aria-labelledby={`${fields.categories.id}-label`}
 						// aria-describedby={fields.categories.ariaDescribedBy}
 					/>
 					<FieldError id={fields.categories.errorId}>
@@ -256,7 +271,7 @@ export default function App() {
 					</FieldError>
 				</Field>
 				<Field role="group" aria-labelledby={fields.interests.id}>
-					<Label id={fields.interests.id}>Interests</Label>
+					<FieldLabel id={fields.interests.id}>Interests</FieldLabel>
 					{[
 						{ value: 'react', name: 'React' },
 						{ value: 'vue', name: 'Vue' },
@@ -288,7 +303,7 @@ export default function App() {
 					</FieldError>
 				</Field>
 				<Field>
-					<Label id={fields.members.id}>Team Members</Label>
+					<FieldLabel id={fields.members.id}>Team Members</FieldLabel>
 					<TeamMemberSelect
 						{...fields.members.teamMemberSelectProps}
 						// Equivalent to:
@@ -346,7 +361,7 @@ export default function App() {
 					</FieldError>
 				</Field>
 				<Field>
-					<Label htmlFor={fields.code.id}>Code</Label>
+					<FieldLabel htmlFor={fields.code.id}>Code</FieldLabel>
 					<InputOTP
 						length={6}
 						{...fields.code.inputOTPProps}

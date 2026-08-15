@@ -6,6 +6,9 @@ import {
 	X as XIcon,
 } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { BaseControl, useControl } from '@conform-to/react/future';
+import { coerceStructure } from '@conform-to/zod/v4/future';
+import { z } from 'zod/v4';
 import { Button } from './ui/button';
 import { Calendar } from './ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -42,56 +45,29 @@ import { Switch as ShadcnSwitch } from './ui/switch';
 import { Slider as ShadcnSlider } from './ui/slider';
 import { Checkbox as ShadcnCheckbox } from './ui/checkbox';
 import { cn } from '../lib/utils';
-import { BaseControl, useControl } from '@conform-to/react/future';
-import { Label } from './ui/label';
+import { Field, FieldDescription, FieldError, FieldLabel } from './ui/field';
 import { Input } from './ui/input';
+import {
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+	InputGroupText,
+	InputGroupTextarea,
+} from './ui/input-group';
+import { NativeSelect, NativeSelectOption } from './ui/native-select';
 import { Textarea } from './ui/textarea';
-import { z } from 'zod';
-import { coerceStructure } from '@conform-to/zod/v3/future';
-
-type FieldProps = {
-	children: React.ReactNode;
-	role?: string;
-	['aria-labelledby']?: string;
-};
-
-function Field({
-	role,
-	children,
-	'aria-labelledby': ariaLabelledby,
-}: FieldProps) {
-	return (
-		<div
-			className="flex flex-col gap-2"
-			role={role}
-			aria-labelledby={ariaLabelledby}
-		>
-			{children}
-		</div>
-	);
-}
-
-export type FieldErrorProps = {
-	id?: string;
-	children: React.ReactNode;
-};
-
-function FieldError({ id, children }: FieldErrorProps) {
-	return (
-		<div id={id} className="text-sm text-red-600">
-			{children}
-		</div>
-	);
-}
 
 export type DatePickerProps = {
 	id?: string;
 	name: string;
 	defaultValue?: string;
+	['aria-labelledby']?: string;
 	['aria-describedby']?: string;
+	['aria-invalid']?: boolean;
 };
 
 function DatePicker({ name, defaultValue, ...props }: DatePickerProps) {
+	const [open, setOpen] = useState(false);
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const control = useControl({
 		defaultValue,
@@ -102,9 +78,15 @@ function DatePicker({ name, defaultValue, ...props }: DatePickerProps) {
 
 	return (
 		<>
-			<input ref={control.register} name={name} hidden />
+			<BaseControl
+				ref={control.register}
+				name={name}
+				defaultValue={control.defaultValue ?? ''}
+			/>
 			<Popover
+				open={open}
 				onOpenChange={(open) => {
+					setOpen(open);
 					if (!open) {
 						control.blur();
 					}
@@ -114,15 +96,15 @@ function DatePicker({ name, defaultValue, ...props }: DatePickerProps) {
 					<Button
 						{...props}
 						ref={triggerRef}
-						variant={'outline'}
+						variant="outline"
 						className={cn(
-							'w-64 justify-start text-left font-normal focus:ring-2 focus:ring-stone-950 focus:ring-offset-2',
+							'w-64 justify-start text-left font-normal',
 							!control.value && 'text-muted-foreground',
 						)}
 					>
 						<CalendarIcon className="mr-2 h-4 w-4" />
 						{control.value ? (
-							format(control.value, 'PPP')
+							format(new Date(control.value), 'PPP')
 						) : (
 							<span>Pick a date</span>
 						)}
@@ -131,9 +113,13 @@ function DatePicker({ name, defaultValue, ...props }: DatePickerProps) {
 				<PopoverContent className="w-auto p-0">
 					<Calendar
 						mode="single"
-						selected={new Date(control.value ?? '')}
-						onSelect={(value) => control.change(value?.toISOString() ?? '')}
-						initialFocus
+						selected={control.value ? new Date(control.value) : undefined}
+						onSelect={(value) => {
+							control.change(value?.toISOString() ?? '');
+							setOpen(false);
+							control.blur();
+						}}
+						autoFocus
 					/>
 				</PopoverContent>
 			</Popover>
@@ -158,6 +144,7 @@ export type ComboboxProps = {
 	name: string;
 	defaultValue?: string;
 	['aria-describedby']?: string;
+	['aria-invalid']?: boolean;
 };
 
 function ComboBox({ name, defaultValue, ...props }: ComboboxProps) {
@@ -171,7 +158,11 @@ function ComboBox({ name, defaultValue, ...props }: ComboboxProps) {
 
 	return (
 		<>
-			<input ref={control.register} name={name} hidden />
+			<BaseControl
+				ref={control.register}
+				name={name}
+				defaultValue={control.defaultValue ?? ''}
+			/>
 			<Popover
 				onOpenChange={(open) => {
 					if (!open) {
@@ -188,7 +179,6 @@ function ComboBox({ name, defaultValue, ...props }: ComboboxProps) {
 						className={cn(
 							'w-[200px] justify-between',
 							!control.value && 'text-muted-foreground',
-							'focus:ring-2 focus:ring-stone-950 focus:ring-offset-2',
 						)}
 					>
 						{control.value
@@ -237,7 +227,9 @@ export type RadioGroupProps = {
 	name: string;
 	items: Array<{ value: string; label: string }>;
 	defaultValue?: string;
+	['aria-labelledby']?: string;
 	['aria-describedby']?: string;
+	['aria-invalid']?: boolean;
 };
 
 function RadioGroup({
@@ -245,35 +237,50 @@ function RadioGroup({
 	name,
 	items,
 	defaultValue,
+	['aria-labelledby']: ariaLabelledBy,
 	['aria-describedby']: ariaDescribedBy,
+	['aria-invalid']: ariaInvalid,
 }: RadioGroupProps) {
-	const radioGroupRef = useRef<React.ElementRef<typeof ShadcnRadioGroup>>(null);
+	const radioGroupRef =
+		useRef<React.ComponentRef<typeof ShadcnRadioGroup>>(null);
 	const control = useControl({
 		defaultValue,
 		onFocus() {
-			radioGroupRef.current?.focus();
+			const item =
+				radioGroupRef.current?.querySelector<HTMLElement>(
+					'[data-state="checked"]',
+				) ??
+				radioGroupRef.current?.querySelector<HTMLElement>('[role="radio"]');
+			item?.focus();
 		},
 	});
 
 	return (
 		<>
-			<input ref={control.register} name={name} hidden />
+			<BaseControl
+				ref={control.register}
+				name={name}
+				defaultValue={control.defaultValue ?? ''}
+			/>
 			<ShadcnRadioGroup
+				id={id}
+				aria-labelledby={ariaLabelledBy}
+				aria-describedby={ariaDescribedBy}
+				aria-invalid={ariaInvalid}
 				ref={radioGroupRef}
 				className="flex items-center gap-4"
 				value={control.value ?? ''}
 				onValueChange={(value) => control.change(value)}
-				onBlur={() => control.blur()}
-				aria-labelledby={id}
+				onBlur={(event) => {
+					if (!event.currentTarget.contains(event.relatedTarget)) {
+						control.blur();
+					}
+				}}
 			>
 				{items.map((item) => {
 					return (
 						<div className="flex items-center gap-2" key={item.value}>
-							<RadioGroupItem
-								id={`${id}-${item.value}`}
-								value={item.value}
-								aria-describedby={ariaDescribedBy}
-							/>
+							<RadioGroupItem id={`${id}-${item.value}`} value={item.value} />
 							<label htmlFor={`${id}-${item.value}`}>{item.label}</label>
 						</div>
 					);
@@ -289,10 +296,11 @@ export type CheckboxProps = {
 	value?: string;
 	defaultChecked?: boolean;
 	['aria-describedby']?: string;
+	['aria-invalid']?: boolean;
 };
 
 function Checkbox({ name, value, defaultChecked, ...props }: CheckboxProps) {
-	const checkboxRef = useRef<React.ElementRef<typeof ShadcnCheckbox>>(null);
+	const checkboxRef = useRef<React.ComponentRef<typeof ShadcnCheckbox>>(null);
 	const control = useControl({
 		defaultChecked,
 		value,
@@ -303,7 +311,13 @@ function Checkbox({ name, value, defaultChecked, ...props }: CheckboxProps) {
 
 	return (
 		<>
-			<input type="checkbox" ref={control.register} name={name} hidden />
+			<BaseControl
+				type="checkbox"
+				ref={control.register}
+				name={name}
+				value={value ?? 'on'}
+				defaultChecked={defaultChecked ?? false}
+			/>
 			<ShadcnCheckbox
 				{...props}
 				ref={checkboxRef}
@@ -312,7 +326,6 @@ function Checkbox({ name, value, defaultChecked, ...props }: CheckboxProps) {
 					control.change(checked === 'indeterminate' ? false : checked)
 				}
 				onBlur={() => control.blur()}
-				className="focus:ring-stone-950 focus:ring-2 focus:ring-offset-2"
 			/>
 		</>
 	);
@@ -325,6 +338,7 @@ export type SelectProps = {
 	placeholder: string;
 	defaultValue?: string;
 	['aria-describedby']?: string;
+	['aria-invalid']?: boolean;
 };
 
 function Select({
@@ -334,7 +348,7 @@ function Select({
 	defaultValue,
 	...props
 }: SelectProps) {
-	const selectRef = useRef<React.ElementRef<typeof SelectTrigger>>(null);
+	const selectRef = useRef<React.ComponentRef<typeof SelectTrigger>>(null);
 	const control = useControl({
 		defaultValue,
 		onFocus() {
@@ -344,9 +358,13 @@ function Select({
 
 	return (
 		<>
-			<input name={name} ref={control.register} hidden />
+			<BaseControl
+				ref={control.register}
+				name={name}
+				defaultValue={control.defaultValue ?? ''}
+			/>
 			<ShadcnSelect
-				value={control.value}
+				value={control.value ?? ''}
 				onValueChange={(value) => control.change(value)}
 				onOpenChange={(open) => {
 					if (!open) {
@@ -375,11 +393,21 @@ export type SliderProps = {
 	id?: string;
 	name: string;
 	defaultValue?: string;
+	['aria-labelledby']?: string;
 	['aria-describedby']?: string;
+	['aria-invalid']?: boolean;
 };
 
-function Slider({ name, defaultValue, ...props }: SliderProps) {
-	const sliderRef = useRef<React.ElementRef<typeof ShadcnSlider>>(null);
+function Slider({
+	id,
+	name,
+	defaultValue,
+	['aria-labelledby']: ariaLabelledBy,
+	'aria-describedby': ariaDescribedBy,
+	'aria-invalid': ariaInvalid,
+	...props
+}: SliderProps) {
+	const sliderRef = useRef<React.ComponentRef<typeof ShadcnSlider>>(null);
 	const control = useControl({
 		defaultValue,
 		onFocus() {
@@ -392,11 +420,21 @@ function Slider({ name, defaultValue, ...props }: SliderProps) {
 
 	return (
 		<>
-			<input name={name} ref={control.register} hidden />
+			<BaseControl
+				ref={control.register}
+				name={name}
+				defaultValue={control.defaultValue ?? ''}
+			/>
 			<div className="flex items-center gap-4">
 				<ShadcnSlider
 					{...props}
 					ref={sliderRef}
+					thumbProps={{
+						id,
+						'aria-labelledby': ariaLabelledBy,
+						'aria-describedby': ariaDescribedBy,
+						'aria-invalid': ariaInvalid,
+					}}
 					step={1}
 					value={[control.value ? parseFloat(control.value) : 0]}
 					onValueChange={(numbers) => {
@@ -417,10 +455,11 @@ export type SwitchProps = {
 	value?: string;
 	defaultChecked?: boolean;
 	['aria-describedby']?: string;
+	['aria-invalid']?: boolean;
 };
 
 function Switch({ name, value, defaultChecked, ...props }: SwitchProps) {
-	const switchRef = useRef<React.ElementRef<typeof ShadcnSwitch>>(null);
+	const switchRef = useRef<React.ComponentRef<typeof ShadcnSwitch>>(null);
 	const control = useControl({
 		defaultChecked,
 		value,
@@ -431,62 +470,82 @@ function Switch({ name, value, defaultChecked, ...props }: SwitchProps) {
 
 	return (
 		<>
-			<input type="checkbox" name={name} ref={control.register} hidden />
+			<BaseControl
+				type="checkbox"
+				ref={control.register}
+				name={name}
+				value={value ?? 'on'}
+				defaultChecked={defaultChecked ?? false}
+			/>
 			<ShadcnSwitch
 				{...props}
 				ref={switchRef}
 				checked={control.checked}
 				onCheckedChange={(checked) => control.change(checked)}
 				onBlur={() => control.blur()}
-				className="focus:ring-stone-950 focus:ring-2 focus:ring-offset-2"
 			/>
 		</>
 	);
 }
 
 export type SingleToggleGroupProps = {
+	id?: string;
 	name: string;
 	items: Array<{ value: string; label: string }>;
 	defaultValue?: string;
 	['aria-labelledby']?: string;
 	['aria-describedby']?: string;
+	['aria-invalid']?: boolean;
 };
 
 function SingleToggleGroup({
+	id,
 	name,
 	items,
 	defaultValue,
 	['aria-labelledby']: ariaLabelledby,
 	['aria-describedby']: ariaDescribedBy,
+	['aria-invalid']: ariaInvalid,
 }: SingleToggleGroupProps) {
 	const toggleGroupRef =
-		useRef<React.ElementRef<typeof ShadcnToggleGroup>>(null);
+		useRef<React.ComponentRef<typeof ShadcnToggleGroup>>(null);
 	const control = useControl({
 		defaultValue,
 		onFocus() {
-			toggleGroupRef.current?.focus();
+			const item =
+				toggleGroupRef.current?.querySelector<HTMLElement>(
+					'[data-state="on"]',
+				) ?? toggleGroupRef.current?.querySelector<HTMLElement>('button');
+			item?.focus();
 		},
 	});
 
 	return (
 		<>
-			<input name={name} ref={control.register} hidden />
+			<BaseControl
+				ref={control.register}
+				name={name}
+				defaultValue={control.defaultValue ?? ''}
+			/>
 			<ShadcnToggleGroup
+				id={id}
+				aria-labelledby={ariaLabelledby}
+				aria-describedby={ariaDescribedBy}
+				aria-invalid={ariaInvalid}
 				type="single"
 				ref={toggleGroupRef}
-				value={control.value}
+				value={control.value ?? ''}
 				onValueChange={(value) => {
 					control.change(value);
 				}}
-				onBlur={() => control.blur()}
-				aria-labelledby={ariaLabelledby}
+				onBlur={(event) => {
+					if (!event.currentTarget.contains(event.relatedTarget)) {
+						control.blur();
+					}
+				}}
 			>
 				{items.map((item) => (
-					<ToggleGroupItem
-						key={item.value}
-						value={item.value}
-						aria-describedby={ariaDescribedBy}
-					>
+					<ToggleGroupItem key={item.value} value={item.value}>
 						{item.label}
 					</ToggleGroupItem>
 				))}
@@ -496,46 +555,63 @@ function SingleToggleGroup({
 }
 
 export type MultiToggleGroupProps = {
+	id?: string;
 	name: string;
 	items: Array<{ value: string; label: string }>;
 	defaultValue?: string[];
 	['aria-labelledby']?: string;
 	['aria-describedby']?: string;
+	['aria-invalid']?: boolean;
 };
 
 function MultiToggleGroup({
+	id,
 	name,
 	items,
 	defaultValue,
 	['aria-labelledby']: ariaLabelledby,
 	['aria-describedby']: ariaDescribedBy,
+	['aria-invalid']: ariaInvalid,
 }: MultiToggleGroupProps) {
 	const toggleGroupRef =
-		useRef<React.ElementRef<typeof ShadcnToggleGroup>>(null);
+		useRef<React.ComponentRef<typeof ShadcnToggleGroup>>(null);
 	const control = useControl({
 		defaultValue,
 		onFocus() {
-			toggleGroupRef.current?.focus();
+			const item =
+				toggleGroupRef.current?.querySelector<HTMLElement>(
+					'[data-state="on"]',
+				) ?? toggleGroupRef.current?.querySelector<HTMLElement>('button');
+			item?.focus();
 		},
 	});
 
 	return (
 		<>
-			<select multiple name={name} ref={control.register} hidden />
+			<BaseControl
+				type="select"
+				multiple
+				ref={control.register}
+				name={name}
+				defaultValue={control.defaultValue ?? []}
+			/>
 			<ShadcnToggleGroup
+				id={id}
+				aria-labelledby={ariaLabelledby}
+				aria-describedby={ariaDescribedBy}
+				aria-invalid={ariaInvalid}
 				type="multiple"
 				ref={toggleGroupRef}
 				value={control.options ?? []}
 				onValueChange={(value) => control.change(value)}
-				onBlur={() => control.blur()}
-				aria-labelledby={ariaLabelledby}
+				onBlur={(event) => {
+					if (!event.currentTarget.contains(event.relatedTarget)) {
+						control.blur();
+					}
+				}}
 			>
 				{items.map((item) => (
-					<ToggleGroupItem
-						key={item.value}
-						value={item.value}
-						aria-describedby={ariaDescribedBy}
-					>
+					<ToggleGroupItem key={item.value} value={item.value}>
 						{item.label}
 					</ToggleGroupItem>
 				))}
@@ -551,6 +627,7 @@ export type InputOTPProps = {
 	pattern?: string;
 	defaultValue?: string;
 	['aria-describedby']?: string;
+	['aria-invalid']?: boolean;
 };
 
 function InputOTP({
@@ -560,8 +637,9 @@ function InputOTP({
 	pattern = REGEXP_ONLY_DIGITS_AND_CHARS,
 	defaultValue,
 	'aria-describedby': ariaDescribedBy,
+	'aria-invalid': ariaInvalid,
 }: InputOTPProps) {
-	const inputOTPRef = useRef<React.ElementRef<typeof ShadcnInputOTP>>(null);
+	const inputOTPRef = useRef<HTMLInputElement>(null);
 	const control = useControl({
 		defaultValue,
 		onFocus() {
@@ -571,20 +649,21 @@ function InputOTP({
 
 	return (
 		<>
-			<input ref={control.register} name={name} hidden />
+			<BaseControl
+				ref={control.register}
+				name={name}
+				defaultValue={control.defaultValue ?? ''}
+			/>
 			<ShadcnInputOTP
 				id={id}
 				ref={inputOTPRef}
 				value={control.value}
 				onChange={(value) => control.change(value)}
-				onBlur={() => {
-					// InputOTP calls the onBlur handler when the input is focused
-					// Which should not happen, so we comment this out for now
-					// control.blur();
-				}}
-				maxLength={6}
+				onBlur={() => control.blur()}
+				maxLength={length}
 				pattern={pattern}
 				aria-describedby={ariaDescribedBy}
+				aria-invalid={ariaInvalid}
 			>
 				<InputOTPGroup>
 					{new Array(length).fill(0).map((_, index) => (
@@ -611,9 +690,11 @@ export type TeamMemberSelectProps = {
 	members: Member[];
 	'aria-labelledby'?: string;
 	'aria-describedby'?: string;
+	'aria-invalid'?: boolean;
 };
 
 const membersSchema = z.array(memberSchema);
+const structuredMembersSchema = coerceStructure(membersSchema);
 
 function TeamMemberSelect({
 	name,
@@ -622,11 +703,12 @@ function TeamMemberSelect({
 	...props
 }: TeamMemberSelectProps) {
 	const [open, setOpen] = useState(false);
+	const [roleFilter, setRoleFilter] = useState<Member['role'] | 'all'>('all');
 	const triggerRef = useRef<HTMLDivElement>(null);
 	const control = useControl({
 		defaultValue,
 		parse(payload) {
-			return coerceStructure(membersSchema).parse(payload);
+			return structuredMembersSchema.parse(payload);
 		},
 		onFocus() {
 			triggerRef.current?.focus();
@@ -634,6 +716,10 @@ function TeamMemberSelect({
 	});
 
 	const selected: Member[] = control.payload ?? [];
+	const filteredMembers =
+		roleFilter === 'all'
+			? members
+			: members.filter((member) => member.role === roleFilter);
 
 	function toggle(member: Member) {
 		const exists = selected.some((m) => m.id === member.id);
@@ -667,31 +753,30 @@ function TeamMemberSelect({
 				}}
 			>
 				<PopoverTrigger asChild>
-					<div
+					<InputGroup
 						{...props}
 						ref={triggerRef}
 						role="combobox"
 						tabIndex={0}
 						aria-expanded={open}
 						className={cn(
-							'flex min-h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm cursor-pointer',
-							'focus:outline-none focus:ring-2 focus:ring-stone-950 focus:ring-offset-2',
+							'h-auto min-h-8 cursor-pointer py-1.5',
 							selected.length === 0 && 'text-muted-foreground',
 						)}
 					>
-						{selected.length === 0 ? (
-							<span>Select team members</span>
-						) : (
-							<div className="flex flex-wrap gap-1">
-								{selected.map((member) => (
+						<InputGroupText className="flex-1 flex-wrap px-2.5">
+							{selected.length === 0 ? (
+								<span>Select team members</span>
+							) : (
+								selected.map((member) => (
 									<span
 										key={member.id}
-										className="inline-flex items-center gap-1 rounded bg-stone-100 px-2 py-0.5 text-xs text-foreground"
+										className="inline-flex items-center gap-1 rounded-sm bg-muted px-2 py-0.5 text-xs text-foreground"
 									>
 										{member.name}
 										<button
 											type="button"
-											className="hover:bg-stone-200 rounded-sm"
+											className="rounded-sm hover:bg-accent"
 											onClick={(e) => {
 												e.stopPropagation();
 												remove(member.id);
@@ -701,19 +786,44 @@ function TeamMemberSelect({
 											<XIcon className="h-3 w-3" />
 										</button>
 									</span>
-								))}
-							</div>
-						)}
-						<ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-					</div>
+								))
+							)}
+						</InputGroupText>
+						<InputGroupAddon align="inline-end">
+							<ChevronsUpDownIcon />
+						</InputGroupAddon>
+					</InputGroup>
 				</PopoverTrigger>
 				<PopoverContent className="w-[320px] p-0">
 					<Command>
+						<div className="border-b p-2">
+							<NativeSelect
+								aria-label="Filter members by role"
+								className="w-full"
+								value={roleFilter}
+								onChange={(event) =>
+									setRoleFilter(
+										event.currentTarget.value as Member['role'] | 'all',
+									)
+								}
+							>
+								<NativeSelectOption value="all">All roles</NativeSelectOption>
+								<NativeSelectOption value="developer">
+									Developers
+								</NativeSelectOption>
+								<NativeSelectOption value="designer">
+									Designers
+								</NativeSelectOption>
+								<NativeSelectOption value="manager">
+									Managers
+								</NativeSelectOption>
+							</NativeSelect>
+						</div>
 						<CommandInput placeholder="Search members..." />
 						<CommandList>
 							<CommandEmpty>No members found.</CommandEmpty>
 							<CommandGroup>
-								{members.map((member) => {
+								{filteredMembers.map((member) => {
 									const isSelected = selected.some((m) => m.id === member.id);
 									return (
 										<CommandItem
@@ -747,10 +857,16 @@ function TeamMemberSelect({
 
 export {
 	Field,
+	FieldDescription,
 	FieldError,
-	Label,
+	FieldLabel,
 	Button,
 	Input,
+	InputGroup,
+	InputGroupInput,
+	InputGroupTextarea,
+	NativeSelect,
+	NativeSelectOption,
 	Textarea,
 	DatePicker,
 	ComboBox,
