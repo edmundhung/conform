@@ -2,7 +2,7 @@
 
 > This guide focuses on behavior specific to Base UI. See [Integrating with UI Libraries](../../docs/integration/ui-libraries.md) for the general concept and the [`useControl`](../../docs/api/react/future/useControl.md) API.
 
-[Base UI](https://base-ui.com/) provides unstyled, accessible React primitives. This example integrates Conform directly with `@base-ui/react`. Unlike [`examples/shadcn-base-ui`](../shadcn-base-ui), it does not use shadcn/ui components, generated registries, or copied shadcn code.
+[Base UI](https://base-ui.com/) provides unstyled, accessible React primitives. This example integrates Conform directly with `@base-ui/react`. Unlike `examples/shadcn-base-ui`, it does not use shadcn/ui components, generated registries, or copied shadcn code.
 
 The example keeps a native `<form {...form.props}>` and uses Conform as the only source of validation and form state. It covers Input, textarea, Checkbox, CheckboxGroup, RadioGroup, Select, Combobox, NumberField, Slider, and Switch.
 

@@ -410,12 +410,12 @@ export function SliderField(props: StringFieldProps) {
 	const { id, label, invalid, name, defaultValue } = props;
 	const thumbInputRef = useRef<HTMLInputElement>(null);
 	const control = useControl({
-		defaultValue: defaultValue ?? '50',
+		defaultValue: defaultValue || '50',
 		onFocus() {
 			thumbInputRef.current?.focus();
 		},
 	});
-	const value = Number(control.value ?? 50);
+	const value = Number(control.value || 50);
 
 	return (
 		<Field.Root className="field" name={name} invalid={invalid}>

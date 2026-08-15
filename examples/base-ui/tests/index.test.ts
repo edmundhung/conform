@@ -203,7 +203,9 @@ test.describe('base-ui', () => {
 		});
 
 		test('coerces NumberField and controls Slider values', async ({ page }) => {
-			const form = await getForm(page);
+			const form = await getForm(page, new URLSearchParams({ budget: '' }));
+
+			await expect(form.budget).toHaveValue('50');
 
 			await form.quantity.fill('');
 			await form.quantity.fill('3');
