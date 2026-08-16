@@ -24,6 +24,7 @@ const forms = configureForms({
 					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					required: metadata.required,
 					error: !metadata.valid,
 					helperText: metadata.errors,
 				} satisfies Partial<React.ComponentProps<typeof TextField>>;
@@ -33,6 +34,7 @@ const forms = configureForms({
 					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					required: metadata.required,
 					error: metadata.errors,
 					'aria-invalid': metadata.ariaInvalid,
 					'aria-describedby': metadata.ariaDescribedBy,
@@ -43,6 +45,7 @@ const forms = configureForms({
 					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					required: metadata.required,
 					error: !metadata.valid,
 					helperText: metadata.errors,
 					'aria-invalid': metadata.ariaInvalid,
@@ -54,6 +57,7 @@ const forms = configureForms({
 					name: metadata.name,
 					value: 'on',
 					defaultChecked: metadata.defaultChecked,
+					required: metadata.required,
 					slotProps: {
 						input: {
 							id: metadata.id,
@@ -69,6 +73,7 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
 					'aria-invalid': metadata.ariaInvalid,
+					'aria-required': metadata.required,
 					'aria-describedby': metadata.ariaDescribedBy,
 					'aria-labelledby': `${metadata.id}-label`,
 				} satisfies Partial<React.ComponentProps<typeof RadioGroup>>;
@@ -78,6 +83,7 @@ const forms = configureForms({
 					name: metadata.name,
 					value: 'on',
 					defaultChecked: metadata.defaultChecked,
+					required: metadata.required,
 					slotProps: {
 						input: {
 							id: metadata.id,
@@ -92,6 +98,7 @@ const forms = configureForms({
 					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					required: metadata.required,
 					'aria-invalid': metadata.ariaInvalid,
 					'aria-describedby': metadata.ariaDescribedBy,
 					'aria-labelledby': `${metadata.id}-label`,
@@ -102,6 +109,7 @@ const forms = configureForms({
 					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					required: metadata.required,
 					'aria-invalid': metadata.ariaInvalid,
 					'aria-describedby': metadata.ariaDescribedBy,
 					'aria-labelledby': `${metadata.id}-label`,

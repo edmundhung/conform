@@ -11,7 +11,6 @@ import {
 	FormHelperText,
 	FormLabel,
 	Radio,
-	MenuItem,
 	TextField,
 	Checkbox,
 	RadioGroup,
@@ -22,18 +21,34 @@ import { Autocomplete, NumberField, Rating, Slider } from './form';
 import { useForm } from './forms';
 
 const schema = coerceFormValue(
-	z.object({
-		email: z.string(),
-		description: z.string(),
-		language: z.string(),
-		movie: z.string(),
-		quantity: z.number().min(10).max(40),
-		subscribe: z.boolean(),
-		active: z.string(),
-		enabled: z.boolean(),
-		score: z.number(),
-		progress: z.number().min(3).max(7),
-	}),
+	z
+		.object({
+			email: z
+				.string({ error: 'Email is required' })
+				.email('Enter a valid email address'),
+			description: z
+				.string({ error: 'Description is required' })
+				.min(10, 'Description must contain at least 10 characters'),
+			language: z.enum(['english', 'german', 'japanese'], {
+				error: 'Choose a language',
+			}),
+			movie: z.enum(['The Godfather', 'Pulp Fiction'], {
+				error: 'Choose a movie',
+			}),
+			quantity: z
+				.number({ error: 'Quantity is required' })
+				.min(10, 'Quantity must be at least 10')
+				.max(40, 'Quantity must be at most 40'),
+			subscribe: z.boolean(),
+			active: z.enum(['yes', 'no'], { error: 'Choose an active state' }),
+			enabled: z.boolean(),
+			score: z.number({ error: 'Choose a score' }),
+			progress: z
+				.number({ error: 'Progress is required' })
+				.min(3, 'Progress must be at least 3')
+				.max(7, 'Progress must be at most 7'),
+		})
+		.strict(),
 );
 
 export default function App() {
@@ -44,29 +59,30 @@ export default function App() {
 		() => new URLSearchParams(window.location.search),
 	);
 	const { form, fields, intent } = useForm(schema, {
+		// The URL is the source of the form's defaults in this client-only example.
 		defaultValue: searchParams,
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 
 			// Demo only - This emulates a GET request with the form data populated in the URL.
 			const url = new URL(document.URL);
-			const searchParams = new URLSearchParams(
+			const nextSearchParams = new URLSearchParams(
 				Array.from(formData).filter(
-					// Skip the file as it is not serializable
+					// Skip files because they cannot be represented in URL search params.
 					(entry): entry is [string, string] => typeof entry[1] === 'string',
 				),
 			);
-			url.search = searchParams.toString();
+			url.search = nextSearchParams.toString();
 			window.history.pushState(null, '', url);
 
-			setSearchParams(searchParams);
+			setSearchParams(nextSearchParams);
 			setSubmittedValue(value);
 		},
 	});
 
 	return (
 		<Container maxWidth="sm">
-			<form {...form.props}>
+			<form {...form.props} onChange={() => setSubmittedValue(null)}>
 				<Stack spacing={4} sx={{ my: 4 }}>
 					<header>
 						<Typography variant="h6" component="h1">
@@ -87,6 +103,7 @@ export default function App() {
 						// id={fields.email.id}
 						// name={fields.email.name}
 						// defaultValue={fields.email.defaultValue}
+						// required={fields.email.required}
 						// error={!fields.email.valid}
 						// helperText={fields.email.errors}
 					/>
@@ -100,6 +117,7 @@ export default function App() {
 						// id={fields.description.id}
 						// name={fields.description.name}
 						// defaultValue={fields.description.defaultValue}
+						// required={fields.description.required}
 						// error={!fields.description.valid}
 						// helperText={fields.description.errors}
 					/>
@@ -107,18 +125,20 @@ export default function App() {
 					<TextField
 						label="Language (Select)"
 						select
+						slotProps={{ select: { native: true } }}
 						{...fields.language.textFieldProps}
 						// Equivalent to:
 						// id={fields.language.id}
 						// name={fields.language.name}
 						// defaultValue={fields.language.defaultValue}
+						// required={fields.language.required}
 						// error={!fields.language.valid}
 						// helperText={fields.language.errors}
 					>
-						<MenuItem value="">Please select</MenuItem>
-						<MenuItem value="english">English</MenuItem>
-						<MenuItem value="german">German</MenuItem>
-						<MenuItem value="japanese">Japanese</MenuItem>
+						<option value="">Please select</option>
+						<option value="english">English</option>
+						<option value="german">German</option>
+						<option value="japanese">Japanese</option>
 					</TextField>
 
 					<Autocomplete
@@ -129,6 +149,7 @@ export default function App() {
 						// id={fields.movie.id}
 						// name={fields.movie.name}
 						// defaultValue={fields.movie.defaultValue}
+						// required={fields.movie.required}
 						// error={fields.movie.errors}
 						// aria-invalid={fields.movie.ariaInvalid}
 						// aria-describedby={fields.movie.ariaDescribedBy}
@@ -143,6 +164,7 @@ export default function App() {
 						// id={fields.quantity.id}
 						// name={fields.quantity.name}
 						// defaultValue={fields.quantity.defaultValue}
+						// required={fields.quantity.required}
 						// error={!fields.quantity.valid}
 						// helperText={fields.quantity.errors}
 						// aria-invalid={fields.quantity.ariaInvalid}
@@ -164,6 +186,7 @@ export default function App() {
 										// name={fields.subscribe.name}
 										// value="on"
 										// defaultChecked={fields.subscribe.defaultChecked}
+										// required={fields.subscribe.required}
 										// slotProps={{ input: {
 										//   id: fields.subscribe.id,
 										//   'aria-invalid': fields.subscribe.ariaInvalid,
@@ -189,6 +212,7 @@ export default function App() {
 							// id={fields.active.id}
 							// name={fields.active.name}
 							// defaultValue={fields.active.defaultValue}
+							// aria-required={fields.active.required}
 							// aria-invalid={fields.active.ariaInvalid}
 							// aria-describedby={fields.active.ariaDescribedBy}
 							// aria-labelledby={`${fields.active.id}-label`}
@@ -216,6 +240,7 @@ export default function App() {
 										// name={fields.enabled.name}
 										// value="on"
 										// defaultChecked={fields.enabled.defaultChecked}
+										// required={fields.enabled.required}
 										// slotProps={{ input: {
 										//   id: fields.enabled.id,
 										//   'aria-invalid': fields.enabled.ariaInvalid,
@@ -241,6 +266,7 @@ export default function App() {
 								// id={fields.score.id}
 								// name={fields.score.name}
 								// defaultValue={fields.score.defaultValue}
+								// required={fields.score.required}
 								// aria-invalid={fields.score.ariaInvalid}
 								// aria-describedby={fields.score.ariaDescribedBy}
 								// aria-labelledby={`${fields.score.id}-label`}
@@ -264,6 +290,7 @@ export default function App() {
 							// id={fields.progress.id}
 							// name={fields.progress.name}
 							// defaultValue={fields.progress.defaultValue}
+							// required={fields.progress.required}
 							// aria-invalid={fields.progress.ariaInvalid}
 							// aria-describedby={fields.progress.ariaDescribedBy}
 							// aria-labelledby={`${fields.progress.id}-label`}

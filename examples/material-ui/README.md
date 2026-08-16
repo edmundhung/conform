@@ -1,94 +1,32 @@
 # Material UI Example
 
-> This guide focuses on behavior specific to Material UI. See [Integrating with UI Libraries](../../docs/integration/ui-libraries.md) for the general concept and the [`useControl`](../../docs/api/react/future/useControl.md) API.
+[Material UI](https://mui.com/material-ui) provides React components that implement Google's Material Design system.
 
-[Material UI](https://mui.com/material-ui) is a comprehensive component library based on Google's Material Design system.
+This Vite React project demonstrates how to use Material UI 9.2 form components with Conform and Zod 4 validation.
 
-This example demonstrates how to integrate Conform with Material UI 9.2 using custom metadata. It covers TextField, multiline TextField, Select, Autocomplete, NumberField, Checkbox, RadioGroup, Switch, Rating, and Slider.
+## Integration
 
-## Keep Native Controls Native
+If a Material UI component renders a normal `<input>`, `<select>`, or group of radio inputs, the example passes Conform's field props directly to it. This applies to TextField, Select, Checkbox, RadioGroup, and Switch.
 
-TextField, Select, Checkbox, RadioGroup, and Switch already render native named controls. They only need Conform metadata mapped to their Material UI props:
+The Select example enables Material UI's native mode so the rendered `<select>` remains the canonical control when Conform supplies updated defaults or resets the form.
 
-```tsx
-<TextField
-  id={fields.email.id}
-  name={fields.email.name}
-  defaultValue={fields.email.defaultValue}
-  error={!fields.email.valid}
-  helperText={fields.email.errors}
-/>
-```
+Autocomplete, NumberField, Rating, and Slider use [`useControl`](../../docs/api/react/future/useControl.md) with a [`BaseControl`](../../docs/api/react/future/BaseControl.md). The base control holds the field name, default value, and serialized value, while the Material UI component handles interaction. The adapters translate component values to strings, restore updated defaults on reset, delegate validation focus, report blur, and forward invalid state and error descriptions to the interactive element.
 
-The example uses those Material UI components directly. This preserves browser FormData and reset behavior without an adapter.
+The visible controls remain unnamed so `BaseControl` is the only serialized field. Material UI Rating always creates presentation radio inputs, so its adapter explicitly disassociates those inputs from the form to avoid duplicate `FormData` entries. NumberField follows the Material UI outlined recipe composed from Base UI NumberField and Material UI form primitives.
 
-## Adapt Controlled Components with `useControl`
+See [Integrating with UI Libraries](../../docs/integration/ui-libraries.md) for the general pattern.
 
-Autocomplete, NumberField, Rating, and Slider do not expose one suitable native control for all of Conform's reset, focus, and FormData requirements, so their adapters register one hidden named control with `useControl`. `useControl` remains the single source of truth for value, blur, reset, and validation focus:
+## Project Structure
 
-```tsx
-const control = useControl({
-  defaultValue,
-  onFocus() {
-    inputRef.current?.focus();
-  },
-});
-
-return (
-  <>
-    <input ref={control.register} name={name} hidden />
-    <MuiAutocomplete
-      value={control.value || null}
-      onChange={(_, value) => control.change(value ?? '')}
-      onBlur={() => control.blur()}
-    />
-  </>
-);
-```
-
-The adapters forward `aria-invalid` and `aria-describedby` to the accessible Material UI control while the hidden control remains responsible for FormData. Rating's presentation radios are explicitly disassociated from the form so they do not add a second value.
-
-NumberField follows Material UI's documented outlined recipe using `@base-ui/react/number-field`, Material UI FormControl, and OutlinedInput. It demonstrates the new core NumberField pattern without adding MUI X solely for a DatePicker.
-
-## Custom Metadata
-
-[`forms.ts`](./src/forms.ts) uses [`configureForms`](../../docs/api/react/future/configureForms.md#integrating-with-ui-libraries) to provide typed props for native Material UI components and the four adapters:
-
-```tsx
-const forms = configureForms({
-  extendFieldMetadata(metadata) {
-    return {
-      get autocompleteProps() {
-        return {
-          id: metadata.id,
-          name: metadata.name,
-          defaultValue: metadata.defaultValue,
-          error: metadata.errors,
-          'aria-invalid': metadata.ariaInvalid,
-          'aria-describedby': metadata.ariaDescribedBy,
-        } satisfies Partial<React.ComponentProps<typeof Autocomplete>>;
-      },
-      // ...other component props
-    };
-  },
-});
-```
-
-The application spreads these props with full type safety. Nearby “Equivalent to” comments preserve the explicit mapping for readers.
-
-## Compatibility
-
-| Package | Version |
-| --- | --- |
-| Material UI | `@mui/material@^9.2.0` |
-| React | `react@^19.2.7` |
-| Zod | `zod@^4.4.3` |
-| Conform Zod API | `@conform-to/zod/v4/future` |
+- [`App.tsx`](./src/App.tsx) contains the example form and shows the explicit Conform prop mappings in nearby comments.
+- [`form.tsx`](./src/form.tsx) contains the Material UI component adapters.
+- [`forms.ts`](./src/forms.ts) uses [`configureForms`](../../docs/api/react/future/configureForms.md#integrating-with-ui-libraries) to expose those mappings as typed field props.
+- [`tests/index.test.ts`](./tests/index.test.ts) verifies submission, updated defaults, reset, validation, focus, and serialization behavior.
 
 ## Demo
 
 <!-- sandbox src="/examples/material-ui" -->
 
-Try it out on [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/material-ui).
+Try it out on [StackBlitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/material-ui).
 
 <!-- /sandbox -->

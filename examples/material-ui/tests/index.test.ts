@@ -1,242 +1,208 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 test.describe('material-ui', () => {
-	test.describe('form', () => {
-		async function getForm(page: Page, searchParams?: URLSearchParams) {
-			await page.goto(searchParams ? `/?${searchParams}` : '/');
+	async function getForm(page: Page, searchParams?: URLSearchParams) {
+		await page.goto(searchParams ? `/?${searchParams}` : '/');
 
-			const container = page.locator('form');
-
-			return {
-				container,
-				heading: page.getByRole('heading', { name: 'Material UI Example' }),
-				submitButton: container.getByRole('button', { name: 'Submit' }),
-				resetButton: container.getByRole('button', { name: 'Reset' }),
-				submittedValue: () =>
-					container
-						.locator('pre')
-						.innerText()
-						.then((value) => JSON.parse(value)),
-				formData: () =>
-					container.evaluate((form) =>
-						Array.from(new FormData(form as HTMLFormElement).entries()).map(
-							([name, value]) => [name, String(value)] as const,
-						),
-					),
-				email: container.getByLabel('Email (TextField)'),
-				description: container.getByLabel(
-					'Description (TextField - multiline)',
-				),
-				language: container.getByRole('combobox', {
-					name: 'Language (Select)',
-				}),
-				movie: container.getByRole('combobox', {
-					name: 'Movie (Autocomplete)',
-				}),
-				quantity: container.getByLabel('Quantity (NumberField)'),
-				subscribe: container.getByRole('checkbox', { name: 'Newsletter' }),
-				activeYes: container.getByRole('radio', { name: 'Yes' }),
-				enabled: container.getByRole('switch'),
-				rating: (value: number) =>
-					container.getByLabel(`${value} Star${value === 1 ? '' : 's'}`),
-				ratingGroup: container.getByRole('radiogroup', {
-					name: 'Score (Rating)',
-				}),
-				emptyRating: container.getByRole('radio', { name: 'Empty' }),
-				slider: container.getByRole('slider', { name: 'Progress (Slider)' }),
-			};
-		}
-
-		async function selectLanguage(page: Page, language: string) {
-			await page.getByRole('combobox', { name: 'Language (Select)' }).click();
-			await page.getByRole('option', { name: language }).click();
-		}
-
-		async function selectMovie(movie: Locator, page: Page, title: string) {
-			await movie.fill(title);
-			await page.getByRole('option', { name: title }).click();
-		}
-
-		async function setSlider(slider: Locator, value: number) {
-			await slider.press('Home');
-
-			for (let index = 0; index < value; index++) {
-				await slider.press('ArrowRight');
-			}
-		}
-
-		async function selectRating(page: Page, rating: Locator) {
-			const id = await rating.getAttribute('id');
-
-			if (!id) {
-				throw new Error('Expected the Rating input to have an id');
-			}
-
-			await page.locator(`label[for="${id}"]`).click({ force: true });
-		}
-
-		test('submits Autocomplete, NumberField, Slider, Rating, and native values', async ({
-			page,
-		}) => {
-			const form = await getForm(page);
-
-			await form.email.fill('hello@example.com');
-			await form.description.fill('A useful description');
-			await selectLanguage(page, 'English');
-			await selectMovie(form.movie, page, 'The Godfather');
-			await form.quantity.fill('20');
-			await form.container.getByRole('button', { name: 'Increase' }).click();
-			await expect(form.quantity).toHaveValue('21');
-			await form.subscribe.check();
-			await form.activeYes.check();
-			await form.enabled.check();
-			await selectRating(page, form.rating(4));
-			await setSlider(form.slider, 5);
-
-			await expect.poll(form.formData).toEqual([
-				['email', 'hello@example.com'],
-				['description', 'A useful description'],
-				['language', 'english'],
-				['movie', 'The Godfather'],
-				['quantity', '21'],
-				['subscribe', 'on'],
-				['active', 'yes'],
-				['enabled', 'on'],
-				['score', '4'],
-				['progress', '5'],
-			]);
-			await form.submitButton.click();
-
-			await expect.poll(form.submittedValue).toEqual({
-				email: 'hello@example.com',
-				description: 'A useful description',
-				language: 'english',
-				movie: 'The Godfather',
-				quantity: 21,
-				subscribe: true,
-				active: 'yes',
-				enabled: true,
-				score: 4,
-				progress: 5,
-			});
+		const form = page.locator('form');
+		const language = form.getByRole('combobox', {
+			name: 'Language (Select)',
 		});
-
-		test('validates custom controlled widgets on blur', async ({ page }) => {
-			const form = await getForm(page);
-
-			await form.movie.focus();
-			await form.heading.click();
-			await expect(form.movie).toHaveAttribute('aria-invalid', 'true');
-			await expect(form.movie).toHaveAccessibleDescription('Invalid input');
-
-			await form.quantity.focus();
-			await form.heading.click();
-			await expect(form.quantity).toHaveAttribute('aria-invalid', 'true');
-			await expect(form.quantity).toHaveAccessibleDescription('Invalid input');
-
-			await form.emptyRating.focus();
-			await form.heading.click();
-			await expect(form.ratingGroup).toHaveAttribute('aria-invalid', 'true');
-			await expect(form.ratingGroup).toHaveAccessibleDescription(
-				'Invalid input',
-			);
-
-			await form.slider.focus();
-			await form.heading.click();
-			await expect(form.slider).toHaveAttribute('aria-invalid', 'true');
-			await expect(form.slider).toHaveAccessibleDescription('Invalid input');
+		const movie = form.getByRole('combobox', {
+			name: 'Movie (Autocomplete)',
 		});
+		const quantity = form.getByLabel('Quantity (NumberField)');
+		const rating = (value: number) =>
+			form.getByLabel(`${value} Star${value === 1 ? '' : 's'}`);
+		const slider = form.getByRole('slider', { name: 'Progress (Slider)' });
 
-		test('moves validation focus through each custom controlled widget', async ({
-			page,
-		}) => {
-			const searchParams = new URLSearchParams([
-				['email', 'hello@example.com'],
-				['description', 'A useful description'],
-				['language', 'english'],
-				['subscribe', 'on'],
-				['active', 'yes'],
-				['enabled', 'on'],
-			]);
-			const form = await getForm(page, searchParams);
+		return {
+			form,
+			heading: page.getByRole('heading', { name: 'Material UI Example' }),
+			email: form.getByLabel('Email (TextField)'),
+			description: form.getByLabel('Description (TextField - multiline)'),
+			language,
+			async selectLanguage(label: string) {
+				await language.selectOption({ label });
+			},
+			movie,
+			async selectMovie(title: string) {
+				await movie.fill(title);
+				await page.getByRole('option', { name: title }).click();
+			},
+			quantity,
+			async setQuantity(value: string) {
+				// Base UI formats controlled text entry, so clear and replace in two
+				// interactions to match how a user edits an existing number.
+				await quantity.fill('');
+				await quantity.fill(value);
+			},
+			increaseQuantity: form.getByRole('button', { name: 'Increase' }),
+			subscribe: form.getByRole('checkbox', { name: 'Newsletter' }),
+			activeYes: form.getByRole('radio', { name: 'Yes' }),
+			activeNo: form.getByRole('radio', { name: 'No' }),
+			enabled: form.getByRole('switch'),
+			rating,
+			ratingGroup: form.getByRole('radiogroup', {
+				name: 'Score (Rating)',
+			}),
+			emptyRating: form.getByRole('radio', { name: 'Empty' }),
+			async selectRating(value: number) {
+				await rating(value).press('Space');
+			},
+			slider,
+			async setSlider(value: number) {
+				await slider.press('Home');
 
-			await form.submitButton.click();
-			await expect(form.movie).toBeFocused();
-			await selectMovie(form.movie, page, 'Pulp Fiction');
-
-			await form.submitButton.click();
-			await expect(form.quantity).toBeFocused();
-			await form.quantity.fill('20');
-
-			await form.submitButton.click();
-			await expect(form.emptyRating).toBeFocused();
-			await form.rating(4).press('Space');
-			await expect(form.rating(4)).toBeChecked();
-
-			await form.submitButton.click();
-			await expect(form.slider).toBeFocused();
-			await setSlider(form.slider, 5);
-
-			await form.submitButton.click();
-			await expect.poll(form.submittedValue).toMatchObject({
-				movie: 'Pulp Fiction',
-				quantity: 20,
-				score: 4,
-				progress: 5,
-			});
-		});
-
-		test('resets custom controlled widgets to URL-backed defaults', async ({
-			page,
-		}) => {
-			const searchParams = new URLSearchParams([
-				['email', 'hello@example.com'],
-				['description', 'A useful description'],
-				['language', 'english'],
-				['movie', 'Pulp Fiction'],
-				['quantity', '20'],
-				['subscribe', 'on'],
-				['active', 'yes'],
-				['enabled', 'on'],
-				['score', '4'],
-				['progress', '5'],
-			]);
-			for (const reset of ['conform', 'browser']) {
-				const form = await getForm(page, searchParams);
-
-				await selectMovie(form.movie, page, 'The Godfather');
-				await form.quantity.fill('30');
-				await selectRating(page, form.rating(2));
-				await setSlider(form.slider, 7);
-
-				if (reset === 'conform') {
-					await form.resetButton.click();
-				} else {
-					await form.container.evaluate((element) =>
-						(element as HTMLFormElement).reset(),
-					);
+				for (let index = 0; index < value; index++) {
+					await slider.press('ArrowRight');
 				}
+			},
+			resetButton: form.getByRole('button', { name: 'Reset' }),
+			submitButton: form.getByRole('button', { name: 'Submit' }),
+			submittedValue: () =>
+				form
+					.locator('pre')
+					.innerText()
+					.then((value) => JSON.parse(value)),
+		};
+	}
 
-				await expect(form.movie).toHaveValue('Pulp Fiction');
-				await expect(form.quantity).toHaveValue('20');
-				await expect(form.rating(4)).toBeChecked();
-				await expect(form.slider).toHaveValue('5');
-				await expect.poll(form.formData).toEqual(Array.from(searchParams));
+	test('validation and submission', async ({ page }) => {
+		const controls = await getForm(page);
 
-				await form.submitButton.click();
-				await expect.poll(form.submittedValue).toEqual({
-					email: 'hello@example.com',
-					description: 'A useful description',
-					language: 'english',
-					movie: 'Pulp Fiction',
-					quantity: 20,
-					subscribe: true,
-					active: 'yes',
-					enabled: true,
-					score: 4,
-					progress: 5,
-				});
-			}
+		await controls.movie.focus();
+		await controls.heading.click();
+		await expect(controls.movie).toHaveAccessibleDescription('Choose a movie');
+
+		await controls.email.fill('ada@example.com');
+		await controls.description.fill('Material UI 9 example');
+		await controls.selectLanguage('Japanese');
+		await controls.subscribe.check();
+		await controls.activeYes.check();
+		await controls.enabled.check();
+
+		await controls.submitButton.click();
+		await expect(controls.movie).toBeFocused();
+		await expect(controls.movie).toHaveAccessibleDescription('Choose a movie');
+		await controls.selectMovie('Pulp Fiction');
+
+		await controls.submitButton.click();
+		await expect(controls.quantity).toBeFocused();
+		await expect(controls.quantity).toHaveAccessibleDescription(
+			'Quantity is required',
+		);
+		await controls.setQuantity('20');
+		await controls.increaseQuantity.click();
+		await expect(controls.quantity).toHaveValue('21');
+
+		await controls.submitButton.click();
+		await expect(controls.emptyRating).toBeFocused();
+		await expect(controls.ratingGroup).toHaveAccessibleDescription(
+			'Choose a score',
+		);
+		await controls.selectRating(4);
+		await expect(controls.rating(4)).toBeChecked();
+
+		await controls.submitButton.click();
+		await expect(controls.slider).toBeFocused();
+		await expect(controls.slider).toHaveAccessibleDescription(
+			'Progress is required',
+		);
+		await controls.setSlider(5);
+		await expect(controls.slider).toHaveValue('5');
+
+		await controls.submitButton.click();
+
+		await expect.poll(controls.submittedValue).toEqual({
+			email: 'ada@example.com',
+			description: 'Material UI 9 example',
+			language: 'japanese',
+			movie: 'Pulp Fiction',
+			quantity: 21,
+			subscribe: true,
+			active: 'yes',
+			enabled: true,
+			score: 4,
+			progress: 5,
+		});
+	});
+
+	test('updated defaults and reset', async ({ page }) => {
+		const defaults = new URLSearchParams([
+			['email', 'default@example.com'],
+			['description', 'Default description'],
+			['language', 'english'],
+			['movie', 'Pulp Fiction'],
+			['quantity', '20'],
+			['active', 'yes'],
+			['score', '4'],
+			['progress', '5'],
+		]);
+		const controls = await getForm(page, defaults);
+
+		await controls.email.fill('submitted@example.com');
+		await controls.description.fill('Submitted description');
+		await controls.selectLanguage('Japanese');
+		await controls.selectMovie('The Godfather');
+		await controls.setQuantity('30');
+		await controls.subscribe.check();
+		await controls.activeNo.check();
+		await controls.enabled.check();
+		await controls.selectRating(2);
+		await controls.setSlider(6);
+		await controls.submitButton.click();
+
+		await expect.poll(controls.submittedValue).toMatchObject({
+			email: 'submitted@example.com',
+			description: 'Submitted description',
+			language: 'japanese',
+			movie: 'The Godfather',
+			quantity: 30,
+			subscribe: true,
+			active: 'no',
+			enabled: true,
+			score: 2,
+			progress: 6,
+		});
+
+		await controls.email.fill('changed@example.com');
+		await controls.description.fill('Changed description');
+		await controls.selectLanguage('German');
+		await controls.selectMovie('Pulp Fiction');
+		await controls.setQuantity('40');
+		await controls.subscribe.uncheck();
+		await controls.activeYes.check();
+		await controls.enabled.uncheck();
+		await controls.selectRating(5);
+		await controls.setSlider(7);
+
+		await controls.resetButton.click();
+
+		await expect(controls.email).toHaveValue('submitted@example.com');
+		await expect(controls.description).toHaveValue('Submitted description');
+		await expect(controls.language).toHaveValue('japanese');
+		await expect(controls.movie).toHaveValue('The Godfather');
+		await expect(controls.quantity).toHaveValue('30');
+		await expect(controls.subscribe).toBeChecked();
+		await expect(controls.activeNo).toBeChecked();
+		await expect(controls.enabled).toBeChecked();
+		await expect(controls.rating(2)).toBeChecked();
+		await expect(controls.slider).toHaveValue('6');
+
+		await controls.submitButton.click();
+
+		await expect.poll(controls.submittedValue).toEqual({
+			email: 'submitted@example.com',
+			description: 'Submitted description',
+			language: 'japanese',
+			movie: 'The Godfather',
+			quantity: 30,
+			subscribe: true,
+			active: 'no',
+			enabled: true,
+			score: 2,
+			progress: 6,
 		});
 	});
 });

@@ -1,4 +1,4 @@
-import { useControl } from '@conform-to/react/future';
+import { BaseControl, useControl } from '@conform-to/react/future';
 import { NumberField as BaseNumberField } from '@base-ui/react/number-field';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
@@ -24,15 +24,24 @@ function setRef<T>(ref: React.Ref<T> | undefined, value: T | null) {
 	}
 }
 
-export type AutocompleteProps = {
+function isFocusLeaving(event: React.FocusEvent<HTMLElement>) {
+	return !event.currentTarget.contains(event.relatedTarget);
+}
+
+type ControlProps = {
 	id?: string;
 	name: string;
-	label: string;
 	defaultValue?: string;
-	options: string[];
-	error: string[] | undefined;
+	required?: boolean;
 	'aria-invalid'?: React.AriaAttributes['aria-invalid'];
 	'aria-describedby'?: string;
+	'aria-labelledby'?: string;
+};
+
+export type AutocompleteProps = ControlProps & {
+	label: string;
+	options: string[];
+	error: string[] | undefined;
 };
 
 export function Autocomplete({
@@ -42,6 +51,7 @@ export function Autocomplete({
 	defaultValue,
 	options,
 	error,
+	required,
 	'aria-invalid': ariaInvalid,
 	'aria-describedby': ariaDescribedBy,
 }: AutocompleteProps) {
@@ -55,14 +65,20 @@ export function Autocomplete({
 
 	return (
 		<>
-			<input name={name} ref={control.register} hidden />
+			<BaseControl
+				name={name}
+				ref={control.register}
+				defaultValue={control.defaultValue ?? ''}
+			/>
 			<MuiAutocomplete
 				id={id}
 				disablePortal
 				options={options}
 				value={control.value ? control.value : null}
 				onChange={(_, option) => control.change(option ?? '')}
-				onBlur={() => control.blur()}
+				onBlur={(event) => {
+					if (isFocusLeaving(event)) control.blur();
+				}}
 				renderInput={(params) => {
 					const autocompleteRef = params.slotProps.htmlInput.ref;
 
@@ -71,6 +87,7 @@ export function Autocomplete({
 							{...params}
 							id={id}
 							label={label}
+							required={required}
 							error={!!error}
 							helperText={error}
 							slotProps={{
@@ -117,6 +134,7 @@ function MuiNumberField({
 	label,
 	error,
 	helperText,
+	inputRef,
 	'aria-invalid': ariaInvalid,
 	'aria-describedby': ariaDescribedBy,
 	size = 'medium',
@@ -146,61 +164,68 @@ function MuiNumberField({
 			<InputLabel htmlFor={id}>{label}</InputLabel>
 			<BaseNumberField.Input
 				id={id}
-				render={(inputProps, state) => (
-					<OutlinedInput
-						label={label}
-						inputRef={inputProps.ref}
-						value={state.inputValue}
-						onBlur={inputProps.onBlur}
-						onChange={inputProps.onChange}
-						onKeyUp={inputProps.onKeyUp}
-						onKeyDown={inputProps.onKeyDown}
-						onFocus={inputProps.onFocus}
-						slotProps={{
-							input: {
-								...inputProps,
-								'aria-invalid': ariaInvalid,
-								'aria-describedby': ariaDescribedBy,
-							},
-						}}
-						endAdornment={
-							<InputAdornment
-								position="end"
-								sx={{
-									flexDirection: 'column',
-									maxHeight: 'unset',
-									alignSelf: 'stretch',
-									borderLeft: '1px solid',
-									borderColor: 'divider',
-									ml: 0,
-									'& button': {
-										py: 0,
-										flex: 1,
-										borderRadius: 0.5,
-									},
-								}}
-							>
-								<BaseNumberField.Increment
-									render={<IconButton size={size} aria-label="Increase" />}
+				render={(inputProps, state) => {
+					const { ref: baseInputRef, ...htmlInputProps } = inputProps;
+
+					return (
+						<OutlinedInput
+							label={label}
+							inputRef={(element) => {
+								setRef(baseInputRef, element);
+								setRef(inputRef, element);
+							}}
+							value={state.inputValue}
+							onBlur={inputProps.onBlur}
+							onChange={inputProps.onChange}
+							onKeyUp={inputProps.onKeyUp}
+							onKeyDown={inputProps.onKeyDown}
+							onFocus={inputProps.onFocus}
+							slotProps={{
+								input: {
+									...htmlInputProps,
+									'aria-invalid': ariaInvalid,
+									'aria-describedby': ariaDescribedBy,
+								},
+							}}
+							endAdornment={
+								<InputAdornment
+									position="end"
+									sx={{
+										flexDirection: 'column',
+										maxHeight: 'unset',
+										alignSelf: 'stretch',
+										borderLeft: '1px solid',
+										borderColor: 'divider',
+										ml: 0,
+										'& button': {
+											py: 0,
+											flex: 1,
+											borderRadius: 0.5,
+										},
+									}}
 								>
-									<KeyboardArrowUpIcon
-										fontSize={size}
-										sx={{ transform: 'translateY(2px)' }}
-									/>
-								</BaseNumberField.Increment>
-								<BaseNumberField.Decrement
-									render={<IconButton size={size} aria-label="Decrease" />}
-								>
-									<KeyboardArrowDownIcon
-										fontSize={size}
-										sx={{ transform: 'translateY(-2px)' }}
-									/>
-								</BaseNumberField.Decrement>
-							</InputAdornment>
-						}
-						sx={{ pr: 0 }}
-					/>
-				)}
+									<BaseNumberField.Increment
+										render={<IconButton size={size} aria-label="Increase" />}
+									>
+										<KeyboardArrowUpIcon
+											fontSize={size}
+											sx={{ transform: 'translateY(2px)' }}
+										/>
+									</BaseNumberField.Increment>
+									<BaseNumberField.Decrement
+										render={<IconButton size={size} aria-label="Decrease" />}
+									>
+										<KeyboardArrowDownIcon
+											fontSize={size}
+											sx={{ transform: 'translateY(-2px)' }}
+										/>
+									</BaseNumberField.Decrement>
+								</InputAdornment>
+							}
+							sx={{ pr: 0 }}
+						/>
+					);
+				}}
 			/>
 			<FormHelperText id={ariaDescribedBy} sx={{ ml: 0, '&:empty': { mt: 0 } }}>
 				{helperText}
@@ -232,31 +257,31 @@ export function NumberField({
 
 	return (
 		<>
-			<input name={name} ref={control.register} hidden />
+			<BaseControl
+				name={name}
+				ref={control.register}
+				defaultValue={control.defaultValue ?? ''}
+			/>
 			<MuiNumberField
 				{...props}
 				inputRef={ref}
 				value={control.value ? Number(control.value) : null}
 				onValueChange={(value) => control.change(value?.toString() ?? '')}
-				onBlur={() => control.blur()}
+				onBlur={(event) => {
+					if (isFocusLeaving(event)) control.blur();
+				}}
 			/>
 		</>
 	);
 }
 
-export type RatingProps = {
-	id?: string;
-	name: string;
-	defaultValue?: string;
-	'aria-invalid'?: React.AriaAttributes['aria-invalid'];
-	'aria-describedby'?: string;
-	'aria-labelledby'?: string;
-};
+export type RatingProps = ControlProps;
 
 export function Rating({
 	id,
 	name,
 	defaultValue,
+	required,
 	'aria-invalid': ariaInvalid,
 	'aria-describedby': ariaDescribedBy,
 	'aria-labelledby': ariaLabelledBy,
@@ -278,10 +303,18 @@ export function Rating({
 			id={id}
 			role="radiogroup"
 			aria-invalid={ariaInvalid}
+			aria-required={required}
 			aria-describedby={ariaDescribedBy}
 			aria-labelledby={ariaLabelledBy}
+			onBlur={(event) => {
+				if (isFocusLeaving(event)) control.blur();
+			}}
 		>
-			<input name={name} ref={control.register} hidden />
+			<BaseControl
+				name={name}
+				ref={control.register}
+				defaultValue={control.defaultValue ?? ''}
+			/>
 			<MuiRating
 				ref={(element) => {
 					ref.current = element;
@@ -293,25 +326,18 @@ export function Rating({
 				onChange={(_, value) => {
 					control.change(value?.toString() ?? '');
 				}}
-				onBlur={() => control.blur()}
 			/>
 		</div>
 	);
 }
 
-export type SliderProps = {
-	id?: string;
-	name: string;
-	defaultValue?: string;
-	'aria-invalid'?: React.AriaAttributes['aria-invalid'];
-	'aria-describedby'?: string;
-	'aria-labelledby'?: string;
-};
+export type SliderProps = ControlProps;
 
 export function Slider({
 	id,
 	name,
 	defaultValue,
+	required,
 	'aria-invalid': ariaInvalid,
 	'aria-describedby': ariaDescribedBy,
 	'aria-labelledby': ariaLabelledBy,
@@ -326,7 +352,11 @@ export function Slider({
 
 	return (
 		<>
-			<input name={name} ref={control.register} hidden />
+			<BaseControl
+				name={name}
+				ref={control.register}
+				defaultValue={control.defaultValue ?? ''}
+			/>
 			<MuiSlider
 				min={0}
 				max={10}
@@ -338,6 +368,7 @@ export function Slider({
 						id,
 						ref,
 						'aria-invalid': ariaInvalid,
+						'aria-required': required,
 						'aria-describedby': ariaDescribedBy,
 					},
 				}}
