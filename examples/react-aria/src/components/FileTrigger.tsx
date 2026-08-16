@@ -9,7 +9,7 @@ import type { FileTriggerProps as AriaFileTriggerProps } from 'react-aria-compon
 import { Button } from './Button';
 
 import './DateField.css';
-import { useControl } from '@conform-to/react/future';
+import { BaseControl, useControl } from '@conform-to/react/future';
 import { useCallback, useId, useRef } from 'react';
 
 export interface FileTriggerProps extends AriaFileTriggerProps {
@@ -17,15 +17,18 @@ export interface FileTriggerProps extends AriaFileTriggerProps {
 	name?: string;
 	defaultValue?: File | File[] | null | undefined;
 	isInvalid?: boolean;
+	isRequired?: boolean;
 	description?: string;
 	errors?: string[];
 }
 
 export function FileTrigger({
 	label,
+	name,
 	defaultValue,
 	description,
 	isInvalid,
+	isRequired,
 	errors,
 	children,
 	...props
@@ -56,6 +59,8 @@ export function FileTrigger({
 						id={`${id}-button`}
 						ref={buttonRef}
 						aria-describedby={isInvalid ? `${id}-error` : undefined}
+						aria-invalid={isInvalid || undefined}
+						aria-required={isRequired || undefined}
 						onBlur={() => control.blur()}
 					>
 						{children}
@@ -78,10 +83,10 @@ export function FileTrigger({
 						color: 'var(--invalid-color)',
 					}}
 				/>
-				<input
+				<BaseControl
 					type="file"
 					ref={control.register}
-					name={props.name}
+					name={name ?? ''}
 					className="file-input-control"
 				/>
 			</AriaFileTrigger>

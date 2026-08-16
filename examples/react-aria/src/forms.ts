@@ -20,16 +20,6 @@ import type { FileTrigger } from './components/FileTrigger';
 import type { Checkbox } from './components/Checkbox';
 import type { DateRangePicker } from './components/DateRangePicker';
 import type { Switch } from './components/Switch';
-import type { ZodType, input, output } from 'zod';
-import type { $ZodErrorMap } from 'zod/v4/core';
-
-declare module '@conform-to/react/future' {
-	interface CustomSchemaTypes<Schema> {
-		input: Schema extends ZodType ? input<Schema> : never;
-		output: Schema extends ZodType ? output<Schema> : never;
-		options: Schema extends ZodType ? { error?: $ZodErrorMap } : never;
-	}
-}
 
 const forms = configureForms({
 	getConstraints,
@@ -55,6 +45,7 @@ const forms = configureForms({
 				return {
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					isRequired: metadata.required,
 					isInvalid: !metadata.valid,
 					errors: metadata.errors,
 				} satisfies Partial<React.ComponentProps<typeof TextField>>;
@@ -63,6 +54,7 @@ const forms = configureForms({
 				return {
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					isRequired: metadata.required,
 					isInvalid: !metadata.valid,
 					errors: metadata.errors,
 				} satisfies Partial<React.ComponentProps<typeof NumberField>>;
@@ -71,6 +63,7 @@ const forms = configureForms({
 				return {
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					isRequired: metadata.required,
 					isInvalid: !metadata.valid,
 					errors: metadata.errors,
 				} satisfies Partial<React.ComponentProps<typeof RadioGroup>>;
@@ -79,6 +72,7 @@ const forms = configureForms({
 				return {
 					name: metadata.name,
 					defaultValue: metadata.defaultOptions,
+					isRequired: metadata.required,
 					isInvalid: !metadata.valid,
 					errors: metadata.errors,
 				} satisfies Partial<React.ComponentProps<typeof CheckboxGroup>>;
@@ -87,6 +81,7 @@ const forms = configureForms({
 				return {
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					isRequired: metadata.required,
 					isInvalid: !metadata.valid,
 					errors: metadata.errors,
 				} satisfies Partial<React.ComponentProps<typeof DatePicker>>;
@@ -95,6 +90,7 @@ const forms = configureForms({
 				return {
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					isRequired: metadata.required,
 					isInvalid: !metadata.valid,
 					errors: metadata.errors,
 				} satisfies Partial<React.ComponentProps<typeof Select>>;
@@ -103,6 +99,7 @@ const forms = configureForms({
 				return {
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					isRequired: metadata.required,
 					isInvalid: !metadata.valid,
 					errors: metadata.errors,
 				} satisfies Partial<React.ComponentProps<typeof ComboBox>>;
@@ -111,6 +108,7 @@ const forms = configureForms({
 				return {
 					name: metadata.name,
 					defaultValue: metadata.defaultOptions,
+					isRequired: metadata.required,
 					isInvalid: !metadata.valid,
 					errors: metadata.errors,
 				} satisfies Partial<React.ComponentProps<typeof MultiSelectComboBox>>;
@@ -118,6 +116,7 @@ const forms = configureForms({
 			get fileTriggerProps() {
 				return {
 					name: metadata.name,
+					isRequired: metadata.required,
 					isInvalid: !metadata.valid,
 					errors: metadata.errors,
 				} satisfies Partial<React.ComponentProps<typeof FileTrigger>>;
@@ -126,6 +125,7 @@ const forms = configureForms({
 				return {
 					name: metadata.name,
 					defaultSelected: metadata.defaultValue === 'on',
+					isRequired: metadata.required,
 					isInvalid: !metadata.valid,
 					errors: metadata.errors,
 				} satisfies Partial<React.ComponentProps<typeof Checkbox>>;
@@ -134,6 +134,7 @@ const forms = configureForms({
 				return {
 					name: metadata.name,
 					defaultSelected: metadata.defaultValue === 'on',
+					isRequired: metadata.required,
 					isInvalid: !metadata.valid,
 					errors: metadata.errors,
 				} satisfies Partial<React.ComponentProps<typeof Switch>>;
@@ -143,9 +144,15 @@ const forms = configureForms({
 					metadata,
 					shape<{ start: string; end: string }>(),
 					(fieldset) => {
+						const fields = fieldset.getFieldset();
+
 						return {
 							name: fieldset.name,
-							defaultValue: fieldset.defaultPayload,
+							defaultValue: {
+								start: fields.start.defaultValue,
+								end: fields.end.defaultValue,
+							},
+							isRequired: fieldset.required,
 							isInvalid: !fieldset.valid,
 							errors: [
 								...new Set<string>([

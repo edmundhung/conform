@@ -65,7 +65,11 @@ export function ComboBox<T extends object>({
 				inputValue={control.value ?? ''}
 				onChange={(value) => control.change(value?.toString() ?? '')}
 				onInputChange={(value) => control.change(value)}
-				onBlur={() => control.blur()}
+				onBlur={(event) => {
+					if (!event.currentTarget.contains(event.relatedTarget)) {
+						control.blur();
+					}
+				}}
 			>
 				<Label>{label}</Label>
 				<div className="my-combobox-container">
@@ -124,7 +128,11 @@ export function MultiSelectComboBox<T extends object>({
 				selectionMode="multiple"
 				value={control.options ?? []}
 				onChange={(value) => control.change(value.map((key) => key.toString()))}
-				onBlur={() => control.blur()}
+				onBlur={(event) => {
+					if (!event.currentTarget.contains(event.relatedTarget)) {
+						control.blur();
+					}
+				}}
 			>
 				<Label>{label}</Label>
 				<div className="my-combobox-container">

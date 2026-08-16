@@ -1,4 +1,4 @@
-import { useControl } from '@conform-to/react/future';
+import { BaseControl, useControl } from '@conform-to/react/future';
 import { parseDateTime, CalendarDateTime } from '@internationalized/date';
 import {
 	Button,
@@ -55,34 +55,46 @@ export function DatePicker({
 	});
 
 	return (
-		<AriaDatePicker
-			{...props}
-			value={control.value ? parseDateTime(control.value) : null}
-			onChange={(value) => control.change(value?.toString() ?? '')}
-			onBlur={() => control.blur()}
-		>
-			<Label>{label}</Label>
-			<Group ref={groupRef}>
-				<DateInput>{(segment) => <DateSegment segment={segment} />}</DateInput>
-				<Button>▼</Button>
-			</Group>
-			{description && <Text slot="description">{description}</Text>}
-			<FieldError>{errors}</FieldError>
-			<Popover>
-				<Dialog>
-					<Calendar firstDayOfWeek={firstDayOfWeek}>
-						<header>
-							<Button slot="previous">◀</Button>
-							<Heading />
-							<Button slot="next">▶</Button>
-						</header>
-						<CalendarGrid>
-							{(date) => <CalendarCell date={date} />}
-						</CalendarGrid>
-					</Calendar>
-				</Dialog>
-			</Popover>
-			<input ref={control.register} name={name} hidden />
-		</AriaDatePicker>
+		<>
+			<BaseControl
+				name={name ?? ''}
+				ref={control.register}
+				defaultValue={control.defaultValue ?? ''}
+			/>
+			<AriaDatePicker
+				{...props}
+				value={control.value ? parseDateTime(control.value) : null}
+				onChange={(value) => control.change(value?.toString() ?? '')}
+				onBlur={(event) => {
+					if (!event.currentTarget.contains(event.relatedTarget)) {
+						control.blur();
+					}
+				}}
+			>
+				<Label>{label}</Label>
+				<Group ref={groupRef}>
+					<DateInput>
+						{(segment) => <DateSegment segment={segment} />}
+					</DateInput>
+					<Button>▼</Button>
+				</Group>
+				{description && <Text slot="description">{description}</Text>}
+				<FieldError>{errors}</FieldError>
+				<Popover>
+					<Dialog>
+						<Calendar firstDayOfWeek={firstDayOfWeek}>
+							<header>
+								<Button slot="previous">◀</Button>
+								<Heading />
+								<Button slot="next">▶</Button>
+							</header>
+							<CalendarGrid>
+								{(date) => <CalendarCell date={date} />}
+							</CalendarGrid>
+						</Calendar>
+					</Dialog>
+				</Popover>
+			</AriaDatePicker>
+		</>
 	);
 }

@@ -47,24 +47,15 @@ const schema = coerceFormValue(
 	}),
 );
 
-function parseSearchParam<Schema extends z.ZodType>(
-	schema: Schema,
-	value: string | null,
-): z.output<Schema> | null {
-	const result = schema.safeParse(value);
-
-	return result.success ? result.data : null;
-}
-
-function parseSearchParams<Schema extends z.ZodType>(
-	schema: Schema,
-	values: string[],
-): Array<z.output<Schema>> {
-	return values.flatMap((value) => {
-		const result = schema.safeParse(value);
-
-		return result.success ? [result.data] : [];
-	});
+function stringifySubmittedValue(value: z.output<typeof schema>) {
+	return JSON.stringify(
+		value,
+		(_key, item) =>
+			item instanceof File
+				? { name: item.name, size: item.size, type: item.type }
+				: item,
+		2,
+	);
 }
 
 export default function App() {
@@ -78,22 +69,8 @@ export default function App() {
 		() => new URLSearchParams(window.location.search),
 	);
 	const { form, fields, intent } = useForm(schema, {
-		defaultValue: {
-			email: searchParams.get('email'),
-			price: searchParams.get('price'),
-			language: parseSearchParam(languageSchema, searchParams.get('language')),
-			colors: parseSearchParams(colorSchema, searchParams.getAll('colors')),
-			date: searchParams.get('date'),
-			range: {
-				start: searchParams.get('range.start'),
-				end: searchParams.get('range.end'),
-			},
-			category: searchParams.get('category'),
-			author: searchParams.get('author'),
-			topics: parseSearchParams(topicSchema, searchParams.getAll('topics')),
-			notifications: searchParams.get('notifications'),
-			acceptTerms: searchParams.get('acceptTerms'),
-		},
+		// The URL is the source of the form's defaults in this client-only example.
+		defaultValue: searchParams,
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 
@@ -129,7 +106,7 @@ export default function App() {
 				}}
 			>
 				<div>
-					<h3>React Aria Example</h3>
+					<h3>React Aria Components Example</h3>
 					<p>
 						This shows how Conform integrates with current React Aria
 						Components, including multi-select ComboBox, Switch, and
@@ -145,6 +122,7 @@ export default function App() {
 						// Equivalent to:
 						// name={fields.email.name}
 						// defaultValue={fields.email.defaultValue}
+						// isRequired={fields.email.required}
 						// isInvalid={!fields.email.valid}
 						// errors={fields.email.errors}
 					/>
@@ -157,6 +135,7 @@ export default function App() {
 						// Equivalent to:
 						// name={fields.price.name}
 						// defaultValue={fields.price.defaultValue}
+						// isRequired={fields.price.required}
 						// isInvalid={!fields.price.valid}
 						// errors={fields.price.errors}
 					/>
@@ -170,6 +149,7 @@ export default function App() {
 						// Equivalent to:
 						// name={fields.language.name}
 						// defaultValue={fields.language.defaultValue}
+						// isRequired={fields.language.required}
 						// isInvalid={!fields.language.valid}
 						// errors={fields.language.errors}
 					>
@@ -193,6 +173,7 @@ export default function App() {
 						// Equivalent to:
 						// name={fields.colors.name}
 						// defaultValue={fields.colors.defaultOptions}
+						// isRequired={fields.colors.required}
 						// isInvalid={!fields.colors.valid}
 						// errors={fields.colors.errors}
 					>
@@ -210,6 +191,7 @@ export default function App() {
 						// Equivalent to:
 						// name={fields.date.name}
 						// defaultValue={fields.date.defaultValue}
+						// isRequired={fields.date.required}
 						// isInvalid={!fields.date.valid}
 						// errors={fields.date.errors}
 					/>
@@ -226,6 +208,7 @@ export default function App() {
 						//   start: fields.range.getFieldset().start.defaultValue,
 						//   end: fields.range.getFieldset().end.defaultValue,
 						// }}
+						// isRequired={fields.range.required}
 						// isInvalid={!fields.range.valid}
 						// errors={fields.range.getFieldset().start.errors ?? fields.range.getFieldset().end.errors}
 					/>
@@ -238,6 +221,7 @@ export default function App() {
 						// Equivalent to:
 						// name={fields.category.name}
 						// defaultValue={fields.category.defaultValue}
+						// isRequired={fields.category.required}
 						// isInvalid={!fields.category.valid}
 						// errors={fields.category.errors}
 					>
@@ -255,6 +239,7 @@ export default function App() {
 						// Equivalent to:
 						// name={fields.author.name}
 						// defaultValue={fields.author.defaultValue}
+						// isRequired={fields.author.required}
 						// isInvalid={!fields.author.valid}
 						// errors={fields.author.errors}
 					>
@@ -271,6 +256,7 @@ export default function App() {
 						// Equivalent to:
 						// name={fields.topics.name}
 						// defaultValue={fields.topics.defaultOptions}
+						// isRequired={fields.topics.required}
 						// isInvalid={!fields.topics.valid}
 						// errors={fields.topics.errors}
 					>
@@ -286,6 +272,7 @@ export default function App() {
 						{...fields.profile.fileTriggerProps}
 						// Equivalent to:
 						// name={fields.profile.name}
+						// isRequired={fields.profile.required}
 						// isInvalid={!fields.profile.valid}
 						// errors={fields.profile.errors}
 					>
@@ -300,6 +287,7 @@ export default function App() {
 						// Equivalent to:
 						// name={fields.notifications.name}
 						// defaultSelected={fields.notifications.defaultValue === 'on'}
+						// isRequired={fields.notifications.required}
 						// isInvalid={!fields.notifications.valid}
 						// errors={fields.notifications.errors}
 					>
@@ -314,6 +302,7 @@ export default function App() {
 						// Equivalent to:
 						// name={fields.acceptTerms.name}
 						// defaultSelected={fields.acceptTerms.defaultValue === 'on'}
+						// isRequired={fields.acceptTerms.required}
 						// isInvalid={!fields.acceptTerms.valid}
 						// errors={fields.acceptTerms.errors}
 					>
@@ -325,7 +314,7 @@ export default function App() {
 					<div>
 						<h4>Value submitted</h4>
 						<pre data-testid="submitted-value">
-							{JSON.stringify(submittedValue, null, 2)}
+							{stringifySubmittedValue(submittedValue)}
 						</pre>
 						<h4>FormData submitted</h4>
 						<pre data-testid="submitted-form-data">

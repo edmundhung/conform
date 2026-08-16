@@ -1,4 +1,4 @@
-import { useControl } from '@conform-to/react/future';
+import { BaseControl, useControl } from '@conform-to/react/future';
 import { useRef } from 'react';
 import {
 	Button,
@@ -41,13 +41,20 @@ export function NumberField({
 
 	return (
 		<>
-			{/* The base control ensures the NumberField can reset to the latest default value */}
-			<input ref={control.register} name={name} hidden />
+			<BaseControl
+				name={name ?? ''}
+				ref={control.register}
+				defaultValue={control.defaultValue ?? ''}
+			/>
 			<AriaNumberField
 				{...props}
 				value={control.value ? Number(control.value) : undefined}
 				onChange={(number) => control.change(number.toString())}
-				onBlur={() => control.blur()}
+				onBlur={(event) => {
+					if (!event.currentTarget.contains(event.relatedTarget)) {
+						control.blur();
+					}
+				}}
 			>
 				<Label>{label}</Label>
 				<Group>

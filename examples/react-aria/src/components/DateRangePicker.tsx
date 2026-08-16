@@ -58,43 +58,44 @@ export function DateRangePicker({
 			?.querySelector<HTMLElement>('[role="spinbutton"]')
 			?.focus();
 	}, []);
-	const control = useControl({
-		defaultValue,
-		parse(payload) {
-			try {
-				const range = coerceStructure(dateRangeSchema).parse(payload);
-
-				return {
-					start: parseDate(range.start),
-					end: parseDate(range.end),
-				};
-			} catch {
-				return null;
-			}
-		},
-		serialize(value) {
-			return {
-				start: value.start.toString(),
-				end: value.end.toString(),
-			};
-		},
+	const defaultRange = coerceStructure(dateRangeSchema).safeParse(defaultValue);
+	const start = useControl({
+		defaultValue: defaultRange.success ? defaultRange.data.start : undefined,
 		onFocus: focusFirstSegment,
 	});
+	const end = useControl({
+		defaultValue: defaultRange.success ? defaultRange.data.end : undefined,
+		onFocus: focusFirstSegment,
+	});
+	const value =
+		start.value && end.value
+			? { start: parseDate(start.value), end: parseDate(end.value) }
+			: null;
 
 	return (
 		<>
 			<BaseControl
-				type="fieldset"
-				name={name}
-				ref={control.register}
-				defaultValue={control.defaultValue}
+				name={`${name}.start`}
+				ref={start.register}
+				defaultValue={start.defaultValue ?? ''}
+			/>
+			<BaseControl
+				name={`${name}.end`}
+				ref={end.register}
+				defaultValue={end.defaultValue ?? ''}
 			/>
 			<AriaDateRangePicker
 				{...props}
-				value={control.payload ?? null}
-				onChange={(value) => control.change(value)}
+				value={value}
+				onChange={(nextValue) => {
+					start.change(nextValue?.start.toString() ?? '');
+					end.change(nextValue?.end.toString() ?? '');
+				}}
 				onBlur={(event) => {
-					control.blur();
+					if (!event.currentTarget.contains(event.relatedTarget)) {
+						start.blur();
+						end.blur();
+					}
 					onBlur?.(event);
 				}}
 			>

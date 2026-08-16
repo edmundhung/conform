@@ -1,4 +1,4 @@
-import { useControl } from '@conform-to/react/future';
+import { BaseControl, useControl } from '@conform-to/react/future';
 import {
 	Button,
 	FieldError,
@@ -51,14 +51,20 @@ export function Select<T extends object>({
 
 	return (
 		<>
-			<select name={name} ref={control.register} hidden>
-				<option />
-			</select>
+			<BaseControl
+				name={name ?? ''}
+				ref={control.register}
+				defaultValue={control.defaultValue ?? ''}
+			/>
 			<AriaSelect
 				{...props}
 				selectedKey={control.value ?? null}
 				onSelectionChange={(key) => control.change(key?.toString() ?? '')}
-				onBlur={() => control.blur()}
+				onBlur={(event) => {
+					if (!event.currentTarget.contains(event.relatedTarget)) {
+						control.blur();
+					}
+				}}
 			>
 				<Label ref={labelRef}>{label}</Label>
 				<Button>

@@ -1,37 +1,23 @@
-# React Aria Example
+# React Aria Components Example
 
-> This guide focuses on behavior specific to React Aria Components. See [Integrating with UI Libraries](../../docs/integration/ui-libraries.md) for the general concept and the [`useControl`](../../docs/api/react/future/useControl.md) API.
+[React Aria Components](https://react-spectrum.adobe.com/react-aria/components.html) provides accessible, unstyled React components for building application and design-system interfaces.
 
-[React Aria Components](https://react-spectrum.adobe.com/react-aria/components.html) provides accessible, unstyled components for building application and design-system interfaces.
+This Vite React 19 project demonstrates how to use React Aria Components 1.19 with Conform and Zod 4 validation.
 
-This example integrates Conform with React 19 and React Aria Components 1.19 using custom metadata. It covers TextField, NumberField, RadioGroup, CheckboxGroup, DatePicker, DateRangePicker, Select, single and multi-select ComboBox, FileTrigger, Switch, and Checkbox.
+## Integration
 
-## Conform integration
+When a React Aria composition exposes a native form control that owns its value, Conform props such as `name`, `defaultValue`, required state, and validation state can be passed to it directly. The text field follows this pattern, while the radio group registers React Aria's native radio inputs with Conform.
 
-- [`forms.ts`](./src/forms.ts) extends Conform's custom field metadata with typed props for each React Aria component.
-- `useControl` and `BaseControl` keep React Aria state synchronized with native form controls, so Conform validation, focus, `FormData`, and reset intents share one source of truth.
-- Zod 4 validation uses `@conform-to/zod/v4/future` and maps errors to React Aria's `FieldError` composition.
-- Checkbox, Radio, and Switch descriptions use `Text slot="description"`, keeping help text and validation errors in their accessible descriptions.
+Components whose value is managed by a compound React Aria control use [`useControl`](../../docs/api/react/future/useControl.md) with one or more [`BaseControl`](../../docs/api/react/future/BaseControl.md) elements. These are the canonical named form controls, while the visible component handles interaction. The adapters translate string, array, date-range, checked, and file values; forward changes, blur, and invalid-submission focus; and let Conform update defaults and reset the rendered component without introducing a second source of truth.
 
-## Multi-select ComboBox
+The multi-select ComboBox serializes its array as repeated `FormData` entries. React Aria's description and error-message slots connect help text and validation errors to the interactive controls. See [Integrating with UI Libraries](../../docs/integration/ui-libraries.md) for the general pattern.
 
-The Topics field demonstrates React Aria's multi-select ComboBox with Conform array metadata:
+## Project Structure
 
-```tsx
-<MultiSelectComboBox {...fields.topics.multiSelectComboBoxProps} label="Topics">
-  <ComboBoxItem id="accessibility">Accessibility</ComboBoxItem>
-  <ComboBoxItem id="forms">Forms</ComboBoxItem>
-</MultiSelectComboBox>
-```
-
-Its hidden multiple `BaseControl` serializes selections as repeated entries:
-
-```txt
-topics=accessibility
-topics=forms
-```
-
-The same native control also restores the current Conform default value after Conform and native form resets. Playwright coverage verifies array and file submission, validation focus and descriptions, Switch behavior, and reset behavior across Chromium, Firefox, and WebKit.
+- [`App.tsx`](./src/App.tsx) contains the example form and shows the explicit Conform prop mappings in nearby comments.
+- [`components`](./src/components) contains the React Aria compositions and their Conform control adapters.
+- [`forms.ts`](./src/forms.ts) uses [`configureForms`](../../docs/api/react/future/configureForms.md#integrating-with-ui-libraries) to expose those mappings as typed field props.
+- [`tests/index.test.ts`](./tests/index.test.ts) verifies validation, focus, submission, updated defaults, and reset behavior.
 
 ## Demo
 
