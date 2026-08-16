@@ -5,6 +5,13 @@ test.describe('chakra-ui', () => {
 		async function getForm(page: Page, searchParams?: URLSearchParams) {
 			await page.goto(searchParams ? `/?${searchParams}` : '/');
 			const form = page.locator('form');
+			const pin = form.locator('[data-scope="pin-input"][data-part="input"]');
+			const editablePreview = form.locator(
+				'[data-scope="editable"][data-part="preview"]',
+			);
+			const editableInput = form.locator(
+				'[data-scope="editable"][data-part="input"]',
+			);
 
 			return {
 				form,
@@ -12,13 +19,26 @@ test.describe('chakra-ui', () => {
 				language: form.getByLabel('Language (NativeSelect)'),
 				description: form.getByLabel('Description (Textarea)'),
 				quantity: form.getByLabel('Quantity (NumberInput)'),
-				pin: form.locator('[data-scope="pin-input"][data-part="input"]'),
-				editablePreview: form.locator(
-					'[data-scope="editable"][data-part="preview"]',
-				),
-				editableInput: form.locator(
-					'[data-scope="editable"][data-part="input"]',
-				),
+				pin,
+				getPinValue() {
+					return pin.evaluateAll((inputs) =>
+						inputs.map((input) => (input as HTMLInputElement).value).join(''),
+					);
+				},
+				async setPin(value: string) {
+					for (const [index, character] of Array.from(value).entries()) {
+						await pin.nth(index).fill(character);
+					}
+				},
+				editablePreview,
+				editableInput,
+				async setEditable(value: string) {
+					if (!(await editableInput.isVisible())) {
+						await editablePreview.dblclick();
+					}
+					await editableInput.fill(value);
+					await editableInput.press('Enter');
+				},
 				subscribe: form.getByRole('checkbox', { name: 'Newsletter' }),
 				subscribeControl: form.locator(
 					'[data-scope="checkbox"][data-part="control"]',
@@ -52,37 +72,6 @@ test.describe('chakra-ui', () => {
 			};
 		}
 
-		async function setEditable(
-			preview: Locator,
-			input: Locator,
-			value: string,
-		) {
-			if (!(await input.isVisible())) {
-				await preview.dblclick();
-			}
-			await input.fill(value);
-			await input.press('Enter');
-		}
-
-		async function setPin(inputs: Locator, value: string) {
-			await expect(inputs).toHaveCount(value.length);
-
-			for (let index = 0; index < value.length; index++) {
-				const input = inputs.nth(index);
-				const character = value[index] ?? '';
-				await input.fill(character);
-				await expect(input).toHaveValue(character);
-			}
-		}
-
-		async function expectPin(inputs: Locator, value: string) {
-			await expect(inputs).toHaveCount(value.length);
-
-			for (let index = 0; index < value.length; index++) {
-				await expect(inputs.nth(index)).toHaveValue(value[index] ?? '');
-			}
-		}
-
 		async function getFormData(form: Locator) {
 			return form.evaluate((element) => {
 				const entries = Array.from(
@@ -105,12 +94,10 @@ test.describe('chakra-ui', () => {
 			await controls.language.selectOption('japanese');
 			await controls.description.fill('Chakra UI v3');
 			await controls.quantity.fill('2');
-			await setPin(controls.pin, '1234');
-			await setEditable(
-				controls.editablePreview,
-				controls.editableInput,
-				'Modern form',
-			);
+			await controls.setPin('1');
+			await expect.poll(controls.getPinValue).toBe('1');
+			await controls.setPin('1234');
+			await controls.setEditable('Modern form');
 			await controls.subscribeControl.click();
 			await controls.enabledControl.click();
 			await controls.slider.press('ArrowRight');
@@ -181,12 +168,9 @@ test.describe('chakra-ui', () => {
 
 				await controls.email.fill('changed@example.com');
 				await controls.quantity.fill('9');
-				await setPin(controls.pin, '9876');
-				await setEditable(
-					controls.editablePreview,
-					controls.editableInput,
-					'Changed title',
-				);
+				await controls.setPin('9876');
+				await expect.poll(controls.getPinValue).toBe('9876');
+				await controls.setEditable('Changed title');
 				await controls.subscribeControl.click();
 				await controls.enabledControl.click();
 				await controls.slider.press('ArrowRight');
@@ -209,7 +193,7 @@ test.describe('chakra-ui', () => {
 
 				await expect(controls.email).toHaveValue('default@example.com');
 				await expect(controls.quantity).toHaveValue('2');
-				await expectPin(controls.pin, '1234');
+				await expect.poll(controls.getPinValue).toBe('1234');
 				await expect(controls.editablePreview).toHaveText('Default title');
 				await expect(controls.subscribe).toBeChecked();
 				await expect(controls.enabled).toBeChecked();
@@ -254,12 +238,8 @@ test.describe('chakra-ui', () => {
 			await controls.language.selectOption('english');
 			await controls.description.fill('Submitted description');
 			await controls.quantity.fill('2');
-			await setPin(controls.pin, '1234');
-			await setEditable(
-				controls.editablePreview,
-				controls.editableInput,
-				'Submitted title',
-			);
+			await controls.setPin('1234');
+			await controls.setEditable('Submitted title');
 			await controls.subscribeControl.click();
 			await controls.enabledControl.click();
 			await controls.slider.press('ArrowRight');
@@ -278,6 +258,7 @@ test.describe('chakra-ui', () => {
 
 			await expect.poll(controls.submittedValue).toMatchObject({
 				email: 'submitted@example.com',
+				pin: '1234',
 				progress: 4,
 				tags: ['react'],
 			});
@@ -286,12 +267,9 @@ test.describe('chakra-ui', () => {
 			await controls.language.selectOption('japanese');
 			await controls.description.fill('Changed description');
 			await controls.quantity.fill('9');
-			await setPin(controls.pin, '9876');
-			await setEditable(
-				controls.editablePreview,
-				controls.editableInput,
-				'Changed title',
-			);
+			await controls.setPin('9876');
+			await expect.poll(controls.getPinValue).toBe('9876');
+			await controls.setEditable('Changed title');
 			await controls.subscribeControl.click();
 			await controls.enabledControl.click();
 			await controls.slider.press('ArrowRight');
@@ -310,7 +288,7 @@ test.describe('chakra-ui', () => {
 			await expect(controls.language).toHaveValue('english');
 			await expect(controls.description).toHaveValue('Submitted description');
 			await expect(controls.quantity).toHaveValue('2');
-			await expectPin(controls.pin, '1234');
+			await expect.poll(controls.getPinValue).toBe('1234');
 			await expect(controls.editablePreview).toHaveText('Submitted title');
 			await expect(controls.subscribe).toBeChecked();
 			await expect(controls.enabled).toBeChecked();
@@ -471,15 +449,11 @@ test.describe('chakra-ui', () => {
 
 			await controls.submitButton.click();
 			await expect(controls.pin.first()).toBeFocused();
-			await setPin(controls.pin, '1234');
+			await controls.setPin('1234');
 
 			await controls.submitButton.click();
 			await expect(controls.editableInput).toBeFocused();
-			await setEditable(
-				controls.editablePreview,
-				controls.editableInput,
-				'Title',
-			);
+			await controls.setEditable('Title');
 
 			await controls.submitButton.click();
 			await expect(controls.subscribe).toBeFocused();

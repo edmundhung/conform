@@ -77,6 +77,7 @@ export function ExamplePinInput({
 	defaultValue,
 	...props
 }: ExamplePinInputProps) {
+	const count = 4;
 	const inputRef = useRef<HTMLInputElement>(null);
 	const control = useControl({
 		defaultValue,
@@ -93,6 +94,7 @@ export function ExamplePinInput({
 				defaultValue={control.defaultValue ?? ''}
 			/>
 			<PinInput.Root
+				count={count}
 				ids={{
 					input: (index) =>
 						Number(index) === 0
@@ -110,7 +112,7 @@ export function ExamplePinInput({
 			>
 				<PinInput.HiddenInput />
 				<PinInput.Control>
-					{Array.from({ length: 4 }, (_, index) => (
+					{Array.from({ length: count }, (_, index) => (
 						<PinInput.Input
 							key={index}
 							index={index}
