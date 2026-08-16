@@ -106,6 +106,7 @@ const forms = configureForms({
 					required: metadata.required,
 					invalid: !metadata.valid,
 					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-labelledby': `${metadata.id}-label`,
 				} satisfies Partial<React.ComponentProps<typeof ExampleSlider>>;
 			},
 			get radioGroupProps() {
@@ -145,6 +146,7 @@ const forms = configureForms({
 					required: metadata.required,
 					invalid: !metadata.valid,
 					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-labelledby': `${metadata.id}-label ${metadata.id}`,
 				} satisfies Partial<React.ComponentProps<typeof ExampleFileUpload>>;
 			},
 		};

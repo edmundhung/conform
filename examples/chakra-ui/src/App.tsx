@@ -268,7 +268,10 @@ export default function App() {
 					</Field.Root>
 
 					<Field.Root invalid={!fields.progress.valid} required>
-						<Field.Label htmlFor={fields.progress.id}>
+						<Field.Label
+							id={`${fields.progress.id}-label`}
+							htmlFor={fields.progress.id}
+						>
 							Progress (Slider)
 						</Field.Label>
 						<ExampleSlider
@@ -280,6 +283,7 @@ export default function App() {
 							// required={fields.progress.required}
 							// invalid={!fields.progress.valid}
 							// aria-describedby={fields.progress.ariaDescribedBy}
+							// aria-labelledby={`${fields.progress.id}-label`}
 						/>
 						<Field.ErrorText id={fields.progress.errorId}>
 							{fields.progress.errors}
@@ -340,8 +344,11 @@ export default function App() {
 					</Field.Root>
 
 					<Field.Root invalid={!fields.attachment.valid} required>
-						<Field.Label htmlFor={fields.attachment.id}>
-							Attachment (FileUpload)
+						<Field.Label
+							id={`${fields.attachment.id}-label`}
+							htmlFor={fields.attachment.id}
+						>
+							Attachment (FileUpload, required)
 						</Field.Label>
 						<ExampleFileUpload
 							{...fields.attachment.fileUploadProps}
@@ -351,6 +358,7 @@ export default function App() {
 							// required={fields.attachment.required}
 							// invalid={!fields.attachment.valid}
 							// aria-describedby={fields.attachment.ariaDescribedBy}
+							// aria-labelledby={`${fields.attachment.id}-label ${fields.attachment.id}`}
 						/>
 						<Field.ErrorText id={fields.attachment.errorId}>
 							{fields.attachment.errors}

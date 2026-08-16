@@ -20,6 +20,7 @@ type ControlProps = {
 	required?: boolean;
 	invalid?: boolean;
 	'aria-describedby'?: string;
+	'aria-labelledby'?: string;
 };
 
 type ChakraChildren = React.ComponentProps<typeof Checkbox.Root>['children'];
@@ -165,6 +166,9 @@ export function ExampleSlider({
 					if (isFocusLeaving(event)) control.blur();
 				}}
 				invalid={props.invalid}
+				aria-labelledby={
+					props['aria-labelledby'] ? [props['aria-labelledby']] : undefined
+				}
 			>
 				<Slider.Control>
 					<Slider.Track>
@@ -187,7 +191,6 @@ export function ExampleSlider({
 
 export type ExampleRadioGroupProps = ControlProps & {
 	children: ChakraChildren;
-	'aria-labelledby'?: string;
 };
 
 export function ExampleRadioGroup({
@@ -452,7 +455,10 @@ export function ExampleFileUpload({ name, ...props }: ExampleFileUploadProps) {
 		<>
 			<BaseControl type="file" name={name} ref={control.register} />
 			<FileUpload.Root
-				ids={{ hiddenInput: props.id }}
+				ids={{
+					hiddenInput: props.id ? `${props.id}-input` : undefined,
+					trigger: props.id,
+				}}
 				acceptedFiles={control.files ?? []}
 				onFileChange={({ acceptedFiles }) => control.change(acceptedFiles)}
 				onBlur={(event) => {
@@ -468,6 +474,7 @@ export function ExampleFileUpload({ name, ...props }: ExampleFileUploadProps) {
 						ref={triggerRef}
 						type="button"
 						variant="outline"
+						aria-labelledby={props['aria-labelledby']}
 						aria-describedby={props['aria-describedby']}
 						aria-invalid={props.invalid}
 					>
