@@ -73,7 +73,7 @@ test.describe('material-ui', () => {
 			page,
 			new URLSearchParams([
 				['quantity', 'not-a-number'],
-				['score', 'not-a-number'],
+				['score', '1.5'],
 				['progress', 'not-a-number'],
 			]),
 		);
@@ -105,9 +105,11 @@ test.describe('material-ui', () => {
 		await expect(controls.quantity).toHaveValue('21');
 
 		await controls.submitButton.click();
-		await expect(controls.emptyRating).toBeFocused();
+		await expect(
+			controls.ratingGroup.locator('input[type="radio"]:focus'),
+		).toHaveCount(1);
 		await expect(controls.ratingGroup).toHaveAccessibleDescription(
-			'Choose a score',
+			'Score must be an integer from 1 to 5',
 		);
 		await controls.selectRating(4);
 		await expect(controls.rating(4)).toBeChecked();

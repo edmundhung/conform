@@ -44,7 +44,11 @@ const schema = coerceFormValue(
 		subscribe: z.boolean().default(false),
 		active: z.enum(['yes', 'no'], { error: 'Choose an active state' }),
 		enabled: z.boolean().default(false),
-		score: z.number({ error: 'Choose a score' }),
+		score: z
+			.number({ error: 'Choose a score' })
+			.int('Score must be an integer from 1 to 5')
+			.min(1, 'Score must be an integer from 1 to 5')
+			.max(5, 'Score must be an integer from 1 to 5'),
 		progress: z
 			.number({ error: 'Progress is required' })
 			.min(3, 'Progress must be at least 3')
