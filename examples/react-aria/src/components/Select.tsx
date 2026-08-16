@@ -1,16 +1,19 @@
-import { useControl } from '@conform-to/react/future';
+import { BaseControl, useControl } from '@conform-to/react/future';
 import {
 	Button,
 	FieldError,
 	Label,
 	ListBox,
 	ListBoxItem,
-	ListBoxItemProps,
 	Popover,
 	Select as AriaSelect,
-	SelectProps as AriaSelectProps,
 	SelectValue,
 	Text,
+} from 'react-aria-components';
+import type {
+	ListBoxProps,
+	ListBoxItemProps,
+	SelectProps as AriaSelectProps,
 } from 'react-aria-components';
 
 import './Select.css';
@@ -24,8 +27,8 @@ export interface SelectProps<T extends object> extends Omit<
 	description?: string;
 	defaultValue?: string;
 	errors?: string[];
-	items?: Iterable<T>;
-	children: React.ReactNode | ((item: T) => React.ReactNode);
+	items?: ListBoxProps<T>['items'];
+	children: ListBoxProps<T>['children'];
 }
 
 export function Select<T extends object>({
@@ -48,14 +51,20 @@ export function Select<T extends object>({
 
 	return (
 		<>
-			<select name={name} ref={control.register} hidden>
-				<option />
-			</select>
+			<BaseControl
+				name={name ?? ''}
+				ref={control.register}
+				defaultValue={control.defaultValue ?? ''}
+			/>
 			<AriaSelect
 				{...props}
-				selectedKey={control.value ?? null}
+				selectedKey={control.value || null}
 				onSelectionChange={(key) => control.change(key?.toString() ?? '')}
-				onBlur={() => control.blur()}
+				onBlur={(event) => {
+					if (!event.currentTarget.contains(event.relatedTarget)) {
+						control.blur();
+					}
+				}}
 			>
 				<Label ref={labelRef}>{label}</Label>
 				<Button>

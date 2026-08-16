@@ -2,11 +2,13 @@ import {
 	Button,
 	CalendarCell,
 	CalendarGrid,
-	DateValue,
 	Heading,
 	RangeCalendar as AriaRangeCalendar,
-	RangeCalendarProps as AriaRangeCalendarProps,
 	Text,
+} from 'react-aria-components';
+import type {
+	DateValue,
+	RangeCalendarProps as AriaRangeCalendarProps,
 } from 'react-aria-components';
 
 import './RangeCalendar.css';

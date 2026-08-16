@@ -4,12 +4,10 @@ import {
 	Label,
 	Text,
 	TextField as AriaTextField,
-	TextFieldProps as AriaTextFieldProps,
 } from 'react-aria-components';
+import type { TextFieldProps as AriaTextFieldProps } from 'react-aria-components';
 
 import './TextField.css';
-import { useControl } from '@conform-to/react/future';
-import { useRef } from 'react';
 
 export interface TextFieldProps extends AriaTextFieldProps {
 	label?: string;
@@ -25,30 +23,13 @@ export function TextField({
 	errors,
 	...props
 }: TextFieldProps) {
-	const inputRef = useRef<HTMLInputElement>(null);
-	const control = useControl({
-		defaultValue,
-		onFocus() {
-			inputRef.current?.focus();
-		},
-	});
-
 	return (
-		<>
-			{/* The base control ensures the TextField can reset to the latest default value */}
-			<input ref={control.register} name={name} hidden />
-			<AriaTextField
-				{...props}
-				value={control.value ?? ''}
-				onChange={(value) => control.change(value)}
-				onBlur={() => control.blur()}
-			>
-				<Label>{label}</Label>
-				<Input ref={inputRef} />
+		<AriaTextField {...props} name={name} defaultValue={defaultValue}>
+			<Label>{label}</Label>
+			<Input />
 
-				{description && <Text slot="description">{description}</Text>}
-				<FieldError>{errors}</FieldError>
-			</AriaTextField>
-		</>
+			{description && <Text slot="description">{description}</Text>}
+			<FieldError>{errors}</FieldError>
+		</AriaTextField>
 	);
 }

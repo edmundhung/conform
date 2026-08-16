@@ -1,4 +1,4 @@
-import { useControl } from '@conform-to/react/future';
+import { BaseControl, useControl } from '@conform-to/react/future';
 import { parseDateTime, CalendarDateTime } from '@internationalized/date';
 import {
 	Button,
@@ -7,9 +7,7 @@ import {
 	CalendarGrid,
 	DateInput,
 	DatePicker as AriaDatePicker,
-	DatePickerProps as AriaDatePickerProps,
 	DateSegment,
-	DateValue,
 	Dialog,
 	FieldError,
 	Group,
@@ -18,9 +16,25 @@ import {
 	Popover,
 	Text,
 } from 'react-aria-components';
+import type {
+	DatePickerProps as AriaDatePickerProps,
+	DateValue,
+} from 'react-aria-components';
 
 import './DatePicker.css';
-import { useRef } from 'react';
+import { useCallback, useRef } from 'react';
+
+function parseValue(value: string | undefined) {
+	if (!value) {
+		return null;
+	}
+
+	try {
+		return parseDateTime(value);
+	} catch {
+		return null;
+	}
+}
 
 export interface DatePickerProps<T extends DateValue> extends Omit<
 	AriaDatePickerProps<T>,
@@ -41,43 +55,58 @@ export function DatePicker({
 	firstDayOfWeek,
 	...props
 }: DatePickerProps<CalendarDateTime>) {
-	const labelRef = useRef<HTMLLabelElement>(null);
+	const groupRef = useRef<HTMLDivElement>(null);
+	const focusFirstSegment = useCallback(() => {
+		groupRef.current
+			?.querySelector<HTMLElement>('[role="spinbutton"]')
+			?.focus();
+	}, []);
 	const control = useControl({
 		defaultValue,
-		onFocus() {
-			labelRef.current?.click();
-		},
+		onFocus: focusFirstSegment,
 	});
 
 	return (
-		<AriaDatePicker
-			{...props}
-			value={control.value ? parseDateTime(control.value) : null}
-			onChange={(value) => control.change(value?.toString() ?? '')}
-			onBlur={() => control.blur()}
-		>
-			<Label ref={labelRef}>{label}</Label>
-			<Group>
-				<DateInput>{(segment) => <DateSegment segment={segment} />}</DateInput>
-				<Button>▼</Button>
-			</Group>
-			{description && <Text slot="description">{description}</Text>}
-			<FieldError>{errors}</FieldError>
-			<Popover>
-				<Dialog>
-					<Calendar firstDayOfWeek={firstDayOfWeek}>
-						<header>
-							<Button slot="previous">◀</Button>
-							<Heading />
-							<Button slot="next">▶</Button>
-						</header>
-						<CalendarGrid>
-							{(date) => <CalendarCell date={date} />}
-						</CalendarGrid>
-					</Calendar>
-				</Dialog>
-			</Popover>
-			<input ref={control.register} name={name} hidden />
-		</AriaDatePicker>
+		<>
+			<BaseControl
+				name={name ?? ''}
+				ref={control.register}
+				defaultValue={control.defaultValue ?? ''}
+			/>
+			<AriaDatePicker
+				{...props}
+				value={parseValue(control.value)}
+				onChange={(value) => control.change(value?.toString() ?? '')}
+				onBlur={(event) => {
+					if (!event.currentTarget.contains(event.relatedTarget)) {
+						control.blur();
+					}
+				}}
+			>
+				<Label>{label}</Label>
+				<Group ref={groupRef}>
+					<DateInput>
+						{(segment) => <DateSegment segment={segment} />}
+					</DateInput>
+					<Button>▼</Button>
+				</Group>
+				{description && <Text slot="description">{description}</Text>}
+				<FieldError>{errors}</FieldError>
+				<Popover>
+					<Dialog>
+						<Calendar firstDayOfWeek={firstDayOfWeek}>
+							<header>
+								<Button slot="previous">◀</Button>
+								<Heading />
+								<Button slot="next">▶</Button>
+							</header>
+							<CalendarGrid>
+								{(date) => <CalendarCell date={date} />}
+							</CalendarGrid>
+						</Calendar>
+					</Dialog>
+				</Popover>
+			</AriaDatePicker>
+		</>
 	);
 }

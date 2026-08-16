@@ -2,13 +2,16 @@ import {
 	Dialog,
 	OverlayArrow,
 	Popover as AriaPopover,
+} from 'react-aria-components';
+import type {
+	DialogProps,
 	PopoverProps as AriaPopoverProps,
 } from 'react-aria-components';
 
 import './Popover.css';
 
 export interface PopoverProps extends Omit<AriaPopoverProps, 'children'> {
-	children: React.ReactNode;
+	children: DialogProps['children'];
 }
 
 export function Popover({ children, ...props }: PopoverProps) {

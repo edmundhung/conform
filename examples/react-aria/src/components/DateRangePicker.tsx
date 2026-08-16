@@ -1,5 +1,5 @@
 import { BaseControl, useControl } from '@conform-to/react/future';
-import { coerceStructure } from '@conform-to/zod/v3/future';
+import { coerceStructure } from '@conform-to/zod/v4/future';
 import { CalendarDate, parseDate } from '@internationalized/date';
 import {
 	Button,
@@ -7,9 +7,7 @@ import {
 	CalendarGrid,
 	DateInput,
 	DateRangePicker as AriaDateRangePicker,
-	DateRangePickerProps as AriaDateRangePickerProps,
 	DateSegment,
-	DateValue,
 	Dialog,
 	FieldError,
 	Group,
@@ -19,15 +17,31 @@ import {
 	RangeCalendar,
 	Text,
 } from 'react-aria-components';
-import { useRef } from 'react';
+import type {
+	DateRangePickerProps as AriaDateRangePickerProps,
+	DateValue,
+} from 'react-aria-components';
+import { useCallback, useRef } from 'react';
 
 import './DateRangePicker.css';
 import { z } from 'zod';
 
-export const dateRangeSchema = z.object({
-	start: z.string(),
-	end: z.string(),
+const dateRangeSchema = z.object({
+	start: z.string().optional(),
+	end: z.string().optional(),
 });
+
+function parseValue(value: string | undefined) {
+	if (!value) {
+		return null;
+	}
+
+	try {
+		return parseDate(value);
+	} catch {
+		return null;
+	}
+}
 
 export interface DateRangePickerProps<T extends DateValue> extends Omit<
 	AriaDateRangePickerProps<T>,
@@ -50,51 +64,55 @@ export function DateRangePicker({
 	onBlur,
 	...props
 }: DateRangePickerProps<CalendarDate>) {
-	const labelRef = useRef<HTMLLabelElement>(null);
-	const control = useControl({
-		defaultValue,
-		parse(payload) {
-			try {
-				const range = coerceStructure(dateRangeSchema).parse(payload);
-
-				return {
-					start: parseDate(range.start),
-					end: parseDate(range.end),
-				};
-			} catch {
-				return null;
-			}
-		},
-		serialize(value) {
-			return {
-				start: value.start.toString(),
-				end: value.end.toString(),
-			};
-		},
-		onFocus() {
-			labelRef.current?.click();
-		},
+	const groupRef = useRef<HTMLDivElement>(null);
+	const focusFirstSegment = useCallback(() => {
+		groupRef.current
+			?.querySelector<HTMLElement>('[role="spinbutton"]')
+			?.focus();
+	}, []);
+	const defaultRange = coerceStructure(dateRangeSchema).safeParse(defaultValue);
+	const start = useControl({
+		defaultValue: defaultRange.success ? defaultRange.data.start : undefined,
+		onFocus: focusFirstSegment,
 	});
+	const end = useControl({
+		defaultValue: defaultRange.success ? defaultRange.data.end : undefined,
+		onFocus: focusFirstSegment,
+	});
+	const startValue = parseValue(start.value);
+	const endValue = parseValue(end.value);
+	const value =
+		startValue && endValue ? { start: startValue, end: endValue } : null;
 
 	return (
 		<>
 			<BaseControl
-				type="fieldset"
-				name={name}
-				ref={control.register}
-				defaultValue={control.defaultValue}
+				name={`${name}.start`}
+				ref={start.register}
+				defaultValue={start.defaultValue ?? ''}
+			/>
+			<BaseControl
+				name={`${name}.end`}
+				ref={end.register}
+				defaultValue={end.defaultValue ?? ''}
 			/>
 			<AriaDateRangePicker
 				{...props}
-				value={control.payload ?? null}
-				onChange={(value) => control.change(value)}
+				value={value}
+				onChange={(nextValue) => {
+					start.change(nextValue?.start.toString() ?? '');
+					end.change(nextValue?.end.toString() ?? '');
+				}}
 				onBlur={(event) => {
-					control.blur();
+					if (!event.currentTarget.contains(event.relatedTarget)) {
+						start.blur();
+						end.blur();
+					}
 					onBlur?.(event);
 				}}
 			>
-				<Label ref={labelRef}>{label}</Label>
-				<Group>
+				<Label>{label}</Label>
+				<Group ref={groupRef}>
 					<DateInput slot="start">
 						{(segment) => <DateSegment segment={segment} />}
 					</DateInput>

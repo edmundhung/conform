@@ -1,58 +1,28 @@
-# React Aria Example
+# React Aria Components Example
 
-[React Aria](https://react-spectrum.adobe.com/react-aria/index.html) is a library of unstyled React components and hooks that helps you build accessible, high quality UI components for your application or design system.
+[React Aria Components](https://react-spectrum.adobe.com/react-aria/components.html) provides accessible, unstyled React components for building application and design-system interfaces.
 
-This example demonstrates how to integrate Conform with React Aria using custom metadata.
+This Vite React 19 project demonstrates how to use React Aria Components 1.19 with Conform and Zod 4 validation.
 
-## Understanding the Integration
+## Integration
 
-The main application ([`App.tsx`](./src/App.tsx)) uses explicit prop assignment for educational purposes, making it easy to see how field metadata maps to React Aria component props:
+When a React Aria composition exposes a native form control that owns its value, Conform props such as `name`, `defaultValue`, required state, and validation state can be passed to it directly. The text field follows this pattern, while the radio group registers React Aria's native radio inputs with Conform.
 
-```tsx
-<TextField
-  label="Email"
-  type="email"
-  name={fields.email.name}
-  defaultValue={fields.email.defaultValue}
-  isInvalid={!fields.email.valid}
-  errors={fields.email.errors}
-/>
-```
+Components whose value is managed by a compound React Aria control use [`useControl`](../../docs/api/react/future/useControl.md) with one or more [`BaseControl`](../../docs/api/react/future/BaseControl.md) elements. These are the canonical named form controls, while the visible component handles interaction. The adapters translate string, array, date-range, checked, and file values; forward changes, blur, and invalid-submission focus; and let Conform update defaults and reset the rendered component without introducing a second source of truth.
 
-While this is clear and straightforward for learning, it becomes repetitive in production applications.
+The multi-select ComboBox serializes its array as repeated `FormData` entries. React Aria's description and error-message slots connect help text and validation errors to the interactive controls. See [Integrating with UI Libraries](../../docs/integration/ui-libraries.md) for the general pattern.
 
-## Custom Metadata
+## Project Structure
 
-The example also showcases metadata customization for a more DRY approach. Check [`forms.ts`](./src/forms.ts) to see how custom metadata is configured using `configureForms`:
-
-```tsx
-import { configureForms } from '@conform-to/react/future';
-
-const result = configureForms({
-  extendFieldMetadata(metadata) {
-    return {
-      get textFieldProps() {
-        return {
-          name: metadata.name,
-          defaultValue: metadata.defaultValue,
-          isInvalid: !metadata.valid,
-          errors: metadata.errors,
-        } satisfies Partial<React.ComponentProps<typeof TextField>>;
-      },
-      // ... other component props
-    };
-  },
-});
-
-export const useForm = result.useForm;
-```
-
-Then use the custom metadata with full type safety:
-
-```tsx
-<TextField {...fields.email.textFieldProps} />
-```
+- [`App.tsx`](./src/App.tsx) contains the example form and shows the explicit Conform prop mappings in nearby comments.
+- [`components`](./src/components) contains the React Aria compositions and their Conform control adapters.
+- [`forms.ts`](./src/forms.ts) uses [`configureForms`](../../docs/api/react/future/configureForms.md#integrating-with-ui-libraries) to expose those mappings as typed field props.
+- [`tests/index.test.ts`](./tests/index.test.ts) verifies validation, focus, submission, updated defaults, and reset behavior.
 
 ## Demo
 
-Try it out on [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/react-aria).
+<!-- sandbox src="/examples/react-aria" -->
+
+Try the example on [StackBlitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/react-aria).
+
+<!-- /sandbox -->

@@ -1,35 +1,41 @@
 {
 	"name": "react-aria-example",
 	"private": true,
+	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite",
 		"build": "tsc -b && vite build",
 		"test": "playwright test",
-		"lint": "eslint .",
+		"lint": "oxlint",
+		"typecheck": "tsc -b",
 		"preview": "vite preview"
 	},
 	"dependencies": {
 		"@conform-to/react": "^1.21.0",
 		"@conform-to/zod": "^1.21.0",
-		"@internationalized/date": "^3.8.0",
-		"react": "^18.2.0",
-		"react-aria-components": "^1.8.0",
-		"react-dom": "^18.2.0",
-		"zod": "^3.25.75"
+		"@internationalized/date": "^3.12.2",
+		"react": "^19.2.7",
+		"react-aria-components": "1.19.0",
+		"react-dom": "^19.2.7",
+		"zod": "^4.4.3"
 	},
 	"devDependencies": {
-		"@eslint/js": "^9.17.0",
 		"@playwright/test": "^1.49.1",
-		"@types/react": "^18.3.18",
-		"@types/react-dom": "^18.3.5",
-		"@vitejs/plugin-react": "^5.2.0",
-		"eslint": "^9.17.0",
-		"eslint-plugin-react-hooks": "^5.0.0",
-		"eslint-plugin-react-refresh": "^0.4.16",
-		"globals": "^15.14.0",
-		"typescript": "^5.8.3",
-		"typescript-eslint": "^8.18.2",
-		"vite": "^7.3.3"
+		"@types/node": "^24.13.3",
+		"@types/react": "^19.2.17",
+		"@types/react-dom": "^19.2.3",
+		"@vitejs/plugin-react": "^6.0.3",
+		"oxlint": "^1.74.0",
+		"typescript": "~6.0.2",
+		"vite": "^8.1.5"
+	},
+	"dependenciesMeta": {
+		"@conform-to/react": {
+			"injected": true
+		},
+		"@conform-to/zod": {
+			"injected": true
+		}
 	}
 }

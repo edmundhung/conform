@@ -1,40 +1,29 @@
-import { useControl } from '@conform-to/react/future';
-import { useContext } from 'react';
+import { BaseControl, useControl } from '@conform-to/react/future';
+import { useCallback, useContext, useRef } from 'react';
+import type { Context } from 'react';
 import {
-	Checkbox as AriaCheckbox,
-	CheckboxProps as AriaCheckboxProps,
+	CheckboxButton,
+	CheckboxField,
 	CheckboxGroupStateContext,
+	FieldError,
+	Text,
 } from 'react-aria-components';
+import type { CheckboxFieldProps, LabelProps } from 'react-aria-components';
 
 import './Checkbox.css';
 
-export type CheckboxProps = Omit<
-	AriaCheckboxProps,
-	'isSelected' | 'onChange' | 'inputRef'
->;
+export interface CheckboxProps extends Omit<
+	CheckboxFieldProps,
+	'children' | 'isSelected' | 'onChange' | 'inputRef'
+> {
+	children?: LabelProps['children'];
+	description?: string;
+	errors?: string[];
+}
 
-export function Checkbox({
-	defaultSelected,
-	value,
-	children,
-	...props
-}: CheckboxProps) {
-	// This makes sure we respect the value set on the CheckboxGroup
-	const state = useContext(CheckboxGroupStateContext);
-	const control = useControl({
-		defaultChecked: state?.value.includes(value ?? '') ?? defaultSelected,
-		value,
-	});
-
+function CheckboxContent({ children }: Pick<CheckboxProps, 'children'>) {
 	return (
-		<AriaCheckbox
-			{...props}
-			ref={(element) => control.register(element?.querySelector('input'))}
-			value={value}
-			isSelected={control.checked}
-			onChange={(checked) => control.change(checked)}
-			onBlur={() => control.blur()}
-		>
+		<CheckboxButton>
 			{({ isIndeterminate }) => (
 				<>
 					<div className="checkbox">
@@ -49,7 +38,70 @@ export function Checkbox({
 					{children}
 				</>
 			)}
-		</AriaCheckbox>
+		</CheckboxButton>
+	);
+}
+
+function StandaloneCheckbox({
+	name,
+	defaultSelected,
+	children,
+	description,
+	errors,
+	onBlur,
+	...props
+}: CheckboxProps) {
+	const inputRef = useRef<HTMLInputElement>(null);
+	const focusInput = useCallback(() => inputRef.current?.focus(), []);
+	const control = useControl({
+		defaultChecked: defaultSelected,
+		onFocus: focusInput,
+	});
+
+	return (
+		<>
+			<BaseControl
+				type="checkbox"
+				name={name ?? ''}
+				ref={control.register}
+				defaultChecked={control.defaultValue === 'on'}
+			/>
+			<CheckboxField
+				{...props}
+				inputRef={inputRef}
+				isSelected={control.checked}
+				onChange={(checked) => control.change(checked)}
+				onBlur={(event) => {
+					control.blur();
+					onBlur?.(event);
+				}}
+			>
+				<CheckboxContent>{children}</CheckboxContent>
+				{description ? <Text slot="description">{description}</Text> : null}
+				<FieldError>{errors}</FieldError>
+			</CheckboxField>
+		</>
+	);
+}
+
+export function Checkbox(props: CheckboxProps) {
+	// React Aria Components 1.19 declares this context with React 18 types.
+	const state = useContext(
+		CheckboxGroupStateContext as unknown as Context<unknown>,
+	);
+
+	if (!state) {
+		return <StandaloneCheckbox {...props} />;
+	}
+
+	const { children, description, errors, ...fieldProps } = props;
+
+	return (
+		<CheckboxField {...fieldProps}>
+			<CheckboxContent>{children}</CheckboxContent>
+			{description ? <Text slot="description">{description}</Text> : null}
+			<FieldError>{errors}</FieldError>
+		</CheckboxField>
 	);
 }
 
