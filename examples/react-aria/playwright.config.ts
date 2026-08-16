@@ -8,6 +8,7 @@ export default defineConfig({
 	reporter: process.env.CI ? 'github' : undefined,
 	use: {
 		trace: 'on-first-retry',
+		locale: 'en-US',
 		timezoneId: 'UTC',
 	},
 	projects: [

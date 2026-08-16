@@ -27,8 +27,8 @@ import './DateRangePicker.css';
 import { z } from 'zod';
 
 const dateRangeSchema = z.object({
-	start: z.string(),
-	end: z.string(),
+	start: z.string().optional(),
+	end: z.string().optional(),
 });
 
 function parseValue(value: string | undefined) {

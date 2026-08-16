@@ -58,7 +58,7 @@ export function Select<T extends object>({
 			/>
 			<AriaSelect
 				{...props}
-				selectedKey={control.value ?? null}
+				selectedKey={control.value || null}
 				onSelectionChange={(key) => control.change(key?.toString() ?? '')}
 				onBlur={(event) => {
 					if (!event.currentTarget.contains(event.relatedTarget)) {

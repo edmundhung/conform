@@ -48,8 +48,10 @@ export function NumberField({
 			/>
 			<AriaNumberField
 				{...props}
-				value={control.value ? Number(control.value) : undefined}
-				onChange={(number) => control.change(number.toString())}
+				value={control.value ? Number(control.value) : Number.NaN}
+				onChange={(number) =>
+					control.change(Number.isNaN(number) ? '' : number.toString())
+				}
 				onBlur={(event) => {
 					if (!event.currentTarget.contains(event.relatedTarget)) {
 						control.blur();
