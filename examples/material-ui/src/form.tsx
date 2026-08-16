@@ -28,6 +28,16 @@ function isFocusLeaving(event: React.FocusEvent<HTMLElement>) {
 	return !event.currentTarget.contains(event.relatedTarget);
 }
 
+function toFiniteNumber(value: string | undefined): number | null {
+	if (!value) {
+		return null;
+	}
+
+	const number = Number(value);
+
+	return Number.isFinite(number) ? number : null;
+}
+
 type ControlProps = {
 	id?: string;
 	name: string;
@@ -41,7 +51,8 @@ type ControlProps = {
 export type AutocompleteProps = ControlProps & {
 	label: string;
 	options: string[];
-	error: string[] | undefined;
+	error?: boolean;
+	helperText?: string[];
 };
 
 export function Autocomplete({
@@ -51,6 +62,7 @@ export function Autocomplete({
 	defaultValue,
 	options,
 	error,
+	helperText,
 	required,
 	'aria-invalid': ariaInvalid,
 	'aria-describedby': ariaDescribedBy,
@@ -88,8 +100,8 @@ export function Autocomplete({
 							id={id}
 							label={label}
 							required={required}
-							error={!!error}
-							helperText={error}
+							error={error}
+							helperText={helperText}
 							slotProps={{
 								...params.slotProps,
 								formHelperText: { id: ariaDescribedBy },
@@ -110,15 +122,6 @@ export function Autocomplete({
 		</>
 	);
 }
-
-// MUI FormControl detects an Input child to derive its initial filled state.
-// The Base UI input renders through a callback, so this marker supplies the
-// NumberField value props without rendering an extra control.
-function NumberFieldFilledStateInput(props: BaseNumberField.Root.Props) {
-	void props;
-	return null;
-}
-NumberFieldFilledStateInput.muiName = 'Input';
 
 type MuiNumberFieldProps = BaseNumberField.Root.Props & {
 	label?: React.ReactNode;
@@ -142,26 +145,31 @@ function MuiNumberField({
 }: MuiNumberFieldProps) {
 	const generatedId = useId();
 	const id = idProp ?? generatedId;
+	const hasValue = props.value != null;
 
 	return (
 		<BaseNumberField.Root
 			{...props}
-			render={(rootProps, state) => (
-				<FormControl
-					size={size}
-					ref={rootProps.ref}
-					onBlur={props.onBlur}
-					disabled={state.disabled}
-					required={state.required}
-					error={error}
-					variant="outlined"
-				>
-					{rootProps.children}
-				</FormControl>
-			)}
+			render={(rootProps, state) => {
+				// Native div props accept any color string, while MUI restricts this
+				// prop to theme colors. All other Base UI root props are compatible.
+				const { color: _color, ...formControlProps } = rootProps;
+
+				return (
+					<FormControl
+						{...formControlProps}
+						size={size}
+						disabled={state.disabled}
+						required={state.required}
+						error={error}
+						variant="outlined"
+					/>
+				);
+			}}
 		>
-			<NumberFieldFilledStateInput {...props} />
-			<InputLabel htmlFor={id}>{label}</InputLabel>
+			<InputLabel htmlFor={id} shrink={hasValue ? true : undefined}>
+				{label}
+			</InputLabel>
 			<BaseNumberField.Input
 				id={id}
 				render={(inputProps, state) => {
@@ -170,6 +178,7 @@ function MuiNumberField({
 					return (
 						<OutlinedInput
 							label={label}
+							notched={hasValue ? true : undefined}
 							inputRef={(element) => {
 								setRef(baseInputRef, element);
 								setRef(inputRef, element);
@@ -265,7 +274,7 @@ export function NumberField({
 			<MuiNumberField
 				{...props}
 				inputRef={ref}
-				value={control.value ? Number(control.value) : null}
+				value={toFiniteNumber(control.value)}
 				onValueChange={(value) => control.change(value?.toString() ?? '')}
 				onBlur={(event) => {
 					if (isFocusLeaving(event)) control.blur();
@@ -322,7 +331,7 @@ export function Rating({
 						?.querySelectorAll('input')
 						.forEach((input) => input.setAttribute('form', ''));
 				}}
-				value={control.value ? Number(control.value) : null}
+				value={toFiniteNumber(control.value)}
 				onChange={(_, value) => {
 					control.change(value?.toString() ?? '');
 				}}
@@ -361,7 +370,7 @@ export function Slider({
 				min={0}
 				max={10}
 				step={1}
-				value={control.value ? Number(control.value) : 0}
+				value={toFiniteNumber(control.value) ?? 0}
 				aria-labelledby={ariaLabelledBy}
 				slotProps={{
 					input: {

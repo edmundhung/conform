@@ -69,7 +69,17 @@ test.describe('material-ui', () => {
 	}
 
 	test('validation and submission', async ({ page }) => {
-		const controls = await getForm(page);
+		const controls = await getForm(
+			page,
+			new URLSearchParams([
+				['quantity', 'not-a-number'],
+				['score', 'not-a-number'],
+				['progress', 'not-a-number'],
+			]),
+		);
+
+		await expect(controls.quantity).toHaveValue('');
+		await expect(controls.slider).toHaveValue('0');
 
 		await controls.movie.focus();
 		await controls.heading.click();
@@ -78,9 +88,7 @@ test.describe('material-ui', () => {
 		await controls.email.fill('ada@example.com');
 		await controls.description.fill('Material UI 9 example');
 		await controls.selectLanguage('Japanese');
-		await controls.subscribe.check();
 		await controls.activeYes.check();
-		await controls.enabled.check();
 
 		await controls.submitButton.click();
 		await expect(controls.movie).toBeFocused();
@@ -120,9 +128,9 @@ test.describe('material-ui', () => {
 			language: 'japanese',
 			movie: 'Pulp Fiction',
 			quantity: 21,
-			subscribe: true,
+			subscribe: false,
 			active: 'yes',
-			enabled: true,
+			enabled: false,
 			score: 4,
 			progress: 5,
 		});
@@ -153,7 +161,7 @@ test.describe('material-ui', () => {
 		await controls.setSlider(6);
 		await controls.submitButton.click();
 
-		await expect.poll(controls.submittedValue).toMatchObject({
+		await expect.poll(controls.submittedValue).toEqual({
 			email: 'submitted@example.com',
 			description: 'Submitted description',
 			language: 'japanese',

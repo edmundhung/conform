@@ -35,7 +35,8 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
 					required: metadata.required,
-					error: metadata.errors,
+					error: !metadata.valid,
+					helperText: metadata.errors,
 					'aria-invalid': metadata.ariaInvalid,
 					'aria-describedby': metadata.ariaDescribedBy,
 				} satisfies Partial<React.ComponentProps<typeof Autocomplete>>;

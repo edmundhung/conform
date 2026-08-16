@@ -21,34 +21,35 @@ import { Autocomplete, NumberField, Rating, Slider } from './form';
 import { useForm } from './forms';
 
 const schema = coerceFormValue(
-	z
-		.object({
-			email: z
-				.string({ error: 'Email is required' })
-				.email('Enter a valid email address'),
-			description: z
-				.string({ error: 'Description is required' })
-				.min(10, 'Description must contain at least 10 characters'),
-			language: z.enum(['english', 'german', 'japanese'], {
-				error: 'Choose a language',
-			}),
-			movie: z.enum(['The Godfather', 'Pulp Fiction'], {
-				error: 'Choose a movie',
-			}),
-			quantity: z
-				.number({ error: 'Quantity is required' })
-				.min(10, 'Quantity must be at least 10')
-				.max(40, 'Quantity must be at most 40'),
-			subscribe: z.boolean(),
-			active: z.enum(['yes', 'no'], { error: 'Choose an active state' }),
-			enabled: z.boolean(),
-			score: z.number({ error: 'Choose a score' }),
-			progress: z
-				.number({ error: 'Progress is required' })
-				.min(3, 'Progress must be at least 3')
-				.max(7, 'Progress must be at most 7'),
-		})
-		.strict(),
+	z.strictObject({
+		email: z.email({
+			error: (issue) =>
+				issue.input === undefined
+					? 'Email is required'
+					: 'Enter a valid email address',
+		}),
+		description: z
+			.string({ error: 'Description is required' })
+			.min(10, 'Description must contain at least 10 characters'),
+		language: z.enum(['english', 'german', 'japanese'], {
+			error: 'Choose a language',
+		}),
+		movie: z.enum(['The Godfather', 'Pulp Fiction'], {
+			error: 'Choose a movie',
+		}),
+		quantity: z
+			.number({ error: 'Quantity is required' })
+			.min(10, 'Quantity must be at least 10')
+			.max(40, 'Quantity must be at most 40'),
+		subscribe: z.boolean().default(false),
+		active: z.enum(['yes', 'no'], { error: 'Choose an active state' }),
+		enabled: z.boolean().default(false),
+		score: z.number({ error: 'Choose a score' }),
+		progress: z
+			.number({ error: 'Progress is required' })
+			.min(3, 'Progress must be at least 3')
+			.max(7, 'Progress must be at most 7'),
+	}),
 );
 
 export default function App() {
@@ -150,7 +151,8 @@ export default function App() {
 						// name={fields.movie.name}
 						// defaultValue={fields.movie.defaultValue}
 						// required={fields.movie.required}
-						// error={fields.movie.errors}
+						// error={!fields.movie.valid}
+						// helperText={fields.movie.errors}
 						// aria-invalid={fields.movie.ariaInvalid}
 						// aria-describedby={fields.movie.ariaDescribedBy}
 					/>
