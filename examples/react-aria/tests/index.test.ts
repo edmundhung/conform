@@ -226,6 +226,19 @@ test.describe('react-aria', () => {
 		]);
 	});
 
+	test('handles malformed date defaults', async ({ page }) => {
+		const defaults = new URLSearchParams([
+			['date', 'not-a-date'],
+			['range.start', '2025-13-01'],
+			['range.end', '2025-02-31'],
+		]);
+		const controls = await getForm(page, defaults);
+
+		await expect(controls.heading).toBeVisible();
+		await expect(controls.date.getByRole('spinbutton').first()).toBeVisible();
+		await expect(controls.range.getByRole('spinbutton').first()).toBeVisible();
+	});
+
 	test('updated defaults and reset', async ({ page }) => {
 		const defaults = new URLSearchParams([
 			['email', 'default@example.com'],

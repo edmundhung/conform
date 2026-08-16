@@ -24,6 +24,18 @@ import type {
 import './DatePicker.css';
 import { useCallback, useRef } from 'react';
 
+function parseValue(value: string | undefined) {
+	if (!value) {
+		return null;
+	}
+
+	try {
+		return parseDateTime(value);
+	} catch {
+		return null;
+	}
+}
+
 export interface DatePickerProps<T extends DateValue> extends Omit<
 	AriaDatePickerProps<T>,
 	'defaultValue' | 'value' | 'onChange'
@@ -63,7 +75,7 @@ export function DatePicker({
 			/>
 			<AriaDatePicker
 				{...props}
-				value={control.value ? parseDateTime(control.value) : null}
+				value={parseValue(control.value)}
 				onChange={(value) => control.change(value?.toString() ?? '')}
 				onBlur={(event) => {
 					if (!event.currentTarget.contains(event.relatedTarget)) {

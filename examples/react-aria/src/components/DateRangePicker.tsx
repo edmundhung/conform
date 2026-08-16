@@ -31,6 +31,18 @@ const dateRangeSchema = z.object({
 	end: z.string(),
 });
 
+function parseValue(value: string | undefined) {
+	if (!value) {
+		return null;
+	}
+
+	try {
+		return parseDate(value);
+	} catch {
+		return null;
+	}
+}
+
 export interface DateRangePickerProps<T extends DateValue> extends Omit<
 	AriaDateRangePickerProps<T>,
 	'defaultValue' | 'value' | 'onChange'
@@ -67,10 +79,10 @@ export function DateRangePicker({
 		defaultValue: defaultRange.success ? defaultRange.data.end : undefined,
 		onFocus: focusFirstSegment,
 	});
+	const startValue = parseValue(start.value);
+	const endValue = parseValue(end.value);
 	const value =
-		start.value && end.value
-			? { start: parseDate(start.value), end: parseDate(end.value) }
-			: null;
+		startValue && endValue ? { start: startValue, end: endValue } : null;
 
 	return (
 		<>
