@@ -14,7 +14,7 @@ import {
 	getFormAction,
 	getFormEncType,
 	getFormMethod,
-	requestSubmit,
+	requestIntent,
 	updateField,
 	isDirtyInput,
 } from './dom';
@@ -1027,17 +1027,10 @@ export function createFormContext<
 
 	function dispatch(intent: Intent): void {
 		const form = getFormElement();
-		const submitter = document.createElement('button');
 		const buttonProps = getControlButtonProps(intent);
 
-		submitter.name = buttonProps.name;
-		submitter.value = buttonProps.value;
-		submitter.hidden = true;
-		submitter.formNoValidate = true;
-
-		form?.appendChild(submitter);
-		requestSubmit(form, submitter);
-		form?.removeChild(submitter);
+		invariant(form !== null, 'Form element is required to trigger submission.');
+		requestIntent(form, buttonProps.name, buttonProps.value);
 	}
 
 	function getControlButtonProps(intent: Intent): ControlButtonProps {

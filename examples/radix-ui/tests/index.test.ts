@@ -209,4 +209,18 @@ test.describe('radix-ui', () => {
 			await expect.poll(form.formData).toEqual(Array.from(defaults));
 		});
 	});
+
+	test('should preserve focus during blur validation in a modal', async ({
+		page,
+	}) => {
+		await page.goto('/modal');
+
+		const firstName = page.getByLabel('First name');
+		const lastName = page.getByLabel('Last name');
+
+		await firstName.click();
+		await lastName.click();
+
+		await expect(lastName).toBeFocused();
+	});
 });

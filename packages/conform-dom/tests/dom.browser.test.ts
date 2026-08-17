@@ -8,6 +8,7 @@ import {
 	focus,
 	blur,
 	requestSubmit,
+	requestIntent,
 	createFileList,
 	isFieldElement,
 	isGlobalInstance,
@@ -1044,6 +1045,57 @@ describe('requestSubmit', () => {
 		expect(() => requestSubmit(form, submitter)).toThrow(
 			'Submitter must be a button or input element or null.',
 		);
+	});
+});
+
+describe('requestIntent', () => {
+	it('supports a form containing a field named id', (ctx) => {
+		const form = document.createElement('form');
+		const input = document.createElement('input');
+		const handleSubmit = vi.fn();
+		const submitEventListener = (event: SubmitEvent) => {
+			event.preventDefault();
+			const submitter = event.submitter as HTMLButtonElement;
+
+			handleSubmit(submitter.parentElement, submitter.form);
+		};
+
+		form.id = 'test-form';
+		input.name = 'id';
+		form.appendChild(input);
+		form.addEventListener('submit', submitEventListener);
+		document.body.appendChild(form);
+		ctx.onTestFinished(() => {
+			form.removeEventListener('submit', submitEventListener);
+			form.remove();
+		});
+
+		requestIntent(form, 'intent', 'clobbered');
+
+		expect(handleSubmit).toHaveBeenCalledWith(document.body, form);
+	});
+
+	it('mounts the submitter inside a form without an ID', (ctx) => {
+		const form = document.createElement('form');
+		const handleSubmit = vi.fn();
+		const submitEventListener = (event: SubmitEvent) => {
+			event.preventDefault();
+			const submitter = event.submitter as HTMLButtonElement;
+
+			handleSubmit(submitter.parentElement, submitter.form);
+		};
+
+		form.addEventListener('submit', submitEventListener);
+		document.body.appendChild(form);
+		ctx.onTestFinished(() => {
+			form.removeEventListener('submit', submitEventListener);
+			form.remove();
+		});
+
+		requestIntent(form, 'intent', 'fallback');
+
+		expect(handleSubmit).toHaveBeenCalledWith(form, form);
+		expect(form.elements).toHaveLength(0);
 	});
 });
 

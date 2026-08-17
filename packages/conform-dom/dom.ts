@@ -176,24 +176,40 @@ export function requestSubmit(
 }
 
 /**
- * Triggers form submission with an intent value. This is achieved by
- * creating a hidden button element with the intent value and then submitting it with the form.
+ * Triggers form submission with an intent value using a temporary submitter.
  */
 export function requestIntent(
 	formElement: HTMLFormElement,
 	intentName: string,
 	intentValue: string,
 ): void {
+	const document = formElement.ownerDocument;
 	const submitter = document.createElement('button');
+	const formId = formElement.getAttribute('id');
+	let container: Node = formElement;
 
 	submitter.name = intentName;
 	submitter.value = intentValue;
 	submitter.hidden = true;
 	submitter.formNoValidate = true;
 
-	formElement.appendChild(submitter);
-	requestSubmit(formElement, submitter);
-	formElement.removeChild(submitter);
+	if (formId) {
+		const root = formElement.getRootNode();
+
+		// Keep the temporary submitter outside forms with an ID so its removal does
+		// not disrupt focus management in modal dialogs during blur validation.
+		// See https://github.com/edmundhung/conform/issues/783
+		container = root === document ? document.body : root;
+		submitter.setAttribute('form', formId);
+	}
+
+	container.appendChild(submitter);
+
+	try {
+		requestSubmit(formElement, submitter);
+	} finally {
+		submitter.remove();
+	}
 }
 
 export function createFileList(value: File | File[]): FileList {
