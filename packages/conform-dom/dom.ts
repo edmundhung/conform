@@ -18,6 +18,8 @@ export type Submitter = HTMLInputElement | HTMLButtonElement;
 const CONFORM_INTERNAL_EVENT = 'conform:internal';
 
 export function dispatchInternalUpdateEvent(form: HTMLFormElement): void {
+	const Event = form.ownerDocument.defaultView?.Event ?? globalThis.Event;
+
 	form.dispatchEvent(new Event(CONFORM_INTERNAL_EVENT));
 }
 
@@ -52,7 +54,7 @@ export function isSubmitter(
  * is a form control excluding submit, button and reset type.
  */
 export function isFieldElement(element: unknown): element is FieldElement {
-	if (element instanceof Element) {
+	if (isGlobalInstance(element, 'Element')) {
 		if (isInputElement(element)) {
 			return (
 				element.type !== 'submit' &&
@@ -81,7 +83,12 @@ export function isGlobalInstance<
 	obj: unknown,
 	className: ClassName,
 ): obj is InstanceType<(typeof globalThis)[ClassName]> {
-	const Ctor = globalThis[className];
+	const ownerDocument =
+		typeof obj === 'object' && obj !== null && 'ownerDocument' in obj
+			? (obj.ownerDocument as Document | null)
+			: null;
+	const scope = ownerDocument?.defaultView ?? globalThis;
+	const Ctor = scope[className] ?? globalThis[className];
 	return typeof Ctor === 'function' && obj instanceof Ctor;
 }
 
@@ -165,7 +172,7 @@ export function requestSubmit(
 	} else if (submitter) {
 		submitter.click();
 	} else {
-		const submitButton = document.createElement('button');
+		const submitButton = form.ownerDocument.createElement('button');
 
 		submitButton.hidden = true;
 
@@ -184,7 +191,7 @@ export function requestIntent(
 	intentName: string,
 	intentValue: string,
 ): void {
-	const submitter = document.createElement('button');
+	const submitter = formElement.ownerDocument.createElement('button');
 
 	submitter.name = intentName;
 	submitter.value = intentValue;
@@ -459,7 +466,7 @@ export function isCheckboxGroup(
 	if (element.type === 'checkbox') {
 		for (const input of element.form?.elements ?? []) {
 			if (
-				input instanceof HTMLInputElement &&
+				isGlobalInstance(input, 'HTMLInputElement') &&
 				input !== element &&
 				input.type === 'checkbox' &&
 				input.name === element.name
@@ -491,7 +498,10 @@ export function change(
 ): boolean {
 	let isChanged = false;
 
-	if (element instanceof HTMLFieldSetElement || Array.isArray(element)) {
+	if (
+		isGlobalInstance(element, 'HTMLFieldSetElement') ||
+		Array.isArray(element)
+	) {
 		let baseName: string;
 		let inputs: Element[];
 		let preventDefault: boolean;
@@ -535,7 +545,13 @@ export function change(
 		});
 	}
 
-	if (element instanceof Element && (isChanged || options?.forceDispatch)) {
+	if (
+		isGlobalInstance(element, 'Element') &&
+		(isChanged || options?.forceDispatch)
+	) {
+		const view = element.ownerDocument.defaultView;
+		const InputEvent = view?.InputEvent ?? globalThis.InputEvent;
+		const Event = view?.Event ?? globalThis.Event;
 		const inputEvent = new InputEvent('input', {
 			bubbles: true,
 			cancelable: true,
@@ -563,6 +579,9 @@ export function change(
  * Dispatches focus and focusin events on the given element.
  */
 export function focus(element: Element): void {
+	const FocusEvent =
+		element.ownerDocument.defaultView?.FocusEvent ?? globalThis.FocusEvent;
+
 	// Only focusin event will be bubbled
 	element.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
 	element.dispatchEvent(new FocusEvent('focus'));
@@ -572,6 +591,9 @@ export function focus(element: Element): void {
  * Dispatches blur and focusout events on the given element.
  */
 export function blur(element: Element): void {
+	const FocusEvent =
+		element.ownerDocument.defaultView?.FocusEvent ?? globalThis.FocusEvent;
+
 	// Only focusout event will be bubbled
 	element.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
 	element.dispatchEvent(new FocusEvent('blur'));

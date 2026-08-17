@@ -1,4 +1,4 @@
-import { isFieldElement, FieldName } from '@conform-to/dom';
+import { isFieldElement, isGlobalInstance, FieldName } from '@conform-to/dom';
 import {
 	type Submission,
 	DEFAULT_INTENT_NAME,
@@ -381,6 +381,7 @@ export function configureForms<
 		);
 		const fallbackId = useId();
 		const formId = options.id ?? `form-${fallbackId}`;
+		const formRef = options.formRef ?? formId;
 		const [state, handleSubmit] = useConform<
 			FormShape,
 			ErrorShape,
@@ -388,7 +389,7 @@ export function configureForms<
 			any,
 			SchemaErrorShape,
 			GlobalCustomStateHandlers
-		>(formId, {
+		>(formRef, {
 			...options,
 			intentHandlers: mergeIntentHandlers(
 				globalIntentHandlers,
@@ -484,7 +485,7 @@ export function configureForms<
 				);
 			},
 		});
-		const intent = useIntent<FormShape, GlobalIntentHandlers>(formId);
+		const intent = useIntent<FormShape, GlobalIntentHandlers>(formRef);
 		const context = useMemo<
 			FormContext<ErrorShape, FormCustomState<GlobalCustomStateHandlers>>
 		>(
@@ -499,11 +500,11 @@ export function configureForms<
 					if (
 						!(
 							isFieldElement(event.target) ||
-							event.target instanceof HTMLFieldSetElement
+							isGlobalInstance(event.target, 'HTMLFieldSetElement')
 						) ||
 						event.target.name === '' ||
 						event.target.form === null ||
-						event.target.form !== getFormElement(formId)
+						event.target.form !== getFormElement(formRef)
 					) {
 						return;
 					}
@@ -537,11 +538,11 @@ export function configureForms<
 					if (
 						!(
 							isFieldElement(event.target) ||
-							event.target instanceof HTMLFieldSetElement
+							isGlobalInstance(event.target, 'HTMLFieldSetElement')
 						) ||
 						event.target.name === '' ||
 						event.target.form === null ||
-						event.target.form !== getFormElement(formId)
+						event.target.form !== getFormElement(formRef)
 					) {
 						return;
 					}
@@ -572,7 +573,16 @@ export function configureForms<
 					}
 				},
 			}),
-			[formId, state, serialize, constraint, handleSubmit, intent, optionsRef],
+			[
+				formId,
+				formRef,
+				state,
+				serialize,
+				constraint,
+				handleSubmit,
+				intent,
+				optionsRef,
+			],
 		);
 		const form = useMemo(
 			() =>

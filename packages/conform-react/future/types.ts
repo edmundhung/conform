@@ -503,6 +503,11 @@ export type FormOptions<
 > = {
 	/** Optional form identifier. If not provided, a unique ID is automatically generated. */
 	id?: string | undefined;
+	/**
+	 * Optional reference to the form element. Use this when the form is rendered
+	 * outside the global document, such as in an iframe or shadow root.
+	 */
+	formRef?: React.RefObject<HTMLFormElement | null> | undefined;
 	/** Optional key for form state reset. When the key changes, the form resets to its initial state. */
 	key?: string | undefined;
 	/** Server-side submission result for form state synchronization. */
