@@ -27,11 +27,11 @@ jobs:
         id: changesets
         uses: changesets/action@198f833dd7d863100ea6e28967bc9a9fdefadb0a # v2.1.0
         with:
-          commitMode: github-api
-          title: 'release: bump packages version'
-          commit: 'release: bump packages version'
-          version: pnpm run version
-          publish: pnpm publish -r
-          createGithubReleases: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          push-with-git-cli: false
+          pr-title: 'release: bump packages version'
+          commit-message: 'release: bump packages version'
+          version-script: pnpm run version
+          publish-script: pnpm publish -r
+          create-github-releases: false
+          push-git-tags: false
