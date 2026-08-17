@@ -1,65 +1,16 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 test.describe('shadcn-base-ui', () => {
-	test.describe('comparison form', () => {
-		function getValidDefaults() {
-			return new URLSearchParams([
-				['name', 'Tester'],
-				['description', 'Hello World'],
-				['accountType', 'business'],
-				['gender', 'male'],
-				['agreeToTerms', 'on'],
-				['job', 'developer'],
-				['country', 'IT'],
-				['age', '42'],
-				['isAdult', 'on'],
-				['dateOfBirth', '2025-04-30T00:00:00.000Z'],
-				['interests', 'react'],
-				['interests', 'angular'],
-				['interests', 'next'],
-				['code', '543210'],
-			]);
-		}
+	async function getForm(page: Page, searchParams?: URLSearchParams) {
+		await page.goto(searchParams ? `/?${searchParams}` : '/');
 
-		async function getForm(page: Page, searchParams = new URLSearchParams()) {
-			await page.goto(`/?${searchParams}`);
-
-			const form = page.locator('form');
-			return {
-				form,
-				heading: page.getByRole('heading', {
-					name: 'shadcn/ui with Base UI',
-				}),
-				submit: form.getByRole('button', { name: 'Submit' }),
-				reset: form.getByRole('button', { name: 'Reset' }),
-				name: form.getByLabel('Name'),
-				description: form.getByLabel('Description'),
-				accountType: form.getByLabel('Account type'),
-				gender: form.getByRole('radiogroup', { name: 'Gender' }),
-				agreeToTerms: form.getByRole('checkbox', { name: 'Agree to terms' }),
-				job: form.getByRole('combobox', { name: 'Job' }),
-				country: form.getByRole('combobox', { name: 'Country' }),
-				age: form.getByRole('slider', { name: 'Age' }),
-				isAdult: form.getByRole('switch', { name: 'Is adult' }),
-				dateOfBirth: form.getByRole('button', { name: 'Date of Birth' }),
-				interests: form.getByRole('combobox', { name: 'Interests' }),
-				code: form.getByRole('textbox', { name: 'Code' }),
-				submittedValue: async () =>
-					JSON.parse(await form.locator('pre').innerText()) as Record<
-						string,
-						unknown
-					>,
-				formData: () =>
-					form.evaluate((element) =>
-						Array.from(new FormData(element as HTMLFormElement)).map(
-							([name, value]) => [name, value.toString()] as [string, string],
-						),
-					),
-			};
-		}
+		const form = page.locator('form');
+		const job = form.getByRole('combobox', { name: 'Job' });
+		const country = form.getByRole('combobox', { name: 'Country' });
+		const interests = form.getByRole('combobox', { name: 'Interests' });
+		const interestChips = form.locator('[data-slot="combobox-chip"]');
 
 		async function selectComboboxItem(
-			page: Page,
 			input: Locator,
 			query: string,
 			option: string,
@@ -75,260 +26,275 @@ test.describe('shadcn-base-ui', () => {
 			await optionElement.waitFor({ state: 'hidden' });
 		}
 
-		async function completeForm(page: Page) {
-			const form = await getForm(page);
-			await form.name.fill('Example');
-			await form.description.fill('A sufficiently long description');
-			await form.accountType.selectOption('personal');
-			await form.gender.getByRole('radio', { name: 'Female' }).click();
-			await form.agreeToTerms.click();
+		return {
+			form,
+			submitButton: form.getByRole('button', { name: 'Submit' }),
+			resetButton: form.getByRole('button', { name: 'Reset' }),
+			name: form.getByLabel('Name'),
+			description: form.getByLabel('Description'),
+			accountType: form.getByLabel('Account type'),
+			gender: form.getByRole('radiogroup', { name: 'Gender' }),
+			agreeToTerms: form.getByRole('checkbox', { name: 'Agree to terms' }),
+			job,
+			async selectJob(option: string) {
+				await job.click();
+				await page.getByRole('option', { name: option, exact: true }).click();
+			},
+			country,
+			selectCountry(query: string, option: string) {
+				return selectComboboxItem(country, query, option);
+			},
+			age: form.getByRole('slider', { name: 'Age' }),
+			isAdult: form.getByRole('switch', { name: 'Is adult' }),
+			dateOfBirth: form.getByRole('button', { name: 'Date of Birth' }),
+			async selectDate(day: string) {
+				await form.getByRole('button', { name: 'Date of Birth' }).click();
+				await page
+					.locator('[data-slot="calendar"] button[data-day]')
+					.filter({ hasText: new RegExp(`^${day}$`) })
+					.first()
+					.click();
+			},
+			interests,
+			selectInterest(option: string) {
+				return selectComboboxItem(interests, option, option);
+			},
+			getInterestsValue() {
+				return interestChips.allTextContents();
+			},
+			code: form.getByRole('textbox', { name: 'Code' }),
+			formData: () =>
+				form.evaluate((element) =>
+					Array.from(new FormData(element as HTMLFormElement)).map(
+						([name, value]) => [name, value.toString()] as [string, string],
+					),
+				),
+			async formDataValue(name: string) {
+				const data = await form.evaluate(
+					(element, fieldName) =>
+						new FormData(element as HTMLFormElement).get(fieldName)?.toString(),
+					name,
+				);
+				return data;
+			},
+			formDataValues(name: string) {
+				return form.evaluate(
+					(element, fieldName) =>
+						new FormData(element as HTMLFormElement)
+							.getAll(fieldName)
+							.map((value) => value.toString()),
+					name,
+				);
+			},
+			submittedValue: () =>
+				form
+					.locator('pre')
+					.innerText()
+					.then((value) => JSON.parse(value) as Record<string, unknown>),
+		};
+	}
 
-			await form.job.click();
-			await page.getByRole('option', { name: 'Designer' }).click();
+	test('validation and submission', async ({ page }) => {
+		const controls = await getForm(page);
 
-			await selectComboboxItem(page, form.country, 'Jap', 'Japan');
+		// Opening a popup keeps focus inside the field; closing it triggers blur.
+		await controls.job.click();
+		await expect(page.getByRole('listbox')).toBeVisible();
+		await expect(controls.job).not.toHaveAttribute('aria-invalid', 'true');
+		await controls.job.press('Escape');
+		await expect(controls.job).toHaveAttribute('aria-invalid', 'true');
 
-			await form.age.focus();
-			for (let index = 0; index < 18; index += 1) {
-				await form.age.press('ArrowRight');
-			}
-			await form.isAdult.click();
+		await controls.name.fill('Example');
+		await controls.description.fill('A sufficiently long description');
+		await controls.accountType.selectOption('personal');
 
-			await form.dateOfBirth.click();
-			await page.getByRole('gridcell').getByText('15', { exact: true }).click();
+		await controls.submitButton.click();
+		const female = controls.gender.getByRole('radio', { name: 'Female' });
+		await expect(controls.gender.getByRole('radio').first()).toBeFocused();
+		await expect(controls.gender).toHaveAttribute('aria-invalid', 'true');
+		await female.click();
 
-			for (const interest of ['React', 'Angular', 'Next']) {
-				await selectComboboxItem(page, form.interests, interest, interest);
-			}
+		await controls.submitButton.click();
+		await expect(controls.agreeToTerms).toBeFocused();
+		await expect(controls.agreeToTerms).toHaveAttribute('aria-invalid', 'true');
+		await controls.agreeToTerms.click();
 
-			await form.code.pressSequentially('123456');
-			return form;
+		await controls.submitButton.click();
+		await expect(controls.job).toBeFocused();
+		await controls.selectJob('Designer');
+
+		await controls.submitButton.click();
+		await expect(controls.country).toBeFocused();
+		await expect(controls.country).toHaveAttribute('aria-invalid', 'true');
+		await controls.selectCountry('Jap', 'Japan');
+
+		await controls.submitButton.click();
+		await expect(controls.age).toBeFocused();
+		await expect(controls.age).toHaveAccessibleDescription(/18/);
+		for (let index = 0; index < 18; index += 1) {
+			await controls.age.press('ArrowRight');
 		}
 
-		test('focuses the first invalid visible control', async ({ page }) => {
-			const form = await getForm(page);
+		await controls.submitButton.click();
+		await expect(controls.isAdult).toBeFocused();
+		await expect(controls.isAdult).toHaveAttribute('aria-invalid', 'true');
+		await controls.isAdult.click();
 
-			await form.submit.click();
+		await controls.submitButton.click();
+		await expect(controls.dateOfBirth).toBeFocused();
+		await expect(controls.dateOfBirth).toHaveAttribute('aria-invalid', 'true');
+		await controls.selectDate('15');
+		const dateOfBirth = await controls.formDataValue('dateOfBirth');
+		expect(dateOfBirth).toBeDefined();
 
-			await expect(form.name).toBeFocused();
-			await expect(form.name).toHaveAttribute('aria-invalid', 'true');
-			await expect(form.name).toHaveAccessibleDescription(/three characters/i);
+		await controls.submitButton.click();
+		await expect(controls.interests).toBeFocused();
+		await expect(controls.interests).toHaveAttribute('aria-invalid', 'true');
+		for (const interest of ['React', 'Angular', 'Next']) {
+			await controls.selectInterest(interest);
+		}
+
+		await controls.submitButton.click();
+		await expect(controls.code).toBeFocused();
+		await expect(controls.code).toHaveAttribute('aria-invalid', 'true');
+		await controls.code.pressSequentially('123456');
+
+		await controls.submitButton.click();
+		await expect.poll(controls.submittedValue).toEqual({
+			name: 'Example',
+			dateOfBirth,
+			country: 'JP',
+			gender: 'female',
+			agreeToTerms: true,
+			job: 'designer',
+			age: 18,
+			isAdult: true,
+			description: 'A sufficiently long description',
+			accountType: 'personal',
+			interests: ['react', 'angular', 'next'],
+			code: '123456',
 		});
 
-		test('forwards validation focus from hidden inputs', async ({ page }) => {
-			type Form = Awaited<ReturnType<typeof getForm>>;
-			async function expectMissingFieldToFocus(
-				name: string,
-				getTarget: (form: Form) => Locator,
-			) {
-				const defaults = getValidDefaults();
-				defaults.delete(name);
-				const form = await getForm(page, defaults);
+		const submittedSearchParams = new URL(page.url()).searchParams;
+		expect(submittedSearchParams.getAll('interests')).toEqual([
+			'react',
+			'angular',
+			'next',
+		]);
+		expect(submittedSearchParams.get('country')).toBe('JP');
+	});
 
-				await form.submit.click();
-				await expect(getTarget(form)).toBeFocused();
-			}
+	test('updated defaults and reset', async ({ page }) => {
+		const defaults = new URLSearchParams([
+			['name', 'Default'],
+			['description', 'Default description'],
+			['accountType', 'business'],
+			['gender', 'male'],
+			['job', 'developer'],
+			['country', 'invalid'],
+			['age', '42'],
+			['dateOfBirth', '2025-04-30T00:00:00.000Z'],
+			['interests', 'react'],
+			['interests', 'angular'],
+			['interests', 'next'],
+			['interests', 'invalid-one'],
+			['interests', 'invalid-two'],
+			['code', '543210'],
+		]);
+		const controls = await getForm(page, defaults);
 
-			await expectMissingFieldToFocus('gender', (form) =>
-				form.gender.getByRole('radio').first(),
-			);
-			await expectMissingFieldToFocus(
-				'agreeToTerms',
-				(form) => form.agreeToTerms,
-			);
-			await expectMissingFieldToFocus('job', (form) => form.job);
-			await expectMissingFieldToFocus('country', (form) => form.country);
-			await expectMissingFieldToFocus('age', (form) => form.age);
-			await expectMissingFieldToFocus('isAdult', (form) => form.isAdult);
-			await expectMissingFieldToFocus(
-				'dateOfBirth',
-				(form) => form.dateOfBirth,
-			);
-			await expectMissingFieldToFocus('interests', (form) => form.interests);
-			await expectMissingFieldToFocus('code', (form) => form.code);
+		// An unknown serialized combobox value must not leak into FormData.
+		await expect(controls.country).toHaveValue('');
+		await expect.poll(controls.formData).toContainEqual(['country', '']);
+		await expect
+			.poll(() => controls.formDataValues('interests'))
+			.toEqual(['react', 'angular', 'next']);
+
+		await controls.selectDate('15');
+		const submittedDate = await controls.formDataValue('dateOfBirth');
+		const submittedDateLabel = await controls.dateOfBirth.textContent();
+		await controls.name.fill('Submitted');
+		await controls.description.fill('Submitted description');
+		await controls.accountType.selectOption('personal');
+		await controls.gender.getByRole('radio', { name: 'Female' }).click();
+		await controls.agreeToTerms.click();
+		await controls.selectJob('Manager');
+		await controls.selectCountry('Jap', 'Japan');
+		for (let index = 0; index < 8; index += 1) {
+			await controls.age.press('ArrowRight');
+		}
+		await controls.isAdult.click();
+		await controls.selectInterest('Vue');
+		await controls.code.press('ControlOrMeta+A');
+		await controls.code.pressSequentially('654321');
+		await controls.submitButton.click();
+
+		await expect.poll(controls.submittedValue).toEqual({
+			name: 'Submitted',
+			dateOfBirth: submittedDate,
+			country: 'JP',
+			gender: 'female',
+			agreeToTerms: true,
+			job: 'manager',
+			age: 50,
+			isAdult: true,
+			description: 'Submitted description',
+			accountType: 'personal',
+			interests: ['react', 'angular', 'next', 'vue'],
+			code: '654321',
 		});
 
-		test('validates on blur and revalidates on input', async ({ page }) => {
-			const form = await getForm(page);
-			async function expectBlurValidation(target: Locator) {
-				await target.focus();
-				await form.heading.click();
-				await expect(target).toHaveAttribute('aria-invalid', 'true');
-			}
+		await controls.name.fill('Changed');
+		await controls.description.fill('Changed description');
+		await controls.accountType.selectOption('business');
+		await controls.gender
+			.getByRole('radio', { name: 'Male', exact: true })
+			.click();
+		await controls.agreeToTerms.click();
+		await controls.selectJob('Developer');
+		await controls.selectCountry('Ita', 'Italy');
+		for (let index = 0; index < 10; index += 1) {
+			await controls.age.press('ArrowRight');
+		}
+		await controls.isAdult.click();
+		await controls.selectDate('20');
+		await controls.selectInterest('Svelte');
+		await controls.code.press('ControlOrMeta+A');
+		await controls.code.pressSequentially('111111');
 
-			await expectBlurValidation(form.name);
-			await expect(form.name).toHaveAccessibleDescription(/Invalid input/);
-			await form.name.fill('Example');
-			await expect(form.name).not.toHaveAccessibleDescription(/Invalid input/);
+		await controls.resetButton.click();
 
-			await expectBlurValidation(form.gender.getByRole('radio').first());
-			await expectBlurValidation(form.agreeToTerms);
-			await expectBlurValidation(form.job);
-			await expect(form.job).toHaveAccessibleDescription(/Invalid input/);
-			await form.job.click();
-			await page.getByRole('option', { name: 'Developer' }).click();
-			await expect(form.job).not.toHaveAccessibleDescription(/Invalid input/);
+		await expect(controls.name).toHaveValue('Submitted');
+		await expect(controls.description).toHaveValue('Submitted description');
+		await expect(controls.accountType).toHaveValue('personal');
+		await expect(
+			controls.gender.getByRole('radio', { name: 'Female' }),
+		).toBeChecked();
+		await expect(controls.agreeToTerms).toBeChecked();
+		await expect(controls.job).toContainText('Manager');
+		await expect(controls.country).toHaveValue('Japan');
+		await expect(controls.age).toHaveValue('50');
+		await expect(controls.isAdult).toBeChecked();
+		await expect(controls.dateOfBirth).toHaveText(submittedDateLabel ?? '');
+		await expect
+			.poll(controls.getInterestsValue)
+			.toEqual(['React', 'Vue', 'Angular', 'Next']);
+		await expect(controls.code).toHaveValue('654321');
 
-			await expectBlurValidation(form.country);
-			await form.age.focus();
-			await form.heading.click();
-			await expect(form.age).toHaveAccessibleDescription(/18/);
-			await expectBlurValidation(form.isAdult);
-			await expectBlurValidation(form.dateOfBirth);
-			await expectBlurValidation(form.interests);
-			await expectBlurValidation(form.code);
-		});
-
-		test('treats popup interaction as part of the field', async ({ page }) => {
-			const form = await getForm(page);
-
-			await form.job.click();
-			await expect(page.getByRole('listbox')).toBeVisible();
-			await expect(form.job).not.toHaveAttribute('aria-invalid', 'true');
-
-			await form.job.press('Escape');
-			await expect(form.job).toHaveAttribute('aria-invalid', 'true');
-
-			await form.job.click();
-			await page.getByRole('option', { name: 'Developer' }).click();
-			await expect(form.job).not.toHaveAttribute('aria-invalid', 'true');
-
-			await form.dateOfBirth.click();
-			await expect(page.getByRole('grid')).toBeVisible();
-			await expect(form.dateOfBirth).not.toHaveAttribute(
-				'aria-invalid',
-				'true',
-			);
-			await page.getByRole('gridcell').getByText('15', { exact: true }).click();
-			await expect(form.dateOfBirth).not.toHaveAttribute(
-				'aria-invalid',
-				'true',
-			);
-			await form.dateOfBirth.focus();
-			await form.heading.click();
-			await expect(form.dateOfBirth).not.toHaveAttribute(
-				'aria-invalid',
-				'true',
-			);
-		});
-
-		test('submits parsed values and repeated FormData entries', async ({
-			page,
-		}) => {
-			const form = await completeForm(page);
-			await form.submit.click();
-
-			const dateOfBirth = (await form.formData()).find(
-				([name]) => name === 'dateOfBirth',
-			)?.[1];
-			expect(dateOfBirth).toBeDefined();
-
-			await expect.poll(form.submittedValue).toEqual({
-				name: 'Example',
-				dateOfBirth,
-				country: 'JP',
-				gender: 'female',
-				agreeToTerms: true,
-				job: 'designer',
-				age: 18,
-				isAdult: true,
-				description: 'A sufficiently long description',
-				accountType: 'personal',
-				interests: ['react', 'angular', 'next'],
-				code: '123456',
-			});
-
-			const submittedSearchParams = new URL(page.url()).searchParams;
-			expect(submittedSearchParams.getAll('interests')).toEqual([
-				'react',
-				'angular',
-				'next',
-			]);
-			expect(submittedSearchParams.get('country')).toBe('JP');
-			expect(submittedSearchParams.get('agreeToTerms')).toBe('on');
-		});
-
-		test('complex controls expose native form values', async ({ page }) => {
-			const defaults = getValidDefaults();
-			const form = await getForm(page, defaults);
-
-			await expect.poll(form.formData).toEqual(Array.from(defaults));
-
-			await selectComboboxItem(page, form.country, 'Jap', 'Japan');
-			await selectComboboxItem(page, form.interests, 'Vue', 'Vue');
-			await form.code.press('ControlOrMeta+A');
-			await form.code.pressSequentially('654321');
-
-			const values = await form.form.evaluate((element) => {
-				const data = new FormData(element as HTMLFormElement);
-				return {
-					country: data.get('country'),
-					interests: data.getAll('interests'),
-					code: data.get('code'),
-				};
-			});
-			expect(values).toEqual({
-				country: 'JP',
-				interests: ['react', 'vue', 'angular', 'next'],
-				code: '654321',
-			});
-
-			const invalidDefaults = getValidDefaults();
-			invalidDefaults.set('country', 'invalid');
-			const invalidForm = await getForm(page, invalidDefaults);
-			await expect(invalidForm.country).toHaveValue('');
-			await expect.poll(invalidForm.formData).toContainEqual(['country', '']);
-		});
-
-		test('resets uncontrolled defaults, Base UI hidden inputs, and adapters', async ({
-			page,
-		}) => {
-			for (const reset of ['button', 'browser']) {
-				const defaults = getValidDefaults();
-				const form = await getForm(page, defaults);
-
-				await form.name.fill('Changed');
-				await form.description.fill('A different valid description');
-				await form.accountType.selectOption('personal');
-				await form.gender.getByRole('radio', { name: 'Female' }).click();
-				await form.agreeToTerms.click();
-				await form.job.click();
-				await page.getByRole('option', { name: 'Manager' }).click();
-				await selectComboboxItem(page, form.country, 'Jap', 'Japan');
-				await form.age.press('Home');
-				await form.isAdult.click();
-				await form.dateOfBirth.click();
-				await page
-					.getByRole('gridcell')
-					.getByText('15', { exact: true })
-					.click();
-				await selectComboboxItem(page, form.interests, 'Vue', 'Vue');
-				await form.code.fill('111111');
-
-				if (reset === 'button') {
-					await form.reset.click();
-				} else {
-					await form.form.evaluate((element) =>
-						(element as HTMLFormElement).reset(),
-					);
-				}
-
-				await expect.poll(form.formData).toEqual(Array.from(defaults));
-				await expect(form.name).toHaveValue('Tester');
-				await expect(form.description).toHaveValue('Hello World');
-				await expect(form.accountType).toHaveValue('business');
-				await expect(
-					form.gender.getByRole('radio', { name: 'Male', exact: true }),
-				).toBeChecked();
-				await expect(form.agreeToTerms).toBeChecked();
-				await expect(form.job).toContainText('Developer');
-				await expect(form.country).toHaveValue('Italy');
-				await expect(form.age).toHaveValue('42');
-				await expect(form.isAdult).toBeChecked();
-				await expect(form.dateOfBirth).toContainText('April 30th, 2025');
-				await expect(form.interests).toHaveValue('');
-				await expect(form.code).toHaveValue('543210');
-			}
+		await controls.submitButton.click();
+		await expect.poll(controls.submittedValue).toEqual({
+			name: 'Submitted',
+			dateOfBirth: submittedDate,
+			country: 'JP',
+			gender: 'female',
+			agreeToTerms: true,
+			job: 'manager',
+			age: 50,
+			isAdult: true,
+			description: 'Submitted description',
+			accountType: 'personal',
+			interests: ['react', 'angular', 'next', 'vue'],
+			code: '654321',
 		});
 	});
 });

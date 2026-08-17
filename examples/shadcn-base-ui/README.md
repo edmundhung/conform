@@ -1,22 +1,23 @@
 # shadcn/ui with Base UI
 
-> This guide focuses on behavior specific to Base UI. See [Integrating with UI Libraries](../../docs/integration/ui-libraries.md) for the general concept and the [`useControl`](../../docs/api/react/future/useControl.md) API.
+[shadcn/ui](https://ui.shadcn.com/) provides composable components that can be generated with [Base UI](https://base-ui.com/) primitives instead of Radix UI.
 
-This is the Base UI counterpart to the Radix-based [`examples/shadcn-ui`](../shadcn-ui). It uses the current shadcn Vite setup with React 19, Tailwind CSS 4, Zod 4, and `@conform-to/zod/v4/future`. Files under `src/components/ui` come from the shadcn CLI; the Conform adapters live in [`form-controls.tsx`](./src/components/form-controls.tsx).
+This Vite project demonstrates how to use the Base UI variant of shadcn/ui with React 19, Conform, Tailwind CSS 4, and Zod 4 validation through `@conform-to/zod/v4/future`. It is the direct counterpart to the Radix-based [`shadcn-ui`](../shadcn-ui) example.
 
-## Use Native Controls Where Possible
+## Integration
 
-Input, Textarea, and NativeSelect receive Conform metadata directly. Base UI Slider already renders named range inputs, so the local shadcn Slider only forwards error ARIA attributes to those focusable inputs.
+When a shadcn component renders a normal `<input>`, `<select>`, or `<textarea>`, the example passes Conform's field props directly to it. Compound controls use [`useControl`](../../docs/api/react/future/useControl.md) with a [`BaseControl`](../../docs/api/react/future/BaseControl.md). The base control is the canonical named form control, while the visible compound component is controlled from its value and left unnamed to avoid duplicate `FormData` entries.
 
-## Bridge Composite Controls
+The adapters translate Base UI's event and value shapes into `control.change`, delegate validation focus to the interactive element, and report blur only after focus leaves a compound control or its popup. Because the visible state follows the base control, initial and updated defaults, Conform reset intents, validation, and string serialization stay synchronized without remounting the form.
 
-Base UI hidden inputs submit values correctly, but their visual elements do not emit the named blur events Conform uses for `onBlur` validation. Checkbox, RadioGroup, Select, Combobox, and Switch therefore use `useControl` with one unnamed Base UI primitive and one named base control. This also gives validation focus and reset a single source of truth.
+The interests combobox uses a multiple `BaseControl`, producing one `FormData` entry per selected value. This demonstrates array-valued form data without encoding the array into a scalar string. See [Integrating with UI Libraries](../../docs/integration/ui-libraries.md) for the general integration pattern.
 
-DatePicker and InputOTP use the same bridge because they have no suitable native form control. The multi-select Combobox registers a visually hidden multiple select so an empty field can receive validation focus and selected values remain repeated `FormData` entries.
+## Project Structure
 
-Base UI 1.6 does not restore every uncontrolled visual state on a native form reset. The form handles its `reset` event and remounts the field group, covering both the Reset button and `form.reset()`.
-
-[`forms.ts`](./src/forms.ts) extends Conform field metadata with typed props for the shadcn and adapter components, matching the other modern UI-library examples.
+- [`App.tsx`](./src/App.tsx) contains the form and shows the explicit Conform prop mappings in nearby comments.
+- [`form.tsx`](./src/components/form.tsx) contains the Base UI adapters.
+- [`forms.ts`](./src/forms.ts) uses [`configureForms`](../../docs/api/react/future/configureForms.md#integrating-with-ui-libraries) to expose those mappings as typed field props.
+- [`tests/index.test.ts`](./tests/index.test.ts) verifies submission, reset, validation, focus, and repeated-value serialization.
 
 ## Demo
 

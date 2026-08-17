@@ -6,13 +6,13 @@ import type {
 	FormCombobox,
 	FormRadioGroup,
 	FormSelect,
+	FormSlider,
 	FormSwitch,
 	InputOTP,
 	MultiCombobox,
-} from './components/form-controls';
+} from './components/form';
 import type { InputGroupInput } from './components/ui/input-group';
 import type { NativeSelect } from './components/ui/native-select';
-import type { Slider } from './components/ui/slider';
 import type { Textarea } from './components/ui/textarea';
 
 function describedBy(descriptionId: string, errorId?: string) {
@@ -99,10 +99,10 @@ const forms = configureForms({
 				return {
 					id: metadata.id,
 					name: metadata.name,
-					defaultValue: [Number(metadata.defaultValue || 0)],
+					defaultValue: metadata.defaultValue,
 					'aria-labelledby': `${metadata.id}-label`,
 					...ariaProps,
-				} satisfies Partial<React.ComponentProps<typeof Slider>>;
+				} satisfies Partial<React.ComponentProps<typeof FormSlider>>;
 			},
 			get switchProps() {
 				return {

@@ -29,6 +29,7 @@ import {
 } from './ui/input-otp';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { RadioGroup } from './ui/radio-group';
+import { Slider } from './ui/slider';
 import {
 	Select,
 	SelectContent,
@@ -52,6 +53,10 @@ type Choice = {
 	value: string;
 };
 
+function isFocusLeaving(event: React.FocusEvent<HTMLElement>) {
+	return !event.currentTarget.contains(event.relatedTarget);
+}
+
 export function MultiCombobox({
 	id,
 	name,
@@ -65,8 +70,11 @@ export function MultiCombobox({
 	const inputRef = useRef<HTMLInputElement>(null);
 	const openRef = useRef(false);
 	const anchor = useComboboxAnchor();
+	const normalizedDefaultValue = defaultValue.filter((value) =>
+		items.some((item) => item.value === value),
+	);
 	const control = useControl({
-		defaultValue,
+		defaultValue: normalizedDefaultValue,
 		onFocus() {
 			inputRef.current?.focus();
 		},
@@ -77,21 +85,13 @@ export function MultiCombobox({
 
 	return (
 		<>
-			<select
+			<BaseControl
+				type="select"
 				ref={control.register}
 				name={name}
 				defaultValue={control.defaultValue ?? []}
-				className="sr-only"
-				aria-hidden="true"
-				tabIndex={-1}
 				multiple
-			>
-				{items.map((item) => (
-					<option key={item.value} value={item.value}>
-						{item.label}
-					</option>
-				))}
-			</select>
+			/>
 			<Combobox
 				multiple
 				items={items}
@@ -320,15 +320,65 @@ export function FormRadioGroup({
 				onValueChange={control.change}
 				onFocus={control.focus}
 				onBlur={(event) => {
-					if (!event.currentTarget.contains(event.relatedTarget)) {
-						control.blur();
-					}
+					if (isFocusLeaving(event)) control.blur();
 				}}
 				className={className}
 				{...props}
 			>
 				{children}
 			</RadioGroup>
+		</>
+	);
+}
+
+export function FormSlider({
+	id,
+	name,
+	defaultValue,
+	min = 0,
+	max = 100,
+	step = 1,
+	...props
+}: SharedControlProps & {
+	min?: number;
+	max?: number;
+	step?: number;
+}) {
+	const rootRef = useRef<HTMLDivElement>(null);
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			rootRef.current
+				?.querySelector<HTMLInputElement>('input[type="range"]')
+				?.focus();
+		},
+	});
+
+	return (
+		<>
+			<BaseControl
+				name={name}
+				ref={control.register}
+				defaultValue={control.defaultValue ?? ''}
+			/>
+			<Slider
+				ref={rootRef}
+				id={id}
+				min={min}
+				max={max}
+				step={step}
+				value={[Number(control.value || min)]}
+				onValueChange={(value) =>
+					control.change(
+						(Array.isArray(value) ? value[0] : value)?.toString() ?? '',
+					)
+				}
+				onFocus={control.focus}
+				onBlur={(event) => {
+					if (isFocusLeaving(event)) control.blur();
+				}}
+				{...props}
+			/>
 		</>
 	);
 }
@@ -450,9 +500,9 @@ export function DatePicker({
 			/>
 			<Popover open={open} onOpenChange={handleOpenChange}>
 				<PopoverTrigger
+					ref={triggerRef}
 					render={
 						<Button
-							ref={triggerRef}
 							id={id}
 							type="button"
 							onBlur={() => {

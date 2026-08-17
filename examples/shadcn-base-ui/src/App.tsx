@@ -9,10 +9,11 @@ import {
 	FormCombobox,
 	FormRadioGroup,
 	FormSelect,
+	FormSlider,
 	FormSwitch,
 	InputOTP,
 	MultiCombobox,
-} from './components/form-controls';
+} from './components/form';
 import { Button } from './components/ui/button';
 import {
 	Field,
@@ -35,7 +36,6 @@ import {
 	NativeSelectOption,
 } from './components/ui/native-select';
 import { RadioGroupItem } from './components/ui/radio-group';
-import { Slider } from './components/ui/slider';
 import { Textarea } from './components/ui/textarea';
 import { useForm } from './forms';
 
@@ -84,18 +84,19 @@ const schema = coerceFormValue(
 );
 
 export function App() {
-	const [resetKey, setResetKey] = useState(0);
 	const [submittedValue, setSubmittedValue] = useState<z.output<
 		typeof schema
 	> | null>(null);
 	const [searchParams, setSearchParams] = useState(
 		() => new URLSearchParams(window.location.search),
 	);
-	const { form, fields } = useForm(schema, {
+	const { form, fields, intent } = useForm(schema, {
+		// The URL is the source of the form's defaults in this client-only example.
 		defaultValue: searchParams,
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 
+			// Demo only - This emulates a GET request with the form data in the URL.
 			const url = new URL(document.URL);
 			const nextSearchParams = new URLSearchParams(
 				Array.from(formData).filter(
@@ -124,19 +125,23 @@ export function App() {
 				method="POST"
 				className="space-y-6"
 				onChange={() => setSubmittedValue(null)}
-				onReset={() => {
-					setSubmittedValue(null);
-					setResetKey((key) => key + 1);
-				}}
 			>
-				<FieldGroup key={resetKey}>
+				<FieldGroup>
 					<Field data-invalid={fields.name.ariaInvalid}>
 						<FieldLabel htmlFor={fields.name.id}>Name</FieldLabel>
 						<InputGroup>
 							<InputGroupAddon>
 								<AtSignIcon />
 							</InputGroupAddon>
-							<InputGroupInput {...fields.name.inputProps} />
+							<InputGroupInput
+								{...fields.name.inputProps}
+								// Equivalent to:
+								// id={fields.name.id}
+								// name={fields.name.name}
+								// defaultValue={fields.name.defaultValue}
+								// aria-invalid={fields.name.ariaInvalid}
+								// aria-describedby={[fields.name.descriptionId, fields.name.ariaDescribedBy].filter(Boolean).join(' ')}
+							/>
 							<InputGroupAddon align="inline-end">
 								<InputGroupText>Public</InputGroupText>
 							</InputGroupAddon>
@@ -151,7 +156,15 @@ export function App() {
 
 					<Field data-invalid={fields.description.ariaInvalid}>
 						<FieldLabel htmlFor={fields.description.id}>Description</FieldLabel>
-						<Textarea {...fields.description.textareaProps} />
+						<Textarea
+							{...fields.description.textareaProps}
+							// Equivalent to:
+							// id={fields.description.id}
+							// name={fields.description.name}
+							// defaultValue={fields.description.defaultValue}
+							// aria-invalid={fields.description.ariaInvalid}
+							// aria-describedby={[fields.description.descriptionId, fields.description.ariaDescribedBy].filter(Boolean).join(' ')}
+						/>
 						<FieldDescription id={fields.description.descriptionId}>
 							Tell us about yourself in at least ten characters.
 						</FieldDescription>
@@ -164,7 +177,15 @@ export function App() {
 						<FieldLabel htmlFor={fields.accountType.id}>
 							Account type
 						</FieldLabel>
-						<NativeSelect {...fields.accountType.nativeSelectProps}>
+						<NativeSelect
+							{...fields.accountType.nativeSelectProps}
+							// Equivalent to:
+							// id={fields.accountType.id}
+							// name={fields.accountType.name}
+							// defaultValue={fields.accountType.defaultValue}
+							// aria-invalid={fields.accountType.ariaInvalid}
+							// aria-describedby={[fields.accountType.descriptionId, fields.accountType.ariaDescribedBy].filter(Boolean).join(' ')}
+						>
 							<NativeSelectOption value="">
 								Choose an account
 							</NativeSelectOption>
@@ -186,6 +207,13 @@ export function App() {
 						</FieldDescription>
 						<FormRadioGroup
 							{...fields.gender.radioGroupProps}
+							// Equivalent to:
+							// id={fields.gender.id}
+							// name={fields.gender.name}
+							// defaultValue={fields.gender.defaultValue}
+							// aria-labelledby={`${fields.gender.id}-label`}
+							// aria-invalid={fields.gender.ariaInvalid}
+							// aria-describedby={[fields.gender.descriptionId, fields.gender.ariaDescribedBy].filter(Boolean).join(' ')}
 							className="grid-cols-3"
 						>
 							{genderValues.map((value) => (
@@ -210,7 +238,16 @@ export function App() {
 						data-invalid={fields.agreeToTerms.ariaInvalid}
 						orientation="horizontal"
 					>
-						<FormCheckbox {...fields.agreeToTerms.checkboxProps} />
+						<FormCheckbox
+							{...fields.agreeToTerms.checkboxProps}
+							// Equivalent to:
+							// id={fields.agreeToTerms.id}
+							// name={fields.agreeToTerms.name}
+							// value="on"
+							// defaultChecked={fields.agreeToTerms.defaultChecked}
+							// aria-invalid={fields.agreeToTerms.ariaInvalid}
+							// aria-describedby={[fields.agreeToTerms.descriptionId, fields.agreeToTerms.ariaDescribedBy].filter(Boolean).join(' ')}
+						/>
 						<FieldContent>
 							<FieldLabel htmlFor={fields.agreeToTerms.id}>
 								Agree to terms
@@ -228,16 +265,35 @@ export function App() {
 						<FieldLabel id={`${fields.job.id}-label`} htmlFor={fields.job.id}>
 							Job
 						</FieldLabel>
-						<FormSelect items={jobs} {...fields.job.selectProps} />
+						<FormSelect
+							items={jobs}
+							{...fields.job.selectProps}
+							// Equivalent to:
+							// id={fields.job.id}
+							// name={fields.job.name}
+							// defaultValue={fields.job.defaultValue}
+							// aria-labelledby={`${fields.job.id}-label`}
+							// aria-invalid={fields.job.ariaInvalid}
+							// aria-describedby={[fields.job.descriptionId, fields.job.ariaDescribedBy].filter(Boolean).join(' ')}
+						/>
 						<FieldDescription id={fields.job.descriptionId}>
-							Base UI supplies the hidden form input.
+							A compound select backed by a Conform BaseControl.
 						</FieldDescription>
 						<FieldError id={fields.job.errorId}>{fields.job.errors}</FieldError>
 					</Field>
 
 					<Field data-invalid={fields.country.ariaInvalid}>
 						<FieldLabel htmlFor={fields.country.id}>Country</FieldLabel>
-						<FormCombobox items={countries} {...fields.country.comboboxProps} />
+						<FormCombobox
+							items={countries}
+							{...fields.country.comboboxProps}
+							// Equivalent to:
+							// id={fields.country.id}
+							// name={fields.country.name}
+							// defaultValue={fields.country.defaultValue}
+							// aria-invalid={fields.country.ariaInvalid}
+							// aria-describedby={[fields.country.descriptionId, fields.country.ariaDescribedBy].filter(Boolean).join(' ')}
+						/>
 						<FieldDescription id={fields.country.descriptionId}>
 							Searchable, but serialized as the two-letter country code.
 						</FieldDescription>
@@ -248,7 +304,19 @@ export function App() {
 
 					<Field data-invalid={fields.age.ariaInvalid}>
 						<FieldLabel id={`${fields.age.id}-label`}>Age</FieldLabel>
-						<Slider min={0} max={100} step={1} {...fields.age.sliderProps} />
+						<FormSlider
+							min={0}
+							max={100}
+							step={1}
+							{...fields.age.sliderProps}
+							// Equivalent to:
+							// id={fields.age.id}
+							// name={fields.age.name}
+							// defaultValue={fields.age.defaultValue}
+							// aria-labelledby={`${fields.age.id}-label`}
+							// aria-invalid={fields.age.ariaInvalid}
+							// aria-describedby={[fields.age.descriptionId, fields.age.ariaDescribedBy].filter(Boolean).join(' ')}
+						/>
 						<FieldDescription id={fields.age.descriptionId}>
 							You must be at least 18.
 						</FieldDescription>
@@ -268,7 +336,16 @@ export function App() {
 								{fields.isAdult.errors}
 							</FieldError>
 						</FieldContent>
-						<FormSwitch {...fields.isAdult.switchProps} />
+						<FormSwitch
+							{...fields.isAdult.switchProps}
+							// Equivalent to:
+							// id={fields.isAdult.id}
+							// name={fields.isAdult.name}
+							// value="on"
+							// defaultChecked={fields.isAdult.defaultChecked}
+							// aria-invalid={fields.isAdult.ariaInvalid}
+							// aria-describedby={[fields.isAdult.descriptionId, fields.isAdult.ariaDescribedBy].filter(Boolean).join(' ')}
+						/>
 					</Field>
 
 					<Field data-invalid={fields.dateOfBirth.ariaInvalid}>
@@ -278,7 +355,16 @@ export function App() {
 						>
 							Date of Birth
 						</FieldLabel>
-						<DatePicker {...fields.dateOfBirth.datePickerProps} />
+						<DatePicker
+							{...fields.dateOfBirth.datePickerProps}
+							// Equivalent to:
+							// id={fields.dateOfBirth.id}
+							// name={fields.dateOfBirth.name}
+							// defaultValue={fields.dateOfBirth.defaultValue}
+							// aria-labelledby={`${fields.dateOfBirth.id}-label`}
+							// aria-invalid={fields.dateOfBirth.ariaInvalid}
+							// aria-describedby={[fields.dateOfBirth.descriptionId, fields.dateOfBirth.ariaDescribedBy].filter(Boolean).join(' ')}
+						/>
 						<FieldDescription id={fields.dateOfBirth.descriptionId}>
 							A calendar backed by a Conform BaseControl.
 						</FieldDescription>
@@ -297,6 +383,13 @@ export function App() {
 						<MultiCombobox
 							items={interests}
 							{...fields.interests.multiComboboxProps}
+							// Equivalent to:
+							// id={fields.interests.id}
+							// name={fields.interests.name}
+							// defaultValue={fields.interests.defaultOptions}
+							// aria-labelledby={`${fields.interests.id}-label`}
+							// aria-invalid={fields.interests.ariaInvalid}
+							// aria-describedby={[fields.interests.descriptionId, fields.interests.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
 						<FieldDescription id={fields.interests.descriptionId}>
 							Choose at least three. Each value is a separate FormData entry.
@@ -310,7 +403,16 @@ export function App() {
 						<FieldLabel id={`${fields.code.id}-label`} htmlFor={fields.code.id}>
 							Code
 						</FieldLabel>
-						<InputOTP {...fields.code.inputOTPProps} />
+						<InputOTP
+							{...fields.code.inputOTPProps}
+							// Equivalent to:
+							// id={fields.code.id}
+							// name={fields.code.name}
+							// defaultValue={fields.code.defaultValue}
+							// aria-labelledby={`${fields.code.id}-label`}
+							// aria-invalid={fields.code.ariaInvalid}
+							// aria-describedby={[fields.code.descriptionId, fields.code.ariaDescribedBy].filter(Boolean).join(' ')}
+						/>
 						<FieldDescription id={fields.code.descriptionId}>
 							Enter the six-digit verification code.
 						</FieldDescription>
@@ -336,7 +438,14 @@ export function App() {
 
 				<div className="flex gap-2">
 					<Button type="submit">Submit</Button>
-					<Button type="reset" variant="outline">
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => {
+							setSubmittedValue(null);
+							intent.reset();
+						}}
+					>
 						Reset
 					</Button>
 				</div>
