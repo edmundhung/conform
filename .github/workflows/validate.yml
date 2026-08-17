@@ -32,6 +32,7 @@ jobs:
   examples:
     name: Examples
     if: inputs.preview != ''
+    timeout-minutes: 15
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repo
@@ -60,6 +61,7 @@ jobs:
   typecheck:
     name: Typecheck — TS ${{ matrix.typescript }}
     if: inputs.typescript != ''
+    timeout-minutes: 10
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -112,6 +114,7 @@ jobs:
   epicstack:
     name: Epic Stack
     if: inputs.preview != ''
+    timeout-minutes: 10
     runs-on: ubuntu-22.04
     steps:
       - name: ⎔ Setup node
@@ -120,7 +123,7 @@ jobs:
           node-version: 22
 
       - name: Bootstrap project
-        run: SKIP_DEPLOYMENT=true npx epicli new ./
+        run: SKIP_DEPLOYMENT=true npx --yes epicli@latest new ./
 
       - name: Install pre-release
         run: |
