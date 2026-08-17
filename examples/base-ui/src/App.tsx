@@ -1,5 +1,5 @@
 import { coerceFormValue } from '@conform-to/zod/v4/future';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { z } from 'zod';
 import {
 	CheckboxField,
@@ -23,9 +23,9 @@ const schema = coerceFormValue(
 		bio: z
 			.string({ error: 'Enter at least 10 characters' })
 			.min(10, 'Enter at least 10 characters'),
-		acceptTerms: z
-			.boolean()
-			.refine((value) => value, 'Accept the terms to continue'),
+		acceptTerms: z.literal(true, {
+			error: 'Accept the terms to continue',
+		}),
 		interests: z
 			.enum(['design', 'engineering', 'research'])
 			.array()
@@ -39,13 +39,15 @@ const schema = coerceFormValue(
 		}),
 		quantity: z
 			.number()
-			.min(1, 'Use at least 1')
+			.min(2, 'Use at least 2')
 			.max(10, 'Use no more than 10'),
 		budget: z
 			.number()
-			.min(0, 'Budget cannot be negative')
+			.min(10, 'Use a budget of at least 10')
 			.max(100, 'Budget cannot exceed 100'),
-		notifications: z.boolean(),
+		notifications: z.literal(true, {
+			error: 'Enable product notifications',
+		}),
 	}),
 );
 
@@ -74,8 +76,6 @@ const frameworkOptions = [
 ];
 
 export default function App() {
-	const formRef = useRef<HTMLFormElement>(null);
-	const [resetKey, setResetKey] = useState(0);
 	const [submittedValue, setSubmittedValue] = useState<z.output<
 		typeof schema
 	> | null>(null);
@@ -110,25 +110,10 @@ export default function App() {
 			setSubmittedValue(value);
 		},
 	});
-	const remountFields = useCallback(() => {
-		setResetKey((key) => key + 1);
-	}, []);
-
-	useEffect(() => {
-		const formElement = formRef.current;
-		if (!formElement) {
-			return;
-		}
-
-		formElement.addEventListener('reset', remountFields);
-		return () => formElement.removeEventListener('reset', remountFields);
-	}, [remountFields]);
-
 	return (
 		<main>
 			<form
 				{...form.props}
-				ref={formRef}
 				className="form-card"
 				onChange={() => setSubmittedValue(null)}
 			>
@@ -141,7 +126,7 @@ export default function App() {
 					</p>
 				</header>
 
-				<div className="field-list" key={`${searchParams}:${resetKey}`}>
+				<div className="field-list">
 					<TextInputField
 						label="Full name"
 						description="A native Base UI Input."
@@ -168,7 +153,7 @@ export default function App() {
 
 					<CheckboxField
 						label="Accept terms"
-						description="The Base UI checkbox owns a hidden native checkbox."
+						description="The visible checkbox is synchronized with a BaseControl."
 						{...fields.acceptTerms.checkboxProps}
 						// Equivalent to:
 						// id={fields.acceptTerms.id}
@@ -180,7 +165,7 @@ export default function App() {
 
 					<CheckboxGroupField
 						label="Interests"
-						description="Each checked item contributes the same name to FormData."
+						description="A multiple BaseControl serializes the selected values."
 						items={interestOptions}
 						{...fields.interests.checkboxGroupProps}
 						// Equivalent to:
@@ -193,7 +178,7 @@ export default function App() {
 
 					<RadioGroupField
 						label="Plan"
-						description="The group serializes one scalar value."
+						description="The BaseControl serializes one scalar value."
 						items={planOptions}
 						{...fields.plan.radioGroupProps}
 						// Equivalent to:
@@ -206,7 +191,7 @@ export default function App() {
 
 					<SelectField
 						label="Country"
-						description="Select maintains a form-compatible hidden input."
+						description="Select is synchronized with a scalar BaseControl."
 						placeholder="Choose a country"
 						items={countryOptions}
 						{...fields.country.selectProps}
@@ -220,7 +205,7 @@ export default function App() {
 
 					<ComboboxField
 						label="Framework"
-						description="Filtering is transient; the selected value is submitted."
+						description="Filtering is transient; BaseControl stores the selection."
 						placeholder="Search frameworks"
 						items={frameworkOptions}
 						{...fields.framework.comboboxProps}
@@ -234,7 +219,7 @@ export default function App() {
 
 					<NumberFieldControl
 						label="Quantity"
-						description="Use the buttons or arrow keys; Zod receives a coerced number."
+						description="BaseControl stores the raw value before Zod coercion."
 						{...fields.quantity.numberFieldProps}
 						// Equivalent to:
 						// id={fields.quantity.id}
@@ -246,7 +231,7 @@ export default function App() {
 
 					<SliderField
 						label="Budget"
-						description="A controlled Base UI slider synchronized through useControl."
+						description="The range input is controlled through useControl."
 						{...fields.budget.sliderProps}
 						// Equivalent to:
 						// id={fields.budget.id}
@@ -258,7 +243,7 @@ export default function App() {
 
 					<SwitchField
 						label="Product notifications"
-						description="The hidden checkbox submits “on” only while enabled."
+						description="A checkbox BaseControl submits “on” while enabled."
 						{...fields.notifications.switchProps}
 						// Equivalent to:
 						// id={fields.notifications.id}

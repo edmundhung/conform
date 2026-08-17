@@ -1,95 +1,35 @@
 # Base UI Example
 
-> This guide focuses on behavior specific to Base UI. See [Integrating with UI Libraries](../../docs/integration/ui-libraries.md) for the general concept and the [`useControl`](../../docs/api/react/future/useControl.md) API.
+[Base UI](https://base-ui.com/) provides unstyled, accessible React primitives.
 
-[Base UI](https://base-ui.com/) provides unstyled, accessible React primitives. This example integrates Conform directly with `@base-ui/react`. Unlike `examples/shadcn-base-ui`, it does not use shadcn/ui components, generated registries, or copied shadcn code.
+This Vite React project demonstrates how to use `@base-ui/react` directly with Conform and Zod 4 validation. Unlike `examples/shadcn-base-ui`, it does not use shadcn/ui components, generated registries, or copied shadcn component code.
 
-The example keeps a native `<form {...form.props}>` and uses Conform as the only source of validation and form state. It covers Input, textarea, Checkbox, CheckboxGroup, RadioGroup, Select, Combobox, NumberField, Slider, and Switch.
+## Integration
 
-## Choose the Native Form Control
+Base UI Input and the native textarea rendered by Field.Control receive Conform's `name`, `defaultValue`, and validation attributes directly. Compound controls use [`useControl`](../../docs/api/react/future/useControl.md) with a [`BaseControl`](../../docs/api/react/future/BaseControl.md). The base control is the single named form control, while the Base UI primitive handles interaction.
 
-Use the control Base UI already renders when it has the required name, default, focus, reset, and `FormData` behavior. Add `useControl` only when the primitive's live value must be synchronized with Conform.
+The adapters leave Base UI's internal inputs unnamed to avoid duplicate `FormData` entries. They translate boolean, array, and numeric values, forward value changes to the base control, move focus to the interactive element after invalid submission, and report blur only when focus leaves a compound control. Because `useControl` follows Conform's current default, reset restores updated defaults without remounting the components.
 
-| Pattern | Components | Conform integration |
+| Pattern | Components | Form integration |
 | --- | --- | --- |
-| Native form integration | Input, textarea | Receive `name` and `defaultValue` directly |
-| Hidden-input integration | Checkbox, CheckboxGroup, RadioGroup, Select, Combobox, NumberField, Switch | Base UI owns the named input and serialization |
-| Requires `useControl` | Slider | Registers Base UI's range input and synchronizes its controlled numeric value |
-| Requires `BaseControl` | None | No field in this example has a structured value that needs an additional base control |
+| Native form control | Input, textarea | The interactive element owns the name and serialization |
+| Base UI internal input | Checkbox, CheckboxGroup, RadioGroup, Select, Combobox, NumberField, Slider, Switch | Unnamed; used only for interaction and accessible focus |
+| `useControl` with `BaseControl` | All compound controls above | A hidden input or checkbox owns scalar and boolean values |
+| Array `BaseControl` | CheckboxGroup | A hidden multiple select serializes repeated values |
 
-CheckboxGroup is an array field, but it is not a structured multi-field value: each checked Base UI input contributes the same name to `FormData`. Adding a `BaseControl` would duplicate that native behavior.
+Conform remains the only source of validation and form state. Base UI supplies field structure and accessible interaction, and the application keeps its native `<form {...form.props}>`. See [Integrating with UI Libraries](../../docs/integration/ui-libraries.md) for the general pattern.
 
-## Preserve Base UI's Hidden Inputs
+## Project Structure
 
-Base UI composites accept native form props on their root. For example, Select receives Conform's name and initial value directly:
-
-```tsx
-<Select.Root name={name} defaultValue={defaultValue} inputRef={inputRef}>
-  <Select.Trigger aria-invalid={invalid || undefined}>
-    {/* ... */}
-  </Select.Trigger>
-</Select.Root>
-```
-
-The Base UI hidden input remains the single named control. Validation attributes belong on the visible trigger, input, group, or thumb exposed to assistive technology.
-
-## Synchronize Only the Controlled Slider
-
-Slider is controlled to demonstrate `useControl` without adding a duplicate hidden input. Its existing range input is registered as the base control:
-
-```tsx
-const control = useControl({ defaultValue });
-
-<Slider.Root
-  name={name}
-  value={Number(control.value)}
-  onValueChange={(value) => control.change(String(value))}
->
-  <Slider.Thumb
-    inputRef={control.register}
-    onBlur={() => control.blur()}
-  />
-</Slider.Root>;
-```
-
-This keeps the same input responsible for browser serialization, Conform focus, blur validation, and reset behavior.
-
-## Match Focus, Blur, and Reset Boundaries
-
-For composites whose visible element and hidden input are separate, blur from the visible control is forwarded to the named input so Conform's `shouldValidate: "onBlur"` receives the correct field name. Base UI continues to own the value.
-
-The field collection is keyed by the current URL defaults and remounted after a reset. This restores the visual state of Base UI's uncontrolled composites for both a Conform reset intent and `HTMLFormElement.reset()`. After a successful submission, the submitted `FormData` becomes the URL and the next reset baseline.
-
-## Custom Metadata
-
-[`src/forms.ts`](./src/forms.ts) uses [`configureForms`](../../docs/api/react/future/configureForms.md#integrating-with-ui-libraries) to provide typed props for each component:
-
-```tsx
-const forms = configureForms({
-  extendFieldMetadata(metadata) {
-    return {
-      get selectProps() {
-        return {
-          id: metadata.id,
-          name: metadata.name,
-          defaultValue: metadata.defaultValue,
-          invalid: !metadata.valid,
-          errors: metadata.errors,
-        } satisfies Partial<React.ComponentProps<typeof SelectField>>;
-      },
-    };
-  },
-});
-```
-
-The application spreads those props with full type safety. Nearby `Equivalent to:` comments preserve the explicit metadata mapping for readers.
-
-Compared with the Radix and Headless UI examples, Base UI's own form-compatible inputs remain canonical instead of being replaced. Compared with the shadcn/Base UI example, these adapters compose Base UI primitives directly and contain no generated component layer.
+- [`App.tsx`](./src/App.tsx) contains the form, schema, URL-backed defaults, and explicit Conform prop mappings.
+- [`components.tsx`](./src/components.tsx) contains the Base UI field components and compound-control adapters.
+- [`forms.ts`](./src/forms.ts) uses [`configureForms`](../../docs/api/react/future/configureForms.md#integrating-with-ui-libraries) to expose those mappings as typed field props.
+- [`tests/index.test.ts`](./tests/index.test.ts) verifies validation, submission, focus, updated defaults, and reset behavior.
 
 ## Demo
 
 <!-- sandbox src="/examples/base-ui" -->
 
-Try it on [StackBlitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/base-ui).
+Try it out on [StackBlitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/base-ui).
 
 <!-- /sandbox -->

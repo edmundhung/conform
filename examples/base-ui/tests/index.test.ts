@@ -1,375 +1,244 @@
 import { expect, test, type Page } from '@playwright/test';
 
 test.describe('base-ui', () => {
-	test.describe('form', () => {
-		async function getForm(page: Page, searchParams?: URLSearchParams) {
-			await page.goto(`/?${searchParams?.toString() ?? ''}`);
+	async function getForm(page: Page, searchParams?: URLSearchParams) {
+		await page.goto(searchParams ? `/?${searchParams}` : '/');
 
-			const form = page.locator('form');
-			return {
-				container: form,
-				heading: page.getByRole('heading', { name: 'Base UI Example' }),
-				fullName: page.getByLabel('Full name'),
-				bio: page.getByLabel('Bio'),
-				acceptTerms: page.getByRole('checkbox', { name: 'Accept terms' }),
-				interestsGroup: page.getByRole('group', { name: 'Interests' }),
-				design: page.getByRole('checkbox', { name: 'Design' }),
-				engineering: page.getByRole('checkbox', { name: 'Engineering' }),
-				research: page.getByRole('checkbox', { name: 'Research' }),
-				starter: page.getByRole('radio', { name: 'Starter' }),
-				professional: page.getByRole('radio', { name: 'Professional' }),
-				planGroup: page.getByRole('radiogroup', { name: 'Plan' }),
-				country: page.getByRole('combobox', { name: 'Country' }),
-				framework: page.getByRole('combobox', { name: 'Framework' }),
-				quantity: page.getByLabel('Quantity', { exact: true }),
-				budget: page.getByRole('slider', { name: 'Budget' }),
-				notifications: page.getByRole('switch', {
-					name: 'Product notifications',
-				}),
-				resetButton: page.getByRole('button', { name: 'Reset' }),
-				submitButton: page.getByRole('button', { name: 'Submit' }),
-				formData: () =>
-					form.evaluate((element) =>
-						Array.from(new FormData(element as HTMLFormElement)).map(
-							([name, value]) => [name, String(value)] as const,
-						),
-					),
-				submittedValue: async () =>
-					JSON.parse(
-						await page.locator('.submitted pre').innerText(),
-					) as unknown,
-			};
-		}
+		const form = page.locator('form');
+		const country = form.getByRole('combobox', { name: 'Country' });
+		const framework = form.getByRole('combobox', { name: 'Framework' });
+		const quantity = form.getByLabel('Quantity', { exact: true });
+		const budget = form.getByRole('slider', { name: 'Budget' });
 
-		async function chooseCountry(page: Page, name: string) {
-			await page.getByRole('combobox', { name: 'Country' }).click();
-			await page.getByRole('option', { name }).click();
-		}
-
-		async function chooseFramework(page: Page, name: string) {
-			const input = page.getByRole('combobox', { name: 'Framework' });
-			await input.fill(name.slice(0, 2));
-			await page.getByRole('option', { name }).click();
-		}
-
-		async function setBudget(page: Page, value: number) {
-			const slider = page.getByRole('slider', { name: 'Budget' });
-			await slider.press('Home');
-			for (let current = 0; current < value; current += 5) {
-				await slider.press('ArrowRight');
-			}
-		}
-
-		async function completeRequiredFields(page: Page) {
-			const form = await getForm(page);
-			await form.fullName.fill('Ada Lovelace');
-			await form.bio.fill('Writes thoughtful programs.');
-			await form.acceptTerms.click();
-			await form.design.click();
-			await form.professional.click();
-			await chooseCountry(page, 'United Kingdom');
-			await chooseFramework(page, 'React');
-			await form.quantity.fill('');
-			await form.quantity.fill('3');
-			return form;
-		}
-
-		test('validates on submit and focuses each invalid control', async ({
-			page,
-		}) => {
-			const form = await getForm(page);
-
-			await form.submitButton.click();
-			await expect(form.fullName).toBeFocused();
-			await expect(form.fullName).toHaveAttribute('aria-invalid', 'true');
-			await expect(form.fullName).toHaveAccessibleDescription(
-				'A native Base UI Input. Enter at least 2 characters',
-			);
-			await form.fullName.fill('Ada Lovelace');
-
-			await form.submitButton.click();
-			await expect(form.bio).toBeFocused();
-			await form.bio.fill('Writes thoughtful programs.');
-
-			await form.submitButton.click();
-			await expect(form.acceptTerms).toBeFocused();
-			await form.acceptTerms.click();
-
-			await form.submitButton.click();
-			await expect(form.design).toBeFocused();
-			await form.design.click();
-
-			await form.submitButton.click();
-			await expect(form.starter).toBeFocused();
-			await form.starter.click();
-
-			await form.submitButton.click();
-			await expect(form.country).toBeFocused();
-			await chooseCountry(page, 'Canada');
-
-			await form.submitButton.click();
-			await expect(form.framework).toBeFocused();
-			await chooseFramework(page, 'React');
-		});
-
-		test('validates native controls on blur', async ({ page }) => {
-			const form = await getForm(page);
-
-			await form.fullName.fill('A');
-			await form.heading.click();
-
-			await expect(form.fullName).toHaveAttribute('aria-invalid', 'true');
-			await expect(page.getByText('Enter at least 2 characters')).toBeVisible();
-
-			await form.acceptTerms.click();
-			await form.acceptTerms.click();
-			await form.acceptTerms.focus();
-			await form.heading.click();
-			await expect(form.acceptTerms).toHaveAttribute('aria-invalid', 'true');
-
-			await form.design.focus();
-			await form.heading.click();
-			await expect(form.interestsGroup).toHaveAttribute('aria-invalid', 'true');
-			await expect(form.interestsGroup).toHaveAccessibleDescription(
-				'Each checked item contributes the same name to FormData. Choose at least one interest',
-			);
-
-			await form.starter.focus();
-			await form.heading.click();
-			await expect(form.planGroup).toHaveAttribute('aria-invalid', 'true');
-			await expect(form.planGroup).toHaveAccessibleDescription(
-				'The group serializes one scalar value. Choose a plan',
-			);
-
-			await form.country.click();
-			await form.country.press('Escape');
-			await form.country.press('Tab');
-			await expect(form.country).toHaveAttribute('aria-invalid', 'true');
-			await expect(form.country).toHaveAccessibleDescription(
-				'Select maintains a form-compatible hidden input. Choose a country',
-			);
-		});
-
-		test('serializes boolean and array checkboxes through Base UI hidden inputs', async ({
-			page,
-		}) => {
-			const form = await getForm(page);
-
-			await form.acceptTerms.click();
-			await form.design.click();
-			await form.research.click();
-
-			await expect
-				.poll(() =>
-					form.container.evaluate((element) => {
-						const data = new FormData(element as HTMLFormElement);
-						return {
-							acceptTerms: data.get('acceptTerms'),
-							interests: data.getAll('interests'),
-						};
-					}),
-				)
-				.toEqual({
-					acceptTerms: 'on',
-					interests: ['design', 'research'],
-				});
-
-			await form.acceptTerms.click();
-			await expect
-				.poll(() =>
-					form.container.evaluate((element) =>
-						new FormData(element as HTMLFormElement).has('acceptTerms'),
-					),
-				)
-				.toBe(false);
-		});
-
-		test('selects values with Select and Combobox', async ({ page }) => {
-			const form = await getForm(page);
-
-			await chooseCountry(page, 'Canada');
-			await chooseFramework(page, 'Svelte');
-
-			await expect(form.country).toContainText('Canada');
-			await expect(form.framework).toHaveValue('Svelte');
-			await expect
-				.poll(() =>
-					form.container.evaluate((element) => {
-						const data = new FormData(element as HTMLFormElement);
-						return [data.get('country'), data.get('framework')];
-					}),
-				)
-				.toEqual(['ca', 'svelte']);
-		});
-
-		test('coerces NumberField and controls Slider values', async ({ page }) => {
-			const form = await getForm(page, new URLSearchParams({ budget: '' }));
-
-			await expect(form.budget).toHaveValue('50');
-
-			await form.quantity.fill('');
-			await form.quantity.fill('3');
-			await page.getByRole('button', { name: 'Increase Quantity' }).click();
-			await setBudget(page, 75);
-
-			await expect(form.quantity).toHaveValue('4');
-			await expect(form.budget).toHaveValue('75');
-			await expect
-				.poll(() =>
-					form.container.evaluate((element) => {
-						const data = new FormData(element as HTMLFormElement);
-						return [data.get('quantity'), data.get('budget')];
-					}),
-				)
-				.toEqual(['4', '75']);
-		});
-
-		test('resets native, hidden-input, and useControl-backed components', async ({
-			page,
-		}) => {
-			const defaults = new URLSearchParams([
-				['fullName', 'Grace Hopper'],
-				['bio', 'Pioneered practical compiler technology.'],
-				['acceptTerms', 'on'],
-				['interests', 'engineering'],
-				['interests', 'research'],
-				['plan', 'enterprise'],
-				['country', 'jp'],
-				['framework', 'svelte'],
-				['quantity', '6'],
-				['budget', '70'],
-				['notifications', 'on'],
-			]);
-
-			for (const reset of ['conform', 'browser']) {
-				const form = await getForm(page, defaults);
-
-				await form.fullName.fill('Changed name');
-				await form.bio.fill('Changed biography text.');
-				await form.acceptTerms.click();
-				await form.engineering.click();
-				await form.design.click();
-				await form.starter.click();
-				await chooseCountry(page, 'Canada');
-				await chooseFramework(page, 'React');
-				await form.quantity.fill('2');
-				await setBudget(page, 80);
-				await form.notifications.click();
-
-				if (reset === 'conform') {
-					await form.resetButton.click();
-				} else {
-					await form.container.evaluate((element) =>
-						(element as HTMLFormElement).reset(),
-					);
+		return {
+			form,
+			heading: page.getByRole('heading', { name: 'Base UI Example' }),
+			fullName: form.getByLabel('Full name'),
+			bio: form.getByLabel('Bio'),
+			acceptTerms: form.getByRole('checkbox', { name: 'Accept terms' }),
+			interestsGroup: form.getByRole('group', { name: 'Interests' }),
+			design: form.getByRole('checkbox', { name: 'Design' }),
+			engineering: form.getByRole('checkbox', { name: 'Engineering' }),
+			research: form.getByRole('checkbox', { name: 'Research' }),
+			planGroup: form.getByRole('radiogroup', { name: 'Plan' }),
+			starter: form.getByRole('radio', { name: 'Starter' }),
+			professional: form.getByRole('radio', { name: 'Professional' }),
+			enterprise: form.getByRole('radio', { name: 'Enterprise' }),
+			country,
+			async chooseCountry(name: string) {
+				await country.click();
+				await page.getByRole('option', { name }).click();
+			},
+			framework,
+			async chooseFramework(name: string) {
+				await framework.fill(name.slice(0, 2));
+				await page.getByRole('option', { name }).click();
+			},
+			quantity,
+			async setQuantity(value: string) {
+				await quantity.fill('');
+				await quantity.fill(value);
+			},
+			increaseQuantity: form.getByRole('button', {
+				name: 'Increase Quantity',
+			}),
+			budget,
+			async setBudget(value: number) {
+				await budget.press('Home');
+				for (let current = 0; current < value; current += 5) {
+					await budget.press('ArrowRight');
 				}
+			},
+			notifications: form.getByRole('switch', {
+				name: 'Product notifications',
+			}),
+			resetButton: form.getByRole('button', { name: 'Reset' }),
+			submitButton: form.getByRole('button', { name: 'Submit' }),
+			submittedValue: () =>
+				form
+					.locator('.submitted pre')
+					.innerText()
+					.then((value) => JSON.parse(value)),
+		};
+	}
 
-				await expect(form.fullName).toHaveValue('Grace Hopper');
-				await expect(form.acceptTerms).toBeChecked();
-				await expect(form.engineering).toBeChecked();
-				await expect(form.research).toBeChecked();
-				await expect(form.design).not.toBeChecked();
-				await expect(
-					page.getByRole('radio', { name: 'Enterprise' }),
-				).toBeChecked();
-				await expect(form.country).toContainText('Japan');
-				await expect(form.framework).toHaveValue('Svelte');
-				await expect(form.quantity).toHaveValue('6');
-				await expect(form.budget).toHaveValue('70');
-				await expect(form.notifications).toBeChecked();
-				await expect.poll(form.formData).toEqual(Array.from(defaults));
-			}
+	test('validation and submission', async ({ page }) => {
+		const controls = await getForm(page, new URLSearchParams({ budget: '' }));
+
+		// An empty URL default falls back to the slider's presentation default.
+		await expect(controls.budget).toHaveValue('50');
+
+		await controls.fullName.fill('A');
+		await controls.heading.click();
+		await expect(controls.fullName).toHaveAccessibleDescription(
+			'A native Base UI Input. Enter at least 2 characters',
+		);
+
+		await controls.design.focus();
+		await controls.heading.click();
+		await expect(controls.interestsGroup).toHaveAccessibleDescription(
+			'A multiple BaseControl serializes the selected values. Choose at least one interest',
+		);
+
+		await controls.fullName.fill('Ada Lovelace');
+		await controls.bio.fill('Writes thoughtful programs.');
+		await controls.setBudget(0);
+
+		await controls.submitButton.click();
+		await expect(controls.acceptTerms).toBeFocused();
+		await expect(controls.acceptTerms).toHaveAccessibleDescription(
+			'The visible checkbox is synchronized with a BaseControl. Accept the terms to continue',
+		);
+		await controls.acceptTerms.click();
+
+		await controls.submitButton.click();
+		await expect(controls.design).toBeFocused();
+		await expect(controls.design).toHaveAccessibleDescription(
+			'A multiple BaseControl serializes the selected values. Choose at least one interest',
+		);
+		await controls.design.click();
+		await controls.engineering.click();
+
+		await controls.submitButton.click();
+		await expect(controls.starter).toBeFocused();
+		await expect(controls.planGroup).toHaveAccessibleDescription(
+			'The BaseControl serializes one scalar value. Choose a plan',
+		);
+		await expect(controls.starter).toHaveAccessibleDescription(
+			'The BaseControl serializes one scalar value. Choose a plan',
+		);
+		await controls.professional.click();
+
+		await controls.submitButton.click();
+		await expect(controls.country).toBeFocused();
+		await expect(controls.country).toHaveAccessibleDescription(
+			'Select is synchronized with a scalar BaseControl. Choose a country',
+		);
+		await controls.chooseCountry('Canada');
+
+		await controls.submitButton.click();
+		await expect(controls.framework).toBeFocused();
+		await expect(controls.framework).toHaveAccessibleDescription(
+			'Filtering is transient; BaseControl stores the selection. Choose a framework',
+		);
+		await controls.chooseFramework('Svelte');
+
+		await controls.submitButton.click();
+		await expect(controls.quantity).toBeFocused();
+		await expect(controls.quantity).toHaveAccessibleDescription(
+			'BaseControl stores the raw value before Zod coercion. Use at least 2',
+		);
+		await controls.setQuantity('3');
+		await controls.increaseQuantity.click();
+
+		await controls.submitButton.click();
+		await expect(controls.budget).toBeFocused();
+		await expect(controls.budget).toHaveAccessibleDescription(
+			'The range input is controlled through useControl. Use a budget of at least 10',
+		);
+		await controls.setBudget(65);
+
+		await controls.submitButton.click();
+		await expect(controls.notifications).toBeFocused();
+		await expect(controls.notifications).toHaveAccessibleDescription(
+			'A checkbox BaseControl submits “on” while enabled. Enable product notifications',
+		);
+		await controls.notifications.click();
+
+		await controls.submitButton.click();
+
+		await expect.poll(controls.submittedValue).toEqual({
+			fullName: 'Ada Lovelace',
+			bio: 'Writes thoughtful programs.',
+			acceptTerms: true,
+			interests: ['design', 'engineering'],
+			plan: 'professional',
+			country: 'ca',
+			framework: 'svelte',
+			quantity: 4,
+			budget: 65,
+			notifications: true,
 		});
+		await expect
+			.poll(() => new URL(page.url()).searchParams.getAll('interests'))
+			.toEqual(['design', 'engineering']);
+	});
 
-		test('resets to the last successful submission', async ({ page }) => {
-			const form = await completeRequiredFields(page);
-			await form.engineering.click();
-			await setBudget(page, 65);
-			await form.notifications.click();
-			await form.submitButton.click();
-			await expect.poll(form.submittedValue).toMatchObject({ budget: 65 });
+	test('updated defaults and reset', async ({ page }) => {
+		const defaults = new URLSearchParams([
+			['fullName', 'Grace Hopper'],
+			['bio', 'Pioneered practical compiler technology.'],
+			['interests', 'research'],
+			['plan', 'enterprise'],
+			['country', 'jp'],
+			['framework', 'svelte'],
+			['quantity', '6'],
+			['budget', '70'],
+		]);
+		const controls = await getForm(page, defaults);
 
-			await form.fullName.fill('Changed name');
-			await form.design.click();
-			await chooseCountry(page, 'Japan');
-			await chooseFramework(page, 'Vue');
-			await form.quantity.fill('8');
-			await setBudget(page, 80);
-			await form.notifications.click();
-			await form.resetButton.click();
+		await expect(controls.fullName).toHaveValue('Grace Hopper');
+		await expect(controls.research).toBeChecked();
+		await expect(controls.enterprise).toBeChecked();
+		await expect(controls.country).toContainText('Japan');
+		await expect(controls.framework).toHaveValue('Svelte');
 
-			await expect(form.fullName).toHaveValue('Ada Lovelace');
-			await expect(form.design).toBeChecked();
-			await expect(form.engineering).toBeChecked();
-			await expect(form.country).toContainText('United Kingdom');
-			await expect(form.framework).toHaveValue('React');
-			await expect(form.quantity).toHaveValue('3');
-			await expect(form.budget).toHaveValue('65');
-			await expect(form.notifications).toBeChecked();
-		});
+		await controls.fullName.fill('Ada Lovelace');
+		await controls.bio.fill('Writes thoughtful programs.');
+		await controls.acceptTerms.click();
+		await controls.research.click();
+		await controls.design.click();
+		await controls.engineering.click();
+		await controls.professional.click();
+		await controls.chooseCountry('United Kingdom');
+		await controls.chooseFramework('React');
+		await controls.setQuantity('4');
+		await controls.setBudget(65);
+		await controls.notifications.click();
+		await controls.submitButton.click();
 
-		test('restores every default from URL search parameters', async ({
-			page,
-		}) => {
-			const searchParams = new URLSearchParams([
-				['fullName', 'Grace Hopper'],
-				['bio', 'Pioneered practical compiler technology.'],
-				['acceptTerms', 'on'],
-				['interests', 'engineering'],
-				['interests', 'research'],
-				['plan', 'enterprise'],
-				['country', 'jp'],
-				['framework', 'svelte'],
-				['quantity', '6'],
-				['budget', '70'],
-				['notifications', 'on'],
-			]);
-			const form = await getForm(page, searchParams);
+		const submittedValue = {
+			fullName: 'Ada Lovelace',
+			bio: 'Writes thoughtful programs.',
+			acceptTerms: true,
+			interests: ['design', 'engineering'],
+			plan: 'professional',
+			country: 'gb',
+			framework: 'react',
+			quantity: 4,
+			budget: 65,
+			notifications: true,
+		};
+		await expect.poll(controls.submittedValue).toEqual(submittedValue);
 
-			await expect(form.fullName).toHaveValue('Grace Hopper');
-			await expect(form.engineering).toBeChecked();
-			await expect(form.research).toBeChecked();
-			await expect(
-				page.getByRole('radio', { name: 'Enterprise' }),
-			).toBeChecked();
-			await expect(form.country).toContainText('Japan');
-			await expect(form.framework).toHaveValue('Svelte');
-			await expect(form.quantity).toHaveValue('6');
-			await expect(form.budget).toHaveValue('70');
-			await expect(form.notifications).toBeChecked();
-		});
+		await controls.fullName.fill('Changed name');
+		await controls.bio.fill('Changed biography text.');
+		await controls.acceptTerms.click();
+		await controls.design.click();
+		await controls.research.click();
+		await controls.starter.click();
+		await controls.chooseCountry('Canada');
+		await controls.chooseFramework('Vue');
+		await controls.setQuantity('9');
+		await controls.setBudget(80);
+		await controls.notifications.click();
 
-		test('submits parsed data and updates the URL', async ({ page }) => {
-			const form = await completeRequiredFields(page);
-			await form.engineering.click();
-			await setBudget(page, 65);
-			await form.notifications.click();
-			await form.submitButton.click();
+		await controls.resetButton.click();
 
-			expect(
-				(await page.locator('.error').allTextContents()).filter((error) =>
-					error.trim(),
-				),
-			).toEqual([]);
-			await expect.poll(form.submittedValue).toEqual({
-				fullName: 'Ada Lovelace',
-				bio: 'Writes thoughtful programs.',
-				acceptTerms: true,
-				interests: ['design', 'engineering'],
-				plan: 'professional',
-				country: 'gb',
-				framework: 'react',
-				quantity: 3,
-				budget: 65,
-				notifications: true,
-			});
+		await expect(controls.fullName).toHaveValue('Ada Lovelace');
+		await expect(controls.bio).toHaveValue('Writes thoughtful programs.');
+		await expect(controls.acceptTerms).toBeChecked();
+		await expect(controls.design).toBeChecked();
+		await expect(controls.engineering).toBeChecked();
+		await expect(controls.research).not.toBeChecked();
+		await expect(controls.professional).toBeChecked();
+		await expect(controls.country).toContainText('United Kingdom');
+		await expect(controls.framework).toHaveValue('React');
+		await expect(controls.quantity).toHaveValue('4');
+		await expect(controls.budget).toHaveValue('65');
+		await expect(controls.notifications).toBeChecked();
 
-			await expect
-				.poll(() => new URL(page.url()).searchParams.get('budget'))
-				.toBe('65');
-			await expect
-				.poll(() => new URL(page.url()).searchParams.getAll('interests'))
-				.toEqual(['design', 'engineering']);
-		});
+		await controls.submitButton.click();
+		await expect.poll(controls.submittedValue).toEqual(submittedValue);
 	});
 });
