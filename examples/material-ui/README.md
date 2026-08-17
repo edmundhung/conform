@@ -1,80 +1,32 @@
 # Material UI Example
 
-[Material UI](https://mui.com/material-ui) is a comprehensive library of components based on Google's Material Design system.
+[Material UI](https://mui.com/material-ui) provides React components that implement Google's Material Design system.
 
-This example demonstrates how to integrate Conform with Material UI using custom metadata.
+This Vite React project demonstrates how to use Material UI 9.2 form components with Conform and Zod 4 validation.
 
-## Understanding the Integration
+## Integration
 
-The main application ([`App.tsx`](./src/App.tsx)) uses explicit prop assignment for educational purposes, making it easy to see how field metadata maps to Material UI component props:
+If a Material UI component renders a normal `<input>`, `<select>`, or group of radio inputs, the example passes Conform's field props directly to it. This applies to TextField, Select, Checkbox, RadioGroup, and Switch.
 
-```tsx
-<TextField
-  name={fields.email.name}
-  defaultValue={fields.email.defaultValue}
-  error={!fields.email.valid}
-  helperText={fields.email.errors}
-/>
-```
+The Select example enables Material UI's native mode so the rendered `<select>` remains the canonical control when Conform supplies updated defaults or resets the form.
 
-While this is clear and straightforward for learning, it becomes repetitive in production applications.
+Autocomplete, NumberField, Rating, and Slider use [`useControl`](../../docs/api/react/future/useControl.md) with a [`BaseControl`](../../docs/api/react/future/BaseControl.md). The base control holds the field name, default value, and serialized value, while the Material UI component handles interaction. The adapters translate component values to strings, restore updated defaults on reset, delegate validation focus, report blur, and forward invalid state and error descriptions to the interactive element.
 
-## Custom Metadata
+The visible controls remain unnamed so `BaseControl` is the only serialized field. Material UI Rating always creates presentation radio inputs, so its adapter explicitly disassociates those inputs from the form to avoid duplicate `FormData` entries. NumberField follows the Material UI outlined recipe composed from Base UI NumberField and Material UI form primitives.
 
-The example also showcases metadata customization for a more DRY approach. Check [`forms.ts`](./src/forms.ts) to see how custom metadata is configured using `configureForms`:
+See [Integrating with UI Libraries](../../docs/integration/ui-libraries.md) for the general pattern.
 
-```tsx
-import { configureForms } from '@conform-to/react/future';
+## Project Structure
 
-const result = configureForms({
-  extendFieldMetadata(metadata) {
-    return {
-      get textFieldProps() {
-        return {
-          name: metadata.name,
-          defaultValue: metadata.defaultValue,
-          error: !metadata.valid,
-          helperText: metadata.errors,
-        } satisfies Partial<React.ComponentProps<typeof TextField>>;
-      },
-      // ... other component props
-    };
-  },
-});
-
-export const useForm = result.useForm;
-```
-
-Then use the custom metadata with full type safety:
-
-```tsx
-<TextField {...fields.email.textFieldProps} />
-```
-
-## Compatibility
-
-> Based on @mui/material@5.10
-
-**Native support**
-
-- Text Field (default)
-- Text Field (multiline)
-- NativeSelect
-- Checkbox
-- Radio Group
-- Switch
-
-**Integration required**
-
-- Autocomplete
-- Select
-- Rating
-- Slider
+- [`App.tsx`](./src/App.tsx) contains the example form and shows the explicit Conform prop mappings in nearby comments.
+- [`form.tsx`](./src/form.tsx) contains the Material UI component adapters.
+- [`forms.ts`](./src/forms.ts) uses [`configureForms`](../../docs/api/react/future/configureForms.md#integrating-with-ui-libraries) to expose those mappings as typed field props.
+- [`tests/index.test.ts`](./tests/index.test.ts) verifies submission, updated defaults, reset, validation, focus, and serialization behavior.
 
 ## Demo
 
 <!-- sandbox src="/examples/material-ui" -->
 
-Try it out on [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/material-ui).
+Try it out on [StackBlitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/material-ui).
 
 <!-- /sandbox -->

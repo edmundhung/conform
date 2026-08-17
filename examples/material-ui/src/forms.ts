@@ -8,9 +8,9 @@ import {
 	type InferCustomFieldMetadata,
 	type InferCustomFormMetadata,
 } from '@conform-to/react/future';
-import { getConstraints } from '@conform-to/zod/v3/future';
+import { getConstraints } from '@conform-to/zod/v4/future';
 import type { TextField, Checkbox, RadioGroup, Switch } from '@mui/material';
-import type { Autocomplete, Rating, Slider } from './form';
+import type { Autocomplete, NumberField, Rating, Slider } from './form';
 
 const forms = configureForms({
 	getConstraints,
@@ -21,30 +21,62 @@ const forms = configureForms({
 		return {
 			get textFieldProps() {
 				return {
+					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					required: metadata.required,
 					error: !metadata.valid,
 					helperText: metadata.errors,
 				} satisfies Partial<React.ComponentProps<typeof TextField>>;
 			},
 			get autocompleteProps() {
 				return {
+					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
-					error: metadata.errors,
+					required: metadata.required,
+					error: !metadata.valid,
+					helperText: metadata.errors,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': metadata.ariaDescribedBy,
 				} satisfies Partial<React.ComponentProps<typeof Autocomplete>>;
+			},
+			get numberFieldProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					required: metadata.required,
+					error: !metadata.valid,
+					helperText: metadata.errors,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': metadata.ariaDescribedBy,
+				} satisfies Partial<React.ComponentProps<typeof NumberField>>;
 			},
 			get checkboxProps() {
 				return {
 					name: metadata.name,
 					value: 'on',
 					defaultChecked: metadata.defaultChecked,
+					required: metadata.required,
+					slotProps: {
+						input: {
+							id: metadata.id,
+							'aria-invalid': metadata.ariaInvalid,
+							'aria-describedby': metadata.ariaDescribedBy,
+						},
+					},
 				} satisfies Partial<React.ComponentProps<typeof Checkbox>>;
 			},
 			get radioGroupProps() {
 				return {
+					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-required': metadata.required,
+					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-labelledby': `${metadata.id}-label`,
 				} satisfies Partial<React.ComponentProps<typeof RadioGroup>>;
 			},
 			get switchProps() {
@@ -52,18 +84,36 @@ const forms = configureForms({
 					name: metadata.name,
 					value: 'on',
 					defaultChecked: metadata.defaultChecked,
+					required: metadata.required,
+					slotProps: {
+						input: {
+							id: metadata.id,
+							'aria-invalid': metadata.ariaInvalid,
+							'aria-describedby': metadata.ariaDescribedBy,
+						},
+					},
 				} satisfies Partial<React.ComponentProps<typeof Switch>>;
 			},
 			get ratingProps() {
 				return {
+					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					required: metadata.required,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-labelledby': `${metadata.id}-label`,
 				} satisfies Partial<React.ComponentProps<typeof Rating>>;
 			},
 			get sliderProps() {
 				return {
+					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					required: metadata.required,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': metadata.ariaDescribedBy,
+					'aria-labelledby': `${metadata.id}-label`,
 				} satisfies Partial<React.ComponentProps<typeof Slider>>;
 			},
 		};
