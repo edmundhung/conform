@@ -1,17 +1,19 @@
+import { Checkbox } from '@base-ui/react/checkbox';
+import { Field } from '@base-ui/react/field';
+import { Input } from '@base-ui/react/input';
+import { Radio } from '@base-ui/react/radio';
 import { coerceFormValue } from '@conform-to/zod/v4/future';
 import { useState } from 'react';
 import { z } from 'zod';
 import {
-	CheckboxField,
-	CheckboxGroupField,
-	ComboboxField,
+	CheckboxControl,
+	CheckboxGroupControl,
+	ComboboxControl,
 	NumberFieldControl,
-	RadioGroupField,
-	SelectField,
-	SliderField,
-	SwitchField,
-	TextareaField,
-	TextInputField,
+	RadioGroupControl,
+	SelectControl,
+	SliderControl,
+	SwitchControl,
 } from './components';
 import { useForm } from './forms';
 
@@ -110,6 +112,7 @@ export default function App() {
 			setSubmittedValue(value);
 		},
 	});
+
 	return (
 		<main>
 			<form
@@ -127,141 +130,354 @@ export default function App() {
 				</header>
 
 				<div className="field-list">
-					<TextInputField
-						label="Full name"
-						description="A native Base UI Input."
-						{...fields.fullName.textInputProps}
-						// Equivalent to:
-						// id={fields.fullName.id}
-						// name={fields.fullName.name}
-						// defaultValue={fields.fullName.defaultValue}
-						// aria-describedby={`${fields.fullName.id}-description ${fields.fullName.ariaDescribedBy ?? ''}`.trim()}
-						// invalid={!fields.fullName.valid}
-						// errors={fields.fullName.errors}
-					/>
+					<Field.Root className="field" invalid={!fields.fullName.valid}>
+						<Field.Label id={`${fields.fullName.id}-label`} className="label">
+							Full name
+						</Field.Label>
+						<Input
+							className="text-control"
+							{...fields.fullName.inputProps}
+							// Equivalent to:
+							// id={fields.fullName.id}
+							// name={fields.fullName.name}
+							// defaultValue={fields.fullName.defaultValue}
+							// aria-labelledby={`${fields.fullName.id}-label`}
+							// aria-describedby={`${fields.fullName.id}-description ${fields.fullName.ariaDescribedBy ?? ''}`.trim()}
+							// aria-invalid={fields.fullName.ariaInvalid}
+						/>
+						<Field.Description
+							id={`${fields.fullName.id}-description`}
+							className="description"
+						>
+							A native Base UI Input.
+						</Field.Description>
+						<Field.Error
+							id={fields.fullName.errorId}
+							className="error"
+							match
+							role={fields.fullName.errors?.length ? 'alert' : undefined}
+						>
+							{fields.fullName.errors?.join(', ')}
+						</Field.Error>
+					</Field.Root>
 
-					<TextareaField
-						label="Bio"
-						description="Field.Control renders a native textarea."
-						{...fields.bio.textareaProps}
-						// Equivalent to:
-						// id={fields.bio.id}
-						// name={fields.bio.name}
-						// defaultValue={fields.bio.defaultValue}
-						// aria-describedby={`${fields.bio.id}-description ${fields.bio.ariaDescribedBy ?? ''}`.trim()}
-						// invalid={!fields.bio.valid}
-						// errors={fields.bio.errors}
-					/>
+					<Field.Root className="field" invalid={!fields.bio.valid}>
+						<Field.Label id={`${fields.bio.id}-label`} className="label">
+							Bio
+						</Field.Label>
+						<Field.Control
+							render={<textarea rows={4} />}
+							className="text-control"
+							{...fields.bio.textareaProps}
+							// Equivalent to:
+							// id={fields.bio.id}
+							// name={fields.bio.name}
+							// defaultValue={fields.bio.defaultValue}
+							// aria-labelledby={`${fields.bio.id}-label`}
+							// aria-describedby={`${fields.bio.id}-description ${fields.bio.ariaDescribedBy ?? ''}`.trim()}
+							// aria-invalid={fields.bio.ariaInvalid}
+						/>
+						<Field.Description
+							id={`${fields.bio.id}-description`}
+							className="description"
+						>
+							Field.Control renders a native textarea.
+						</Field.Description>
+						<Field.Error
+							id={fields.bio.errorId}
+							className="error"
+							match
+							role={fields.bio.errors?.length ? 'alert' : undefined}
+						>
+							{fields.bio.errors?.join(', ')}
+						</Field.Error>
+					</Field.Root>
 
-					<CheckboxField
-						label="Accept terms"
-						description="The visible checkbox is synchronized with a BaseControl."
-						{...fields.acceptTerms.checkboxProps}
-						// Equivalent to:
-						// id={fields.acceptTerms.id}
-						// name={fields.acceptTerms.name}
-						// defaultChecked={fields.acceptTerms.defaultChecked}
-						// aria-describedby={`${fields.acceptTerms.id}-description ${fields.acceptTerms.ariaDescribedBy ?? ''}`.trim()}
-						// invalid={!fields.acceptTerms.valid}
-						// errors={fields.acceptTerms.errors}
-					/>
+					<Field.Root className="field" invalid={!fields.acceptTerms.valid}>
+						<Field.Label
+							id={`${fields.acceptTerms.id}-label`}
+							className="choice-label"
+						>
+							<CheckboxControl
+								{...fields.acceptTerms.checkboxProps}
+								// Equivalent to:
+								// id={fields.acceptTerms.id}
+								// name={fields.acceptTerms.name}
+								// defaultChecked={fields.acceptTerms.defaultChecked}
+								// aria-labelledby={`${fields.acceptTerms.id}-label`}
+								// aria-describedby={`${fields.acceptTerms.id}-description ${fields.acceptTerms.ariaDescribedBy ?? ''}`.trim()}
+								// invalid={!fields.acceptTerms.valid}
+							/>
+							Accept terms
+						</Field.Label>
+						<Field.Description
+							id={`${fields.acceptTerms.id}-description`}
+							className="description"
+						>
+							The visible checkbox is synchronized with a BaseControl.
+						</Field.Description>
+						<Field.Error
+							id={fields.acceptTerms.errorId}
+							className="error"
+							match
+							role={fields.acceptTerms.errors?.length ? 'alert' : undefined}
+						>
+							{fields.acceptTerms.errors?.join(', ')}
+						</Field.Error>
+					</Field.Root>
 
-					<CheckboxGroupField
-						label="Interests"
-						description="A multiple BaseControl serializes the selected values."
-						items={interestOptions}
-						{...fields.interests.checkboxGroupProps}
-						// Equivalent to:
-						// id={fields.interests.id}
-						// name={fields.interests.name}
-						// defaultValue={fields.interests.defaultOptions}
-						// aria-describedby={`${fields.interests.id}-description ${fields.interests.ariaDescribedBy ?? ''}`.trim()}
-						// invalid={!fields.interests.valid}
-						// errors={fields.interests.errors}
-					/>
+					<Field.Root className="field" invalid={!fields.interests.valid}>
+						<Field.Label id={`${fields.interests.id}-label`} className="label">
+							Interests
+						</Field.Label>
+						<CheckboxGroupControl
+							{...fields.interests.checkboxGroupProps}
+							// Equivalent to:
+							// id={fields.interests.id}
+							// name={fields.interests.name}
+							// defaultValue={fields.interests.defaultOptions}
+							// aria-labelledby={`${fields.interests.id}-label`}
+							// aria-describedby={`${fields.interests.id}-description ${fields.interests.ariaDescribedBy ?? ''}`.trim()}
+							// invalid={!fields.interests.valid}
+						>
+							{interestOptions.map((item) => (
+								<label className="choice-label" key={item.value}>
+									<Checkbox.Root
+										className="checkbox"
+										value={item.value}
+										aria-labelledby={`${fields.interests.id}-${item.value}-label`}
+									>
+										<Checkbox.Indicator className="checkbox-indicator">
+											✓
+										</Checkbox.Indicator>
+									</Checkbox.Root>
+									<span id={`${fields.interests.id}-${item.value}-label`}>
+										{item.label}
+									</span>
+								</label>
+							))}
+						</CheckboxGroupControl>
+						<Field.Description
+							id={`${fields.interests.id}-description`}
+							className="description"
+						>
+							A multiple BaseControl serializes the selected values.
+						</Field.Description>
+						<Field.Error
+							id={fields.interests.errorId}
+							className="error"
+							match
+							role={fields.interests.errors?.length ? 'alert' : undefined}
+						>
+							{fields.interests.errors?.join(', ')}
+						</Field.Error>
+					</Field.Root>
 
-					<RadioGroupField
-						label="Plan"
-						description="The BaseControl serializes one scalar value."
-						items={planOptions}
-						{...fields.plan.radioGroupProps}
-						// Equivalent to:
-						// id={fields.plan.id}
-						// name={fields.plan.name}
-						// defaultValue={fields.plan.defaultValue}
-						// aria-describedby={`${fields.plan.id}-description ${fields.plan.ariaDescribedBy ?? ''}`.trim()}
-						// invalid={!fields.plan.valid}
-						// errors={fields.plan.errors}
-					/>
+					<Field.Root className="field" invalid={!fields.plan.valid}>
+						<Field.Label id={`${fields.plan.id}-label`} className="label">
+							Plan
+						</Field.Label>
+						<RadioGroupControl
+							{...fields.plan.radioGroupProps}
+							// Equivalent to:
+							// id={fields.plan.id}
+							// name={fields.plan.name}
+							// defaultValue={fields.plan.defaultValue}
+							// aria-labelledby={`${fields.plan.id}-label`}
+							// aria-describedby={`${fields.plan.id}-description ${fields.plan.ariaDescribedBy ?? ''}`.trim()}
+							// invalid={!fields.plan.valid}
+						>
+							{planOptions.map((item) => (
+								<label className="choice-label" key={item.value}>
+									<Radio.Root
+										className="radio"
+										value={item.value}
+										aria-labelledby={`${fields.plan.id}-${item.value}-label`}
+									>
+										<Radio.Indicator className="radio-indicator" />
+									</Radio.Root>
+									<span id={`${fields.plan.id}-${item.value}-label`}>
+										{item.label}
+									</span>
+								</label>
+							))}
+						</RadioGroupControl>
+						<Field.Description
+							id={`${fields.plan.id}-description`}
+							className="description"
+						>
+							The BaseControl serializes one scalar value.
+						</Field.Description>
+						<Field.Error
+							id={fields.plan.errorId}
+							className="error"
+							match
+							role={fields.plan.errors?.length ? 'alert' : undefined}
+						>
+							{fields.plan.errors?.join(', ')}
+						</Field.Error>
+					</Field.Root>
 
-					<SelectField
-						label="Country"
-						description="Select is synchronized with a scalar BaseControl."
-						placeholder="Choose a country"
-						items={countryOptions}
-						{...fields.country.selectProps}
-						// Equivalent to:
-						// id={fields.country.id}
-						// name={fields.country.name}
-						// defaultValue={fields.country.defaultValue}
-						// aria-describedby={`${fields.country.id}-description ${fields.country.ariaDescribedBy ?? ''}`.trim()}
-						// invalid={!fields.country.valid}
-						// errors={fields.country.errors}
-					/>
+					<Field.Root className="field" invalid={!fields.country.valid}>
+						<Field.Label id={`${fields.country.id}-label`} className="label">
+							Country
+						</Field.Label>
+						<SelectControl
+							placeholder="Choose a country"
+							items={countryOptions}
+							{...fields.country.selectProps}
+							// Equivalent to:
+							// id={fields.country.id}
+							// name={fields.country.name}
+							// defaultValue={fields.country.defaultValue}
+							// aria-labelledby={`${fields.country.id}-label`}
+							// aria-describedby={`${fields.country.id}-description ${fields.country.ariaDescribedBy ?? ''}`.trim()}
+							// invalid={!fields.country.valid}
+						/>
+						<Field.Description
+							id={`${fields.country.id}-description`}
+							className="description"
+						>
+							Select is synchronized with a scalar BaseControl.
+						</Field.Description>
+						<Field.Error
+							id={fields.country.errorId}
+							className="error"
+							match
+							role={fields.country.errors?.length ? 'alert' : undefined}
+						>
+							{fields.country.errors?.join(', ')}
+						</Field.Error>
+					</Field.Root>
 
-					<ComboboxField
-						label="Framework"
-						description="Filtering is transient; BaseControl stores the selection."
-						placeholder="Search frameworks"
-						items={frameworkOptions}
-						{...fields.framework.comboboxProps}
-						// Equivalent to:
-						// id={fields.framework.id}
-						// name={fields.framework.name}
-						// defaultValue={fields.framework.defaultValue}
-						// aria-describedby={`${fields.framework.id}-description ${fields.framework.ariaDescribedBy ?? ''}`.trim()}
-						// invalid={!fields.framework.valid}
-						// errors={fields.framework.errors}
-					/>
+					<Field.Root className="field" invalid={!fields.framework.valid}>
+						<Field.Label id={`${fields.framework.id}-label`} className="label">
+							Framework
+						</Field.Label>
+						<ComboboxControl
+							placeholder="Search frameworks"
+							triggerLabel="Open Framework"
+							items={frameworkOptions}
+							{...fields.framework.comboboxProps}
+							// Equivalent to:
+							// id={fields.framework.id}
+							// name={fields.framework.name}
+							// defaultValue={fields.framework.defaultValue}
+							// aria-labelledby={`${fields.framework.id}-label`}
+							// aria-describedby={`${fields.framework.id}-description ${fields.framework.ariaDescribedBy ?? ''}`.trim()}
+							// invalid={!fields.framework.valid}
+						/>
+						<Field.Description
+							id={`${fields.framework.id}-description`}
+							className="description"
+						>
+							Filtering is transient; BaseControl stores the selection.
+						</Field.Description>
+						<Field.Error
+							id={fields.framework.errorId}
+							className="error"
+							match
+							role={fields.framework.errors?.length ? 'alert' : undefined}
+						>
+							{fields.framework.errors?.join(', ')}
+						</Field.Error>
+					</Field.Root>
 
-					<NumberFieldControl
-						label="Quantity"
-						description="BaseControl stores the raw value before Zod coercion."
-						{...fields.quantity.numberFieldProps}
-						// Equivalent to:
-						// id={fields.quantity.id}
-						// name={fields.quantity.name}
-						// defaultValue={fields.quantity.defaultValue}
-						// aria-describedby={`${fields.quantity.id}-description ${fields.quantity.ariaDescribedBy ?? ''}`.trim()}
-						// invalid={!fields.quantity.valid}
-						// errors={fields.quantity.errors}
-					/>
+					<Field.Root className="field" invalid={!fields.quantity.valid}>
+						<Field.Label id={`${fields.quantity.id}-label`} className="label">
+							Quantity
+						</Field.Label>
+						<NumberFieldControl
+							label="Quantity"
+							{...fields.quantity.numberFieldProps}
+							// Equivalent to:
+							// id={fields.quantity.id}
+							// name={fields.quantity.name}
+							// defaultValue={fields.quantity.defaultValue}
+							// aria-labelledby={`${fields.quantity.id}-label`}
+							// aria-describedby={`${fields.quantity.id}-description ${fields.quantity.ariaDescribedBy ?? ''}`.trim()}
+							// invalid={!fields.quantity.valid}
+						/>
+						<Field.Description
+							id={`${fields.quantity.id}-description`}
+							className="description"
+						>
+							BaseControl stores the raw value before Zod coercion.
+						</Field.Description>
+						<Field.Error
+							id={fields.quantity.errorId}
+							className="error"
+							match
+							role={fields.quantity.errors?.length ? 'alert' : undefined}
+						>
+							{fields.quantity.errors?.join(', ')}
+						</Field.Error>
+					</Field.Root>
 
-					<SliderField
-						label="Budget"
-						description="The range input is controlled through useControl."
-						{...fields.budget.sliderProps}
-						// Equivalent to:
-						// id={fields.budget.id}
-						// name={fields.budget.name}
-						// defaultValue={fields.budget.defaultValue}
-						// aria-describedby={`${fields.budget.id}-description ${fields.budget.ariaDescribedBy ?? ''}`.trim()}
-						// invalid={!fields.budget.valid}
-						// errors={fields.budget.errors}
-					/>
+					<Field.Root className="field" invalid={!fields.budget.valid}>
+						<Field.Label id={`${fields.budget.id}-label`} className="label">
+							Budget
+						</Field.Label>
+						<SliderControl
+							{...fields.budget.sliderProps}
+							// Equivalent to:
+							// id={fields.budget.id}
+							// name={fields.budget.name}
+							// defaultValue={fields.budget.defaultValue}
+							// aria-labelledby={`${fields.budget.id}-label`}
+							// aria-describedby={`${fields.budget.id}-description ${fields.budget.ariaDescribedBy ?? ''}`.trim()}
+							// invalid={!fields.budget.valid}
+						/>
+						<Field.Description
+							id={`${fields.budget.id}-description`}
+							className="description"
+						>
+							The range input is controlled through useControl.
+						</Field.Description>
+						<Field.Error
+							id={fields.budget.errorId}
+							className="error"
+							match
+							role={fields.budget.errors?.length ? 'alert' : undefined}
+						>
+							{fields.budget.errors?.join(', ')}
+						</Field.Error>
+					</Field.Root>
 
-					<SwitchField
-						label="Product notifications"
-						description="A checkbox BaseControl submits “on” while enabled."
-						{...fields.notifications.switchProps}
-						// Equivalent to:
-						// id={fields.notifications.id}
-						// name={fields.notifications.name}
-						// defaultChecked={fields.notifications.defaultChecked}
-						// aria-describedby={`${fields.notifications.id}-description ${fields.notifications.ariaDescribedBy ?? ''}`.trim()}
-						// invalid={!fields.notifications.valid}
-						// errors={fields.notifications.errors}
-					/>
+					<Field.Root className="field" invalid={!fields.notifications.valid}>
+						<div className="switch-row">
+							<Field.Label
+								id={`${fields.notifications.id}-label`}
+								className="label"
+							>
+								Product notifications
+							</Field.Label>
+							<SwitchControl
+								{...fields.notifications.switchProps}
+								// Equivalent to:
+								// id={fields.notifications.id}
+								// name={fields.notifications.name}
+								// defaultChecked={fields.notifications.defaultChecked}
+								// aria-labelledby={`${fields.notifications.id}-label`}
+								// aria-describedby={`${fields.notifications.id}-description ${fields.notifications.ariaDescribedBy ?? ''}`.trim()}
+								// invalid={!fields.notifications.valid}
+							/>
+						</div>
+						<Field.Description
+							id={`${fields.notifications.id}-description`}
+							className="description"
+						>
+							A checkbox BaseControl submits “on” while enabled.
+						</Field.Description>
+						<Field.Error
+							id={fields.notifications.errorId}
+							className="error"
+							match
+							role={fields.notifications.errors?.length ? 'alert' : undefined}
+						>
+							{fields.notifications.errors?.join(', ')}
+						</Field.Error>
+					</Field.Root>
 				</div>
 
 				{submittedValue ? (

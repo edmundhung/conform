@@ -1,33 +1,24 @@
 import { Checkbox } from '@base-ui/react/checkbox';
 import { CheckboxGroup } from '@base-ui/react/checkbox-group';
 import { Combobox } from '@base-ui/react/combobox';
-import { Field } from '@base-ui/react/field';
-import { Input } from '@base-ui/react/input';
 import { NumberField } from '@base-ui/react/number-field';
-import { Radio } from '@base-ui/react/radio';
 import { RadioGroup } from '@base-ui/react/radio-group';
 import { Select } from '@base-ui/react/select';
 import { Slider } from '@base-ui/react/slider';
 import { Switch } from '@base-ui/react/switch';
 import { BaseControl, useControl } from '@conform-to/react/future';
-import { useRef, type FocusEvent } from 'react';
+import { useRef, type FocusEvent, type ReactNode } from 'react';
 
-type FieldStatusProps = {
+type ControlProps = {
 	id: string;
-	label: string;
-	description: string;
-	errors?: string[];
-	invalid: boolean;
-	'aria-describedby'?: string;
-};
-
-type StringFieldProps = FieldStatusProps & {
 	name: string;
 	defaultValue?: string;
+	invalid: boolean;
+	'aria-describedby'?: string;
+	'aria-labelledby'?: string;
 };
 
-type BooleanFieldProps = FieldStatusProps & {
-	name: string;
+type CheckedControlProps = Omit<ControlProps, 'defaultValue'> & {
 	defaultChecked?: boolean;
 };
 
@@ -40,70 +31,10 @@ function isFocusLeaving(event: FocusEvent<HTMLElement>) {
 	return !event.currentTarget.contains(event.relatedTarget);
 }
 
-function FieldMessages({ id, description, errors }: FieldStatusProps) {
-	return (
-		<>
-			<Field.Description id={`${id}-description`} className="description">
-				{description}
-			</Field.Description>
-			<div
-				id={`${id}-error`}
-				className="error"
-				role={errors?.length ? 'alert' : undefined}
-			>
-				{errors?.join(', ')}
-			</div>
-		</>
-	);
-}
+export type CheckboxControlProps = CheckedControlProps;
 
-export function TextInputField(props: StringFieldProps) {
-	const { id, label, invalid, name, defaultValue } = props;
-
-	return (
-		<Field.Root className="field" invalid={invalid}>
-			<Field.Label id={`${id}-label`} className="label">
-				{label}
-			</Field.Label>
-			<Input
-				id={id}
-				className="text-control"
-				name={name}
-				defaultValue={defaultValue}
-				aria-labelledby={`${id}-label`}
-				aria-describedby={props['aria-describedby']}
-				aria-invalid={invalid || undefined}
-			/>
-			<FieldMessages {...props} />
-		</Field.Root>
-	);
-}
-
-export function TextareaField(props: StringFieldProps) {
-	const { id, label, invalid, name, defaultValue } = props;
-
-	return (
-		<Field.Root className="field" invalid={invalid}>
-			<Field.Label id={`${id}-label`} className="label">
-				{label}
-			</Field.Label>
-			<Field.Control
-				render={<textarea rows={4} />}
-				id={id}
-				className="text-control"
-				name={name}
-				defaultValue={defaultValue}
-				aria-labelledby={`${id}-label`}
-				aria-describedby={props['aria-describedby']}
-				aria-invalid={invalid || undefined}
-			/>
-			<FieldMessages {...props} />
-		</Field.Root>
-	);
-}
-
-export function CheckboxField(props: BooleanFieldProps) {
-	const { id, label, invalid, name, defaultChecked } = props;
+export function CheckboxControl(props: CheckboxControlProps) {
+	const { id, invalid, name, defaultChecked } = props;
 	const checkboxRef = useRef<HTMLElement>(null);
 	const control = useControl({
 		defaultChecked,
@@ -114,7 +45,7 @@ export function CheckboxField(props: BooleanFieldProps) {
 	});
 
 	return (
-		<Field.Root className="field" invalid={invalid}>
+		<>
 			<BaseControl
 				type="checkbox"
 				name={name}
@@ -122,58 +53,53 @@ export function CheckboxField(props: BooleanFieldProps) {
 				defaultChecked={defaultChecked ?? false}
 				ref={control.register}
 			/>
-			<Field.Label id={`${id}-label`} className="choice-label">
-				<Checkbox.Root
-					id={id}
-					className="checkbox"
-					ref={checkboxRef}
-					checked={control.checked ?? false}
-					onCheckedChange={(checked) => control.change(checked)}
-					onBlur={() => control.blur()}
-					aria-labelledby={`${id}-label`}
-					aria-describedby={props['aria-describedby']}
-					aria-invalid={invalid || undefined}
-				>
-					<Checkbox.Indicator className="checkbox-indicator">
-						✓
-					</Checkbox.Indicator>
-				</Checkbox.Root>
-				{label}
-			</Field.Label>
-			<FieldMessages {...props} />
-		</Field.Root>
+			<Checkbox.Root
+				id={id}
+				className="checkbox"
+				ref={checkboxRef}
+				checked={control.checked ?? false}
+				onCheckedChange={(checked) => control.change(checked)}
+				onBlur={() => control.blur()}
+				aria-labelledby={props['aria-labelledby']}
+				aria-describedby={props['aria-describedby']}
+				aria-invalid={invalid || undefined}
+			>
+				<Checkbox.Indicator className="checkbox-indicator">
+					✓
+				</Checkbox.Indicator>
+			</Checkbox.Root>
+		</>
 	);
 }
 
-export type CheckboxGroupFieldProps = FieldStatusProps & {
-	name: string;
+export type CheckboxGroupControlProps = Omit<ControlProps, 'defaultValue'> & {
 	defaultValue?: string[];
-	items: Option[];
+	children: ReactNode;
 };
 
-export function CheckboxGroupField(props: CheckboxGroupFieldProps) {
-	const { id, label, invalid, name, defaultValue, items } = props;
-	const firstCheckboxRef = useRef<HTMLElement>(null);
+export function CheckboxGroupControl(props: CheckboxGroupControlProps) {
+	const { invalid, name, defaultValue, children } = props;
+	const groupRef = useRef<HTMLDivElement>(null);
 	const control = useControl({
 		defaultValue,
 		onFocus() {
-			firstCheckboxRef.current?.focus();
+			groupRef.current
+				?.querySelector<HTMLElement>('[role="checkbox"]')
+				?.focus();
 		},
 	});
 
 	return (
-		<Field.Root className="field" invalid={invalid}>
+		<>
 			<BaseControl
 				type="select"
 				name={name}
 				defaultValue={control.defaultValue ?? []}
 				ref={control.register}
 			/>
-			<Field.Label id={`${id}-label`} className="label">
-				{label}
-			</Field.Label>
 			<CheckboxGroup
 				className="choice-group"
+				ref={groupRef}
 				value={control.options ?? []}
 				onValueChange={(value) => control.change(value)}
 				onBlur={(event) => {
@@ -181,59 +107,40 @@ export function CheckboxGroupField(props: CheckboxGroupFieldProps) {
 						control.blur();
 					}
 				}}
-				aria-labelledby={`${id}-label`}
+				aria-labelledby={props['aria-labelledby']}
 				aria-describedby={props['aria-describedby']}
 				aria-invalid={invalid || undefined}
 			>
-				{items.map((item, index) => (
-					<label className="choice-label" key={item.value}>
-						<Checkbox.Root
-							className="checkbox"
-							value={item.value}
-							ref={index === 0 ? firstCheckboxRef : undefined}
-							aria-labelledby={`${id}-${item.value}-label`}
-							aria-describedby={props['aria-describedby']}
-							aria-invalid={invalid || undefined}
-						>
-							<Checkbox.Indicator className="checkbox-indicator">
-								✓
-							</Checkbox.Indicator>
-						</Checkbox.Root>
-						<span id={`${id}-${item.value}-label`}>{item.label}</span>
-					</label>
-				))}
+				{children}
 			</CheckboxGroup>
-			<FieldMessages {...props} />
-		</Field.Root>
+		</>
 	);
 }
 
-export type RadioGroupFieldProps = StringFieldProps & {
-	items: Option[];
+export type RadioGroupControlProps = ControlProps & {
+	children: ReactNode;
 };
 
-export function RadioGroupField(props: RadioGroupFieldProps) {
-	const { id, label, invalid, name, defaultValue, items } = props;
-	const firstRadioRef = useRef<HTMLElement>(null);
+export function RadioGroupControl(props: RadioGroupControlProps) {
+	const { invalid, name, defaultValue, children } = props;
+	const groupRef = useRef<HTMLDivElement>(null);
 	const control = useControl({
 		defaultValue,
 		onFocus() {
-			firstRadioRef.current?.focus();
+			groupRef.current?.querySelector<HTMLElement>('[role="radio"]')?.focus();
 		},
 	});
 
 	return (
-		<Field.Root className="field" invalid={invalid}>
+		<>
 			<BaseControl
 				name={name}
 				defaultValue={control.defaultValue ?? ''}
 				ref={control.register}
 			/>
-			<Field.Label id={`${id}-label`} className="label">
-				{label}
-			</Field.Label>
 			<RadioGroup
 				className="choice-group"
+				ref={groupRef}
 				value={control.value ?? ''}
 				onValueChange={(value) => control.change(value)}
 				onBlur={(event) => {
@@ -241,38 +148,23 @@ export function RadioGroupField(props: RadioGroupFieldProps) {
 						control.blur();
 					}
 				}}
-				aria-labelledby={`${id}-label`}
+				aria-labelledby={props['aria-labelledby']}
 				aria-describedby={props['aria-describedby']}
 				aria-invalid={invalid || undefined}
 			>
-				{items.map((item, index) => (
-					<label className="choice-label" key={item.value}>
-						<Radio.Root
-							className="radio"
-							ref={index === 0 ? firstRadioRef : undefined}
-							value={item.value}
-							aria-labelledby={`${id}-${item.value}-label`}
-							aria-describedby={props['aria-describedby']}
-							aria-invalid={invalid || undefined}
-						>
-							<Radio.Indicator className="radio-indicator" />
-						</Radio.Root>
-						<span id={`${id}-${item.value}-label`}>{item.label}</span>
-					</label>
-				))}
+				{children}
 			</RadioGroup>
-			<FieldMessages {...props} />
-		</Field.Root>
+		</>
 	);
 }
 
-export type SelectFieldProps = StringFieldProps & {
+export type SelectControlProps = ControlProps & {
 	items: Option[];
 	placeholder?: string;
 };
 
-export function SelectField(props: SelectFieldProps) {
-	const { id, label, invalid, name, defaultValue, items, placeholder } = props;
+export function SelectControl(props: SelectControlProps) {
+	const { id, invalid, name, defaultValue, items, placeholder } = props;
 	const labels = Object.fromEntries(
 		items.map((item) => [item.value, item.label]),
 	);
@@ -285,15 +177,12 @@ export function SelectField(props: SelectFieldProps) {
 	});
 
 	return (
-		<Field.Root className="field" invalid={invalid}>
+		<>
 			<BaseControl
 				name={name}
 				defaultValue={control.defaultValue ?? ''}
 				ref={control.register}
 			/>
-			<Field.Label id={`${id}-label`} className="label">
-				{label}
-			</Field.Label>
 			<Select.Root
 				value={control.value || null}
 				onValueChange={(value) => control.change(value ?? '')}
@@ -302,7 +191,7 @@ export function SelectField(props: SelectFieldProps) {
 					id={id}
 					className="select-trigger"
 					ref={triggerRef}
-					aria-labelledby={`${id}-label`}
+					aria-labelledby={props['aria-labelledby']}
 					aria-describedby={props['aria-describedby']}
 					aria-invalid={invalid || undefined}
 					onBlur={() => control.blur()}
@@ -335,15 +224,19 @@ export function SelectField(props: SelectFieldProps) {
 					</Select.Positioner>
 				</Select.Portal>
 			</Select.Root>
-			<FieldMessages {...props} />
-		</Field.Root>
+		</>
 	);
 }
 
-export type ComboboxFieldProps = SelectFieldProps;
+export type ComboboxControlProps = ControlProps & {
+	items: Option[];
+	placeholder?: string;
+	triggerLabel: string;
+};
 
-export function ComboboxField(props: ComboboxFieldProps) {
-	const { id, label, invalid, name, defaultValue, items, placeholder } = props;
+export function ComboboxControl(props: ComboboxControlProps) {
+	const { id, invalid, name, defaultValue, items, placeholder, triggerLabel } =
+		props;
 	const labels = Object.fromEntries(
 		items.map((item) => [item.value, item.label]),
 	);
@@ -357,15 +250,12 @@ export function ComboboxField(props: ComboboxFieldProps) {
 	});
 
 	return (
-		<Field.Root className="field" invalid={invalid}>
+		<>
 			<BaseControl
 				name={name}
 				defaultValue={control.defaultValue ?? ''}
 				ref={control.register}
 			/>
-			<Field.Label id={`${id}-label`} className="label">
-				{label}
-			</Field.Label>
 			<Combobox.Root
 				items={values}
 				value={control.value || null}
@@ -378,14 +268,14 @@ export function ComboboxField(props: ComboboxFieldProps) {
 						className="combobox-input"
 						ref={inputRef}
 						placeholder={placeholder}
-						aria-labelledby={`${id}-label`}
+						aria-labelledby={props['aria-labelledby']}
 						aria-describedby={props['aria-describedby']}
 						aria-invalid={invalid || undefined}
 						onBlur={() => control.blur()}
 					/>
 					<Combobox.Trigger
 						className="combobox-trigger"
-						aria-label={`Open ${label}`}
+						aria-label={triggerLabel}
 					>
 						⌄
 					</Combobox.Trigger>
@@ -410,13 +300,16 @@ export function ComboboxField(props: ComboboxFieldProps) {
 					</Combobox.Positioner>
 				</Combobox.Portal>
 			</Combobox.Root>
-			<FieldMessages {...props} />
-		</Field.Root>
+		</>
 	);
 }
 
-export function NumberFieldControl(props: StringFieldProps) {
-	const { id, label, invalid, name, defaultValue } = props;
+export type NumberFieldControlProps = ControlProps & {
+	label: string;
+};
+
+export function NumberFieldControl(props: NumberFieldControlProps) {
+	const { id, invalid, label, name, defaultValue } = props;
 	const inputRef = useRef<HTMLInputElement>(null);
 	const control = useControl({
 		defaultValue,
@@ -429,15 +322,12 @@ export function NumberFieldControl(props: StringFieldProps) {
 		control.value === '' || Number.isNaN(numericValue) ? null : numericValue;
 
 	return (
-		<Field.Root className="field" invalid={invalid}>
+		<>
 			<BaseControl
 				name={name}
 				defaultValue={control.defaultValue ?? ''}
 				ref={control.register}
 			/>
-			<Field.Label id={`${id}-label`} className="label">
-				{label}
-			</Field.Label>
 			<NumberField.Root
 				id={id}
 				value={value}
@@ -462,7 +352,7 @@ export function NumberFieldControl(props: StringFieldProps) {
 					<NumberField.Input
 						className="number-input"
 						ref={inputRef}
-						aria-labelledby={`${id}-label`}
+						aria-labelledby={props['aria-labelledby']}
 						aria-describedby={props['aria-describedby']}
 						aria-invalid={invalid || undefined}
 					/>
@@ -474,13 +364,14 @@ export function NumberFieldControl(props: StringFieldProps) {
 					</NumberField.Increment>
 				</NumberField.Group>
 			</NumberField.Root>
-			<FieldMessages {...props} />
-		</Field.Root>
+		</>
 	);
 }
 
-export function SliderField(props: StringFieldProps) {
-	const { id, label, invalid, name, defaultValue } = props;
+export type SliderControlProps = ControlProps;
+
+export function SliderControl(props: SliderControlProps) {
+	const { invalid, name, defaultValue } = props;
 	const thumbInputRef = useRef<HTMLInputElement>(null);
 	const control = useControl({
 		defaultValue: defaultValue || '50',
@@ -492,15 +383,12 @@ export function SliderField(props: StringFieldProps) {
 	const value = Number.isFinite(numericValue) ? numericValue : 50;
 
 	return (
-		<Field.Root className="field" invalid={invalid}>
+		<>
 			<BaseControl
 				name={name}
 				defaultValue={control.defaultValue ?? '50'}
 				ref={control.register}
 			/>
-			<Field.Label id={`${id}-label`} className="label">
-				{label}
-			</Field.Label>
 			<Slider.Root
 				className="slider-root"
 				value={value}
@@ -517,20 +405,21 @@ export function SliderField(props: StringFieldProps) {
 							className="slider-thumb"
 							inputRef={thumbInputRef}
 							onBlur={() => control.blur()}
-							aria-labelledby={`${id}-label`}
+							aria-labelledby={props['aria-labelledby']}
 							aria-describedby={props['aria-describedby']}
 							aria-invalid={invalid || undefined}
 						/>
 					</Slider.Track>
 				</Slider.Control>
 			</Slider.Root>
-			<FieldMessages {...props} />
-		</Field.Root>
+		</>
 	);
 }
 
-export function SwitchField(props: BooleanFieldProps) {
-	const { id, label, invalid, name, defaultChecked } = props;
+export type SwitchControlProps = CheckedControlProps;
+
+export function SwitchControl(props: SwitchControlProps) {
+	const { id, invalid, name, defaultChecked } = props;
 	const switchRef = useRef<HTMLElement>(null);
 	const control = useControl({
 		defaultChecked,
@@ -541,7 +430,7 @@ export function SwitchField(props: BooleanFieldProps) {
 	});
 
 	return (
-		<Field.Root className="field" invalid={invalid}>
+		<>
 			<BaseControl
 				type="checkbox"
 				name={name}
@@ -549,25 +438,19 @@ export function SwitchField(props: BooleanFieldProps) {
 				defaultChecked={defaultChecked ?? false}
 				ref={control.register}
 			/>
-			<div className="switch-row">
-				<Field.Label id={`${id}-label`} className="label">
-					{label}
-				</Field.Label>
-				<Switch.Root
-					id={id}
-					className="switch"
-					ref={switchRef}
-					checked={control.checked ?? false}
-					onCheckedChange={(checked) => control.change(checked)}
-					onBlur={() => control.blur()}
-					aria-labelledby={`${id}-label`}
-					aria-describedby={props['aria-describedby']}
-					aria-invalid={invalid || undefined}
-				>
-					<Switch.Thumb className="switch-thumb" />
-				</Switch.Root>
-			</div>
-			<FieldMessages {...props} />
-		</Field.Root>
+			<Switch.Root
+				id={id}
+				className="switch"
+				ref={switchRef}
+				checked={control.checked ?? false}
+				onCheckedChange={(checked) => control.change(checked)}
+				onBlur={() => control.blur()}
+				aria-labelledby={props['aria-labelledby']}
+				aria-describedby={props['aria-describedby']}
+				aria-invalid={invalid || undefined}
+			>
+				<Switch.Thumb className="switch-thumb" />
+			</Switch.Root>
+		</>
 	);
 }

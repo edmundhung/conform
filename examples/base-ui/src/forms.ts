@@ -8,18 +8,17 @@ import {
 	type InferCustomFormMetadata,
 } from '@conform-to/react/future';
 import { getConstraints } from '@conform-to/zod/v4/future';
+import type { Input } from '@base-ui/react/input';
 import type { ComponentProps } from 'react';
 import type {
-	CheckboxField,
-	CheckboxGroupField,
-	ComboboxField,
+	CheckboxControl,
+	CheckboxGroupControl,
+	ComboboxControl,
 	NumberFieldControl,
-	RadioGroupField,
-	SelectField,
-	SliderField,
-	SwitchField,
-	TextareaField,
-	TextInputField,
+	RadioGroupControl,
+	SelectControl,
+	SliderControl,
+	SwitchControl,
 } from './components';
 
 const forms = configureForms({
@@ -28,92 +27,92 @@ const forms = configureForms({
 	shouldRevalidate: 'onInput',
 	extendFieldMetadata(metadata) {
 		return {
-			get textInputProps() {
+			get inputProps() {
 				return {
 					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-labelledby': `${metadata.id}-label`,
 					'aria-describedby':
 						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
-					invalid: !metadata.valid,
-					errors: metadata.errors,
-				} satisfies Partial<ComponentProps<typeof TextInputField>>;
+					'aria-invalid': metadata.ariaInvalid,
+				} satisfies Partial<ComponentProps<typeof Input>>;
 			},
 			get textareaProps() {
 				return {
 					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-labelledby': `${metadata.id}-label`,
 					'aria-describedby':
 						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
-					invalid: !metadata.valid,
-					errors: metadata.errors,
-				} satisfies Partial<ComponentProps<typeof TextareaField>>;
+					'aria-invalid': metadata.ariaInvalid,
+				} satisfies Partial<ComponentProps<'textarea'>>;
 			},
 			get checkboxProps() {
 				return {
 					id: metadata.id,
 					name: metadata.name,
 					defaultChecked: metadata.defaultChecked,
+					'aria-labelledby': `${metadata.id}-label`,
 					'aria-describedby':
 						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
 					invalid: !metadata.valid,
-					errors: metadata.errors,
-				} satisfies Partial<ComponentProps<typeof CheckboxField>>;
+				} satisfies Partial<ComponentProps<typeof CheckboxControl>>;
 			},
 			get checkboxGroupProps() {
 				return {
 					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultOptions,
+					'aria-labelledby': `${metadata.id}-label`,
 					'aria-describedby':
 						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
 					invalid: !metadata.valid,
-					errors: metadata.errors,
-				} satisfies Partial<ComponentProps<typeof CheckboxGroupField>>;
+				} satisfies Partial<ComponentProps<typeof CheckboxGroupControl>>;
 			},
 			get radioGroupProps() {
 				return {
 					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-labelledby': `${metadata.id}-label`,
 					'aria-describedby':
 						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
 					invalid: !metadata.valid,
-					errors: metadata.errors,
-				} satisfies Partial<ComponentProps<typeof RadioGroupField>>;
+				} satisfies Partial<ComponentProps<typeof RadioGroupControl>>;
 			},
 			get selectProps() {
 				return {
 					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-labelledby': `${metadata.id}-label`,
 					'aria-describedby':
 						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
 					invalid: !metadata.valid,
-					errors: metadata.errors,
-				} satisfies Partial<ComponentProps<typeof SelectField>>;
+				} satisfies Partial<ComponentProps<typeof SelectControl>>;
 			},
 			get comboboxProps() {
 				return {
 					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-labelledby': `${metadata.id}-label`,
 					'aria-describedby':
 						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
 					invalid: !metadata.valid,
-					errors: metadata.errors,
-				} satisfies Partial<ComponentProps<typeof ComboboxField>>;
+				} satisfies Partial<ComponentProps<typeof ComboboxControl>>;
 			},
 			get numberFieldProps() {
 				return {
 					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-labelledby': `${metadata.id}-label`,
 					'aria-describedby':
 						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
 					invalid: !metadata.valid,
-					errors: metadata.errors,
 				} satisfies Partial<ComponentProps<typeof NumberFieldControl>>;
 			},
 			get sliderProps() {
@@ -121,22 +120,22 @@ const forms = configureForms({
 					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-labelledby': `${metadata.id}-label`,
 					'aria-describedby':
 						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
 					invalid: !metadata.valid,
-					errors: metadata.errors,
-				} satisfies Partial<ComponentProps<typeof SliderField>>;
+				} satisfies Partial<ComponentProps<typeof SliderControl>>;
 			},
 			get switchProps() {
 				return {
 					id: metadata.id,
 					name: metadata.name,
 					defaultChecked: metadata.defaultChecked,
+					'aria-labelledby': `${metadata.id}-label`,
 					'aria-describedby':
 						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
 					invalid: !metadata.valid,
-					errors: metadata.errors,
-				} satisfies Partial<ComponentProps<typeof SwitchField>>;
+				} satisfies Partial<ComponentProps<typeof SwitchControl>>;
 			},
 		};
 	},
