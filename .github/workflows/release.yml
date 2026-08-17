@@ -32,6 +32,6 @@ jobs:
           pr-title: 'release: bump packages version'
           commit-message: 'release: bump packages version'
           version-script: pnpm run version
-          publish-script: pnpm publish -r
+          publish-script: pnpm exec changeset publish
           create-github-releases: false
-          push-git-tags: false
+          push-git-tags: true
