@@ -131,7 +131,7 @@ export default function App() {
 
 				<div className="field-list">
 					<Field.Root className="field" invalid={!fields.fullName.valid}>
-						<Field.Label id={`${fields.fullName.id}-label`} className="label">
+						<Field.Label id={fields.fullName.labelId} className="label">
 							Full name
 						</Field.Label>
 						<Input
@@ -141,12 +141,12 @@ export default function App() {
 							// id={fields.fullName.id}
 							// name={fields.fullName.name}
 							// defaultValue={fields.fullName.defaultValue}
-							// aria-labelledby={`${fields.fullName.id}-label`}
-							// aria-describedby={`${fields.fullName.id}-description ${fields.fullName.ariaDescribedBy ?? ''}`.trim()}
+							// aria-labelledby={fields.fullName.labelId}
+							// aria-describedby={`${fields.fullName.descriptionId} ${fields.fullName.ariaDescribedBy ?? ''}`.trim()}
 							// aria-invalid={fields.fullName.ariaInvalid}
 						/>
 						<Field.Description
-							id={`${fields.fullName.id}-description`}
+							id={fields.fullName.descriptionId}
 							className="description"
 						>
 							A native Base UI Input.
@@ -162,7 +162,7 @@ export default function App() {
 					</Field.Root>
 
 					<Field.Root className="field" invalid={!fields.bio.valid}>
-						<Field.Label id={`${fields.bio.id}-label`} className="label">
+						<Field.Label id={fields.bio.labelId} className="label">
 							Bio
 						</Field.Label>
 						<Field.Control
@@ -173,12 +173,12 @@ export default function App() {
 							// id={fields.bio.id}
 							// name={fields.bio.name}
 							// defaultValue={fields.bio.defaultValue}
-							// aria-labelledby={`${fields.bio.id}-label`}
-							// aria-describedby={`${fields.bio.id}-description ${fields.bio.ariaDescribedBy ?? ''}`.trim()}
+							// aria-labelledby={fields.bio.labelId}
+							// aria-describedby={`${fields.bio.descriptionId} ${fields.bio.ariaDescribedBy ?? ''}`.trim()}
 							// aria-invalid={fields.bio.ariaInvalid}
 						/>
 						<Field.Description
-							id={`${fields.bio.id}-description`}
+							id={fields.bio.descriptionId}
 							className="description"
 						>
 							Field.Control renders a native textarea.
@@ -195,7 +195,7 @@ export default function App() {
 
 					<Field.Root className="field" invalid={!fields.acceptTerms.valid}>
 						<Field.Label
-							id={`${fields.acceptTerms.id}-label`}
+							id={fields.acceptTerms.labelId}
 							className="choice-label"
 						>
 							<CheckboxControl
@@ -204,14 +204,14 @@ export default function App() {
 								// id={fields.acceptTerms.id}
 								// name={fields.acceptTerms.name}
 								// defaultChecked={fields.acceptTerms.defaultChecked}
-								// aria-labelledby={`${fields.acceptTerms.id}-label`}
-								// aria-describedby={`${fields.acceptTerms.id}-description ${fields.acceptTerms.ariaDescribedBy ?? ''}`.trim()}
+								// aria-labelledby={fields.acceptTerms.labelId}
+								// aria-describedby={`${fields.acceptTerms.descriptionId} ${fields.acceptTerms.ariaDescribedBy ?? ''}`.trim()}
 								// invalid={!fields.acceptTerms.valid}
 							/>
 							Accept terms
 						</Field.Label>
 						<Field.Description
-							id={`${fields.acceptTerms.id}-description`}
+							id={fields.acceptTerms.descriptionId}
 							className="description"
 						>
 							The visible checkbox is synchronized with a BaseControl.
@@ -227,7 +227,7 @@ export default function App() {
 					</Field.Root>
 
 					<Field.Root className="field" invalid={!fields.interests.valid}>
-						<Field.Label id={`${fields.interests.id}-label`} className="label">
+						<Field.Label id={fields.interests.labelId} className="label">
 							Interests
 						</Field.Label>
 						<CheckboxGroupControl
@@ -236,8 +236,8 @@ export default function App() {
 							// id={fields.interests.id}
 							// name={fields.interests.name}
 							// defaultValue={fields.interests.defaultOptions}
-							// aria-labelledby={`${fields.interests.id}-label`}
-							// aria-describedby={`${fields.interests.id}-description ${fields.interests.ariaDescribedBy ?? ''}`.trim()}
+							// aria-labelledby={fields.interests.labelId}
+							// aria-describedby={`${fields.interests.descriptionId} ${fields.interests.ariaDescribedBy ?? ''}`.trim()}
 							// invalid={!fields.interests.valid}
 						>
 							{interestOptions.map((item) => (
@@ -258,7 +258,7 @@ export default function App() {
 							))}
 						</CheckboxGroupControl>
 						<Field.Description
-							id={`${fields.interests.id}-description`}
+							id={fields.interests.descriptionId}
 							className="description"
 						>
 							A multiple BaseControl serializes the selected values.
@@ -274,7 +274,7 @@ export default function App() {
 					</Field.Root>
 
 					<Field.Root className="field" invalid={!fields.plan.valid}>
-						<Field.Label id={`${fields.plan.id}-label`} className="label">
+						<Field.Label id={fields.plan.labelId} className="label">
 							Plan
 						</Field.Label>
 						<RadioGroupControl
@@ -283,8 +283,8 @@ export default function App() {
 							// id={fields.plan.id}
 							// name={fields.plan.name}
 							// defaultValue={fields.plan.defaultValue}
-							// aria-labelledby={`${fields.plan.id}-label`}
-							// aria-describedby={`${fields.plan.id}-description ${fields.plan.ariaDescribedBy ?? ''}`.trim()}
+							// aria-labelledby={fields.plan.labelId}
+							// aria-describedby={`${fields.plan.descriptionId} ${fields.plan.ariaDescribedBy ?? ''}`.trim()}
 							// invalid={!fields.plan.valid}
 						>
 							{planOptions.map((item) => (
@@ -303,7 +303,7 @@ export default function App() {
 							))}
 						</RadioGroupControl>
 						<Field.Description
-							id={`${fields.plan.id}-description`}
+							id={fields.plan.descriptionId}
 							className="description"
 						>
 							The BaseControl serializes one scalar value.
@@ -319,7 +319,7 @@ export default function App() {
 					</Field.Root>
 
 					<Field.Root className="field" invalid={!fields.country.valid}>
-						<Field.Label id={`${fields.country.id}-label`} className="label">
+						<Field.Label id={fields.country.labelId} className="label">
 							Country
 						</Field.Label>
 						<SelectControl
@@ -330,12 +330,12 @@ export default function App() {
 							// id={fields.country.id}
 							// name={fields.country.name}
 							// defaultValue={fields.country.defaultValue}
-							// aria-labelledby={`${fields.country.id}-label`}
-							// aria-describedby={`${fields.country.id}-description ${fields.country.ariaDescribedBy ?? ''}`.trim()}
+							// aria-labelledby={fields.country.labelId}
+							// aria-describedby={`${fields.country.descriptionId} ${fields.country.ariaDescribedBy ?? ''}`.trim()}
 							// invalid={!fields.country.valid}
 						/>
 						<Field.Description
-							id={`${fields.country.id}-description`}
+							id={fields.country.descriptionId}
 							className="description"
 						>
 							Select is synchronized with a scalar BaseControl.
@@ -351,7 +351,7 @@ export default function App() {
 					</Field.Root>
 
 					<Field.Root className="field" invalid={!fields.framework.valid}>
-						<Field.Label id={`${fields.framework.id}-label`} className="label">
+						<Field.Label id={fields.framework.labelId} className="label">
 							Framework
 						</Field.Label>
 						<ComboboxControl
@@ -363,12 +363,12 @@ export default function App() {
 							// id={fields.framework.id}
 							// name={fields.framework.name}
 							// defaultValue={fields.framework.defaultValue}
-							// aria-labelledby={`${fields.framework.id}-label`}
-							// aria-describedby={`${fields.framework.id}-description ${fields.framework.ariaDescribedBy ?? ''}`.trim()}
+							// aria-labelledby={fields.framework.labelId}
+							// aria-describedby={`${fields.framework.descriptionId} ${fields.framework.ariaDescribedBy ?? ''}`.trim()}
 							// invalid={!fields.framework.valid}
 						/>
 						<Field.Description
-							id={`${fields.framework.id}-description`}
+							id={fields.framework.descriptionId}
 							className="description"
 						>
 							Filtering is transient; BaseControl stores the selection.
@@ -384,7 +384,7 @@ export default function App() {
 					</Field.Root>
 
 					<Field.Root className="field" invalid={!fields.quantity.valid}>
-						<Field.Label id={`${fields.quantity.id}-label`} className="label">
+						<Field.Label id={fields.quantity.labelId} className="label">
 							Quantity
 						</Field.Label>
 						<NumberFieldControl
@@ -394,12 +394,12 @@ export default function App() {
 							// id={fields.quantity.id}
 							// name={fields.quantity.name}
 							// defaultValue={fields.quantity.defaultValue}
-							// aria-labelledby={`${fields.quantity.id}-label`}
-							// aria-describedby={`${fields.quantity.id}-description ${fields.quantity.ariaDescribedBy ?? ''}`.trim()}
+							// aria-labelledby={fields.quantity.labelId}
+							// aria-describedby={`${fields.quantity.descriptionId} ${fields.quantity.ariaDescribedBy ?? ''}`.trim()}
 							// invalid={!fields.quantity.valid}
 						/>
 						<Field.Description
-							id={`${fields.quantity.id}-description`}
+							id={fields.quantity.descriptionId}
 							className="description"
 						>
 							BaseControl stores the raw value before Zod coercion.
@@ -415,7 +415,7 @@ export default function App() {
 					</Field.Root>
 
 					<Field.Root className="field" invalid={!fields.budget.valid}>
-						<Field.Label id={`${fields.budget.id}-label`} className="label">
+						<Field.Label id={fields.budget.labelId} className="label">
 							Budget
 						</Field.Label>
 						<SliderControl
@@ -424,12 +424,12 @@ export default function App() {
 							// id={fields.budget.id}
 							// name={fields.budget.name}
 							// defaultValue={fields.budget.defaultValue}
-							// aria-labelledby={`${fields.budget.id}-label`}
-							// aria-describedby={`${fields.budget.id}-description ${fields.budget.ariaDescribedBy ?? ''}`.trim()}
+							// aria-labelledby={fields.budget.labelId}
+							// aria-describedby={`${fields.budget.descriptionId} ${fields.budget.ariaDescribedBy ?? ''}`.trim()}
 							// invalid={!fields.budget.valid}
 						/>
 						<Field.Description
-							id={`${fields.budget.id}-description`}
+							id={fields.budget.descriptionId}
 							className="description"
 						>
 							The range input is controlled through useControl.
@@ -446,10 +446,7 @@ export default function App() {
 
 					<Field.Root className="field" invalid={!fields.notifications.valid}>
 						<div className="switch-row">
-							<Field.Label
-								id={`${fields.notifications.id}-label`}
-								className="label"
-							>
+							<Field.Label id={fields.notifications.labelId} className="label">
 								Product notifications
 							</Field.Label>
 							<SwitchControl
@@ -458,13 +455,13 @@ export default function App() {
 								// id={fields.notifications.id}
 								// name={fields.notifications.name}
 								// defaultChecked={fields.notifications.defaultChecked}
-								// aria-labelledby={`${fields.notifications.id}-label`}
-								// aria-describedby={`${fields.notifications.id}-description ${fields.notifications.ariaDescribedBy ?? ''}`.trim()}
+								// aria-labelledby={fields.notifications.labelId}
+								// aria-describedby={`${fields.notifications.descriptionId} ${fields.notifications.ariaDescribedBy ?? ''}`.trim()}
 								// invalid={!fields.notifications.valid}
 							/>
 						</div>
 						<Field.Description
-							id={`${fields.notifications.id}-description`}
+							id={fields.notifications.descriptionId}
 							className="description"
 						>
 							A checkbox BaseControl submits “on” while enabled.

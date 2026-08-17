@@ -27,6 +27,12 @@ const forms = configureForms({
 	shouldRevalidate: 'onInput',
 	extendFieldMetadata(metadata) {
 		return {
+			get labelId() {
+				return `${metadata.id}-label`;
+			},
+			get descriptionId() {
+				return `${metadata.id}-description`;
+			},
 			get inputProps() {
 				return {
 					id: metadata.id,
