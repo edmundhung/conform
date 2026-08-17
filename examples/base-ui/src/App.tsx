@@ -135,6 +135,7 @@ export default function App() {
 						// id={fields.fullName.id}
 						// name={fields.fullName.name}
 						// defaultValue={fields.fullName.defaultValue}
+						// aria-describedby={`${fields.fullName.id}-description ${fields.fullName.ariaDescribedBy ?? ''}`.trim()}
 						// invalid={!fields.fullName.valid}
 						// errors={fields.fullName.errors}
 					/>
@@ -147,6 +148,7 @@ export default function App() {
 						// id={fields.bio.id}
 						// name={fields.bio.name}
 						// defaultValue={fields.bio.defaultValue}
+						// aria-describedby={`${fields.bio.id}-description ${fields.bio.ariaDescribedBy ?? ''}`.trim()}
 						// invalid={!fields.bio.valid}
 						// errors={fields.bio.errors}
 					/>
@@ -159,6 +161,7 @@ export default function App() {
 						// id={fields.acceptTerms.id}
 						// name={fields.acceptTerms.name}
 						// defaultChecked={fields.acceptTerms.defaultChecked}
+						// aria-describedby={`${fields.acceptTerms.id}-description ${fields.acceptTerms.ariaDescribedBy ?? ''}`.trim()}
 						// invalid={!fields.acceptTerms.valid}
 						// errors={fields.acceptTerms.errors}
 					/>
@@ -172,6 +175,7 @@ export default function App() {
 						// id={fields.interests.id}
 						// name={fields.interests.name}
 						// defaultValue={fields.interests.defaultOptions}
+						// aria-describedby={`${fields.interests.id}-description ${fields.interests.ariaDescribedBy ?? ''}`.trim()}
 						// invalid={!fields.interests.valid}
 						// errors={fields.interests.errors}
 					/>
@@ -185,6 +189,7 @@ export default function App() {
 						// id={fields.plan.id}
 						// name={fields.plan.name}
 						// defaultValue={fields.plan.defaultValue}
+						// aria-describedby={`${fields.plan.id}-description ${fields.plan.ariaDescribedBy ?? ''}`.trim()}
 						// invalid={!fields.plan.valid}
 						// errors={fields.plan.errors}
 					/>
@@ -199,6 +204,7 @@ export default function App() {
 						// id={fields.country.id}
 						// name={fields.country.name}
 						// defaultValue={fields.country.defaultValue}
+						// aria-describedby={`${fields.country.id}-description ${fields.country.ariaDescribedBy ?? ''}`.trim()}
 						// invalid={!fields.country.valid}
 						// errors={fields.country.errors}
 					/>
@@ -213,6 +219,7 @@ export default function App() {
 						// id={fields.framework.id}
 						// name={fields.framework.name}
 						// defaultValue={fields.framework.defaultValue}
+						// aria-describedby={`${fields.framework.id}-description ${fields.framework.ariaDescribedBy ?? ''}`.trim()}
 						// invalid={!fields.framework.valid}
 						// errors={fields.framework.errors}
 					/>
@@ -225,6 +232,7 @@ export default function App() {
 						// id={fields.quantity.id}
 						// name={fields.quantity.name}
 						// defaultValue={fields.quantity.defaultValue}
+						// aria-describedby={`${fields.quantity.id}-description ${fields.quantity.ariaDescribedBy ?? ''}`.trim()}
 						// invalid={!fields.quantity.valid}
 						// errors={fields.quantity.errors}
 					/>
@@ -237,6 +245,7 @@ export default function App() {
 						// id={fields.budget.id}
 						// name={fields.budget.name}
 						// defaultValue={fields.budget.defaultValue}
+						// aria-describedby={`${fields.budget.id}-description ${fields.budget.ariaDescribedBy ?? ''}`.trim()}
 						// invalid={!fields.budget.valid}
 						// errors={fields.budget.errors}
 					/>
@@ -249,6 +258,7 @@ export default function App() {
 						// id={fields.notifications.id}
 						// name={fields.notifications.name}
 						// defaultChecked={fields.notifications.defaultChecked}
+						// aria-describedby={`${fields.notifications.id}-description ${fields.notifications.ariaDescribedBy ?? ''}`.trim()}
 						// invalid={!fields.notifications.valid}
 						// errors={fields.notifications.errors}
 					/>

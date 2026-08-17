@@ -18,6 +18,7 @@ type FieldStatusProps = {
 	description: string;
 	errors?: string[];
 	invalid: boolean;
+	'aria-describedby'?: string;
 };
 
 type StringFieldProps = FieldStatusProps & {
@@ -34,10 +35,6 @@ type Option = {
 	label: string;
 	value: string;
 };
-
-function getDescriptionIds(id: string, invalid: boolean): string | undefined {
-	return invalid ? `${id}-description ${id}-error` : `${id}-description`;
-}
 
 function isFocusLeaving(event: FocusEvent<HTMLElement>) {
 	return !event.currentTarget.contains(event.relatedTarget);
@@ -74,7 +71,7 @@ export function TextInputField(props: StringFieldProps) {
 				name={name}
 				defaultValue={defaultValue}
 				aria-labelledby={`${id}-label`}
-				aria-describedby={getDescriptionIds(id, invalid)}
+				aria-describedby={props['aria-describedby']}
 				aria-invalid={invalid || undefined}
 			/>
 			<FieldMessages {...props} />
@@ -97,7 +94,7 @@ export function TextareaField(props: StringFieldProps) {
 				name={name}
 				defaultValue={defaultValue}
 				aria-labelledby={`${id}-label`}
-				aria-describedby={getDescriptionIds(id, invalid)}
+				aria-describedby={props['aria-describedby']}
 				aria-invalid={invalid || undefined}
 			/>
 			<FieldMessages {...props} />
@@ -134,7 +131,7 @@ export function CheckboxField(props: BooleanFieldProps) {
 					onCheckedChange={(checked) => control.change(checked)}
 					onBlur={() => control.blur()}
 					aria-labelledby={`${id}-label`}
-					aria-describedby={getDescriptionIds(id, invalid)}
+					aria-describedby={props['aria-describedby']}
 					aria-invalid={invalid || undefined}
 				>
 					<Checkbox.Indicator className="checkbox-indicator">
@@ -185,7 +182,7 @@ export function CheckboxGroupField(props: CheckboxGroupFieldProps) {
 					}
 				}}
 				aria-labelledby={`${id}-label`}
-				aria-describedby={getDescriptionIds(id, invalid)}
+				aria-describedby={props['aria-describedby']}
 				aria-invalid={invalid || undefined}
 			>
 				{items.map((item, index) => (
@@ -195,7 +192,7 @@ export function CheckboxGroupField(props: CheckboxGroupFieldProps) {
 							value={item.value}
 							ref={index === 0 ? firstCheckboxRef : undefined}
 							aria-labelledby={`${id}-${item.value}-label`}
-							aria-describedby={getDescriptionIds(id, invalid)}
+							aria-describedby={props['aria-describedby']}
 							aria-invalid={invalid || undefined}
 						>
 							<Checkbox.Indicator className="checkbox-indicator">
@@ -245,7 +242,7 @@ export function RadioGroupField(props: RadioGroupFieldProps) {
 					}
 				}}
 				aria-labelledby={`${id}-label`}
-				aria-describedby={getDescriptionIds(id, invalid)}
+				aria-describedby={props['aria-describedby']}
 				aria-invalid={invalid || undefined}
 			>
 				{items.map((item, index) => (
@@ -255,7 +252,7 @@ export function RadioGroupField(props: RadioGroupFieldProps) {
 							ref={index === 0 ? firstRadioRef : undefined}
 							value={item.value}
 							aria-labelledby={`${id}-${item.value}-label`}
-							aria-describedby={getDescriptionIds(id, invalid)}
+							aria-describedby={props['aria-describedby']}
 							aria-invalid={invalid || undefined}
 						>
 							<Radio.Indicator className="radio-indicator" />
@@ -306,7 +303,7 @@ export function SelectField(props: SelectFieldProps) {
 					className="select-trigger"
 					ref={triggerRef}
 					aria-labelledby={`${id}-label`}
-					aria-describedby={getDescriptionIds(id, invalid)}
+					aria-describedby={props['aria-describedby']}
 					aria-invalid={invalid || undefined}
 					onBlur={() => control.blur()}
 				>
@@ -382,7 +379,7 @@ export function ComboboxField(props: ComboboxFieldProps) {
 						ref={inputRef}
 						placeholder={placeholder}
 						aria-labelledby={`${id}-label`}
-						aria-describedby={getDescriptionIds(id, invalid)}
+						aria-describedby={props['aria-describedby']}
 						aria-invalid={invalid || undefined}
 						onBlur={() => control.blur()}
 					/>
@@ -427,7 +424,9 @@ export function NumberFieldControl(props: StringFieldProps) {
 			inputRef.current?.focus();
 		},
 	});
-	const value = control.value ? Number(control.value) : null;
+	const numericValue = Number(control.value);
+	const value =
+		control.value === '' || Number.isNaN(numericValue) ? null : numericValue;
 
 	return (
 		<Field.Root className="field" invalid={invalid}>
@@ -464,7 +463,7 @@ export function NumberFieldControl(props: StringFieldProps) {
 						className="number-input"
 						ref={inputRef}
 						aria-labelledby={`${id}-label`}
-						aria-describedby={getDescriptionIds(id, invalid)}
+						aria-describedby={props['aria-describedby']}
 						aria-invalid={invalid || undefined}
 					/>
 					<NumberField.Increment
@@ -518,7 +517,7 @@ export function SliderField(props: StringFieldProps) {
 							inputRef={thumbInputRef}
 							onBlur={() => control.blur()}
 							aria-labelledby={`${id}-label`}
-							aria-describedby={getDescriptionIds(id, invalid)}
+							aria-describedby={props['aria-describedby']}
 							aria-invalid={invalid || undefined}
 						/>
 					</Slider.Track>
@@ -561,7 +560,7 @@ export function SwitchField(props: BooleanFieldProps) {
 					onCheckedChange={(checked) => control.change(checked)}
 					onBlur={() => control.blur()}
 					aria-labelledby={`${id}-label`}
-					aria-describedby={getDescriptionIds(id, invalid)}
+					aria-describedby={props['aria-describedby']}
 					aria-invalid={invalid || undefined}
 				>
 					<Switch.Thumb className="switch-thumb" />

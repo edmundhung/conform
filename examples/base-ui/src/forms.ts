@@ -27,71 +27,115 @@ const forms = configureForms({
 	shouldValidate: 'onBlur',
 	shouldRevalidate: 'onInput',
 	extendFieldMetadata(metadata) {
-		const status = {
-			id: metadata.id,
-			name: metadata.name,
-			invalid: !metadata.valid,
-			errors: metadata.errors,
-		};
 		return {
 			get textInputProps() {
 				return {
-					...status,
+					id: metadata.id,
+					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-describedby':
+						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
+					invalid: !metadata.valid,
+					errors: metadata.errors,
 				} satisfies Partial<ComponentProps<typeof TextInputField>>;
 			},
 			get textareaProps() {
 				return {
-					...status,
+					id: metadata.id,
+					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-describedby':
+						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
+					invalid: !metadata.valid,
+					errors: metadata.errors,
 				} satisfies Partial<ComponentProps<typeof TextareaField>>;
 			},
 			get checkboxProps() {
 				return {
-					...status,
+					id: metadata.id,
+					name: metadata.name,
 					defaultChecked: metadata.defaultChecked,
+					'aria-describedby':
+						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
+					invalid: !metadata.valid,
+					errors: metadata.errors,
 				} satisfies Partial<ComponentProps<typeof CheckboxField>>;
 			},
 			get checkboxGroupProps() {
 				return {
-					...status,
+					id: metadata.id,
+					name: metadata.name,
 					defaultValue: metadata.defaultOptions,
+					'aria-describedby':
+						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
+					invalid: !metadata.valid,
+					errors: metadata.errors,
 				} satisfies Partial<ComponentProps<typeof CheckboxGroupField>>;
 			},
 			get radioGroupProps() {
 				return {
-					...status,
+					id: metadata.id,
+					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-describedby':
+						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
+					invalid: !metadata.valid,
+					errors: metadata.errors,
 				} satisfies Partial<ComponentProps<typeof RadioGroupField>>;
 			},
 			get selectProps() {
 				return {
-					...status,
+					id: metadata.id,
+					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-describedby':
+						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
+					invalid: !metadata.valid,
+					errors: metadata.errors,
 				} satisfies Partial<ComponentProps<typeof SelectField>>;
 			},
 			get comboboxProps() {
 				return {
-					...status,
+					id: metadata.id,
+					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-describedby':
+						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
+					invalid: !metadata.valid,
+					errors: metadata.errors,
 				} satisfies Partial<ComponentProps<typeof ComboboxField>>;
 			},
 			get numberFieldProps() {
 				return {
-					...status,
+					id: metadata.id,
+					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-describedby':
+						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
+					invalid: !metadata.valid,
+					errors: metadata.errors,
 				} satisfies Partial<ComponentProps<typeof NumberFieldControl>>;
 			},
 			get sliderProps() {
 				return {
-					...status,
+					id: metadata.id,
+					name: metadata.name,
 					defaultValue: metadata.defaultValue,
+					'aria-describedby':
+						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
+					invalid: !metadata.valid,
+					errors: metadata.errors,
 				} satisfies Partial<ComponentProps<typeof SliderField>>;
 			},
 			get switchProps() {
 				return {
-					...status,
+					id: metadata.id,
+					name: metadata.name,
 					defaultChecked: metadata.defaultChecked,
+					'aria-describedby':
+						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
+					invalid: !metadata.valid,
+					errors: metadata.errors,
 				} satisfies Partial<ComponentProps<typeof SwitchField>>;
 			},
 		};
