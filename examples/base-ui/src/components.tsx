@@ -488,7 +488,7 @@ export function SliderField(props: StringFieldProps) {
 			thumbInputRef.current?.focus();
 		},
 	});
-	const numericValue = Number(control.value || 50);
+	const numericValue = Number(control.value);
 	const value = Number.isFinite(numericValue) ? numericValue : 50;
 
 	return (

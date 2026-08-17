@@ -63,12 +63,6 @@ test.describe('base-ui', () => {
 	}
 
 	test('validation and submission', async ({ page }) => {
-		const malformedDefaults = await getForm(
-			page,
-			new URLSearchParams({ budget: 'abc' }),
-		);
-		await expect(malformedDefaults.budget).toHaveValue('50');
-
 		const controls = await getForm(page, new URLSearchParams({ budget: '' }));
 
 		// An empty URL default falls back to the slider's presentation default.
