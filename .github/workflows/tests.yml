@@ -21,7 +21,7 @@ permissions:
 jobs:
   e2e:
     name: E2E Tests
-    timeout-minutes: 60
+    timeout-minutes: 20
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -61,6 +61,7 @@ jobs:
           retention-days: 14
   unit:
     name: API Tests (v1)
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -80,6 +81,7 @@ jobs:
         run: pnpm exec vitest --project=browser --project=node
   future:
     name: Future API Tests
+    timeout-minutes: 20
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -112,6 +114,7 @@ jobs:
         run: pnpm run test:future --browser.name=${{ matrix.browser }}
   typecheck:
     name: Typecheck
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
