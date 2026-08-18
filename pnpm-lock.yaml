@@ -671,7 +671,7 @@ importers:
   examples/shadcn-base-ui:
     dependencies:
       '@base-ui/react':
-        specifier: ^1.6.0
+        specifier: ^1.7.0
         version: 1.7.0(@date-fns/tz@1.5.0)(@types/react@19.2.17)(date-fns@4.4.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@conform-to/react':
         specifier: 1.21.0

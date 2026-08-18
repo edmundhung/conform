@@ -1,8 +1,7 @@
 import { BaseControl, useControl } from '@conform-to/react/future';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import { useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 
 import { cn } from '../lib/utils';
 import { Button } from './ui/button';
@@ -39,52 +38,36 @@ import {
 } from './ui/select';
 import { Switch } from './ui/switch';
 
-type SharedControlProps = {
-	id: string;
-	name: string;
-	defaultValue?: string;
-	'aria-describedby'?: string;
-	'aria-invalid'?: boolean;
-	'aria-labelledby'?: string;
-};
-
-type Choice = {
-	label: string;
-	value: string;
-};
-
-function isFocusLeaving(event: React.FocusEvent<HTMLElement>) {
-	return !event.currentTarget.contains(event.relatedTarget);
-}
-
 export function MultiCombobox({
 	id,
 	name,
 	defaultValue = [],
 	items,
 	...props
-}: Omit<SharedControlProps, 'defaultValue'> & {
+}: {
+	id: string;
+	name: string;
 	defaultValue?: string[];
-	items: Choice[];
+	items: Array<{ label: string; value: string }>;
+	'aria-describedby'?: string;
+	'aria-invalid'?: boolean;
+	'aria-labelledby'?: string;
 }) {
 	const inputRef = useRef<HTMLInputElement>(null);
-	const openRef = useRef(false);
 	const anchor = useComboboxAnchor();
-	const normalizedDefaultValue = defaultValue.filter((value) =>
-		items.some((item) => item.value === value),
+	const labels = Object.fromEntries(
+		items.map((item) => [item.value, item.label]),
 	);
 	const control = useControl({
-		defaultValue: normalizedDefaultValue,
+		defaultValue,
 		onFocus() {
 			inputRef.current?.focus();
 		},
 	});
-	const selectedItems = items.filter((item) =>
-		control.options?.includes(item.value),
-	);
 
 	return (
 		<>
+			{/* The multiple BaseControl is the only named form control. */}
 			<BaseControl
 				type="select"
 				ref={control.register}
@@ -94,37 +77,23 @@ export function MultiCombobox({
 			/>
 			<Combobox
 				multiple
-				items={items}
-				value={selectedItems}
-				onValueChange={(nextItems) =>
-					control.change(nextItems.map((item) => item.value))
-				}
-				onOpenChange={(open) => {
-					openRef.current = open;
-					if (!open) {
-						control.blur();
-					}
-				}}
+				items={items.map((item) => item.value)}
+				value={control.options ?? []}
+				onValueChange={(value) => control.change(value)}
+				itemToStringLabel={(value) => labels[value] ?? value}
 			>
 				<ComboboxChips ref={anchor}>
 					<ComboboxValue>
-						{(value: Choice[]) =>
+						{(value: string[]) =>
 							value.map((item) => (
-								<ComboboxChip key={item.value}>{item.label}</ComboboxChip>
+								<ComboboxChip key={item}>{labels[item] ?? item}</ComboboxChip>
 							))
 						}
 					</ComboboxValue>
 					<ComboboxChipsInput
 						ref={inputRef}
 						id={id}
-						onFocus={control.focus}
-						onBlur={() => {
-							queueMicrotask(() => {
-								if (!openRef.current) {
-									control.blur();
-								}
-							});
-						}}
+						onBlur={() => control.blur()}
 						placeholder="Add interests"
 						{...props}
 					/>
@@ -133,9 +102,9 @@ export function MultiCombobox({
 					<ComboboxEmpty>No interest found.</ComboboxEmpty>
 					<ComboboxList>
 						<ComboboxCollection>
-							{(item: Choice) => (
-								<ComboboxItem key={item.value} value={item}>
-									{item.label}
+							{(item: string) => (
+								<ComboboxItem key={item} value={item}>
+									{labels[item] ?? item}
 								</ComboboxItem>
 							)}
 						</ComboboxCollection>
@@ -152,54 +121,43 @@ export function FormCombobox({
 	defaultValue,
 	items,
 	...props
-}: SharedControlProps & {
-	items: Choice[];
+}: {
+	id: string;
+	name: string;
+	defaultValue?: string;
+	items: Array<{ label: string; value: string }>;
+	'aria-describedby'?: string;
+	'aria-invalid'?: boolean;
 }) {
 	const inputRef = useRef<HTMLInputElement>(null);
-	const openRef = useRef(false);
-	const normalizedDefaultValue = items.some(
-		(item) => item.value === defaultValue,
-	)
-		? defaultValue
-		: '';
+	const labels = Object.fromEntries(
+		items.map((item) => [item.value, item.label]),
+	);
 	const control = useControl({
-		defaultValue: normalizedDefaultValue,
+		defaultValue,
 		onFocus() {
 			inputRef.current?.focus();
 		},
 	});
-	const selectedItem =
-		items.find((item) => item.value === control.value) ?? null;
 
 	return (
 		<>
+			{/* BaseControl is the only named form control. */}
 			<BaseControl
 				name={name}
 				ref={control.register}
 				defaultValue={control.defaultValue ?? ''}
 			/>
 			<Combobox
-				items={items}
-				value={selectedItem}
-				onValueChange={(item) => control.change(item?.value ?? '')}
-				onOpenChange={(open) => {
-					openRef.current = open;
-					if (!open) {
-						control.blur();
-					}
-				}}
+				items={items.map((item) => item.value)}
+				value={control.value || null}
+				onValueChange={(value) => control.change(value ?? '')}
+				itemToStringLabel={(value) => labels[value] ?? value}
 			>
 				<ComboboxInput
 					ref={inputRef}
 					id={id}
-					onFocus={control.focus}
-					onBlur={() => {
-						queueMicrotask(() => {
-							if (!openRef.current) {
-								control.blur();
-							}
-						});
-					}}
+					onBlur={() => control.blur()}
 					placeholder="Search countries"
 					showClear
 					className="w-full"
@@ -209,9 +167,9 @@ export function FormCombobox({
 					<ComboboxEmpty>No country found.</ComboboxEmpty>
 					<ComboboxList>
 						<ComboboxCollection>
-							{(item: Choice) => (
-								<ComboboxItem key={item.value} value={item}>
-									{item.label}
+							{(item: string) => (
+								<ComboboxItem key={item} value={item}>
+									{labels[item] ?? item}
 								</ComboboxItem>
 							)}
 						</ComboboxCollection>
@@ -228,11 +186,16 @@ export function FormSelect({
 	defaultValue,
 	items,
 	...props
-}: SharedControlProps & {
-	items: Choice[];
+}: {
+	id: string;
+	name: string;
+	defaultValue?: string;
+	items: Array<{ label: string; value: string }>;
+	'aria-describedby'?: string;
+	'aria-invalid'?: boolean;
+	'aria-labelledby'?: string;
 }) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
-	const openRef = useRef(false);
 	const control = useControl({
 		defaultValue,
 		onFocus() {
@@ -242,6 +205,7 @@ export function FormSelect({
 
 	return (
 		<>
+			{/* BaseControl is the only named form control. */}
 			<BaseControl
 				name={name}
 				ref={control.register}
@@ -251,24 +215,11 @@ export function FormSelect({
 				items={items}
 				value={control.value || null}
 				onValueChange={(value) => control.change(value ?? '')}
-				onOpenChange={(open) => {
-					openRef.current = open;
-					if (!open) {
-						control.blur();
-					}
-				}}
 			>
 				<SelectTrigger
 					ref={triggerRef}
 					id={id}
-					onFocus={control.focus}
-					onBlur={() => {
-						queueMicrotask(() => {
-							if (!openRef.current) {
-								control.blur();
-							}
-						});
-					}}
+					onBlur={() => control.blur()}
 					className="w-full"
 					{...props}
 				>
@@ -292,9 +243,15 @@ export function FormRadioGroup({
 	children,
 	className,
 	...props
-}: SharedControlProps & {
+}: {
+	id: string;
+	name: string;
+	defaultValue?: string;
 	children: ReactNode;
 	className?: string;
+	'aria-describedby'?: string;
+	'aria-invalid'?: boolean;
+	'aria-labelledby'?: string;
 }) {
 	const groupRef = useRef<HTMLDivElement>(null);
 	const control = useControl({
@@ -309,6 +266,7 @@ export function FormRadioGroup({
 
 	return (
 		<>
+			{/* BaseControl is the only named form control. */}
 			<BaseControl
 				name={name}
 				ref={control.register}
@@ -317,10 +275,11 @@ export function FormRadioGroup({
 			<RadioGroup
 				ref={groupRef}
 				value={control.value ?? ''}
-				onValueChange={control.change}
-				onFocus={control.focus}
+				onValueChange={(value) => control.change(value)}
 				onBlur={(event) => {
-					if (isFocusLeaving(event)) control.blur();
+					if (!event.currentTarget.contains(event.relatedTarget)) {
+						control.blur();
+					}
 				}}
 				className={className}
 				{...props}
@@ -339,15 +298,22 @@ export function FormSlider({
 	max = 100,
 	step = 1,
 	...props
-}: SharedControlProps & {
+}: {
+	id: string;
+	name: string;
+	defaultValue?: string;
 	min?: number;
 	max?: number;
 	step?: number;
+	'aria-describedby'?: string;
+	'aria-invalid'?: boolean;
+	'aria-labelledby'?: string;
 }) {
 	const rootRef = useRef<HTMLDivElement>(null);
 	const control = useControl({
 		defaultValue,
 		onFocus() {
+			// The generated Slider owns its thumb, so delegate focus to its range input.
 			rootRef.current
 				?.querySelector<HTMLInputElement>('input[type="range"]')
 				?.focus();
@@ -356,6 +322,7 @@ export function FormSlider({
 
 	return (
 		<>
+			{/* BaseControl is the only named form control. */}
 			<BaseControl
 				name={name}
 				ref={control.register}
@@ -373,9 +340,10 @@ export function FormSlider({
 						(Array.isArray(value) ? value[0] : value)?.toString() ?? '',
 					)
 				}
-				onFocus={control.focus}
 				onBlur={(event) => {
-					if (isFocusLeaving(event)) control.blur();
+					if (!event.currentTarget.contains(event.relatedTarget)) {
+						control.blur();
+					}
 				}}
 				{...props}
 			/>
@@ -389,9 +357,13 @@ export function FormCheckbox({
 	defaultChecked,
 	value = 'on',
 	...props
-}: Omit<SharedControlProps, 'defaultValue'> & {
+}: {
+	id: string;
+	name: string;
 	defaultChecked?: boolean;
 	value?: string;
+	'aria-describedby'?: string;
+	'aria-invalid'?: boolean;
 }) {
 	const checkboxRef = useRef<HTMLElement>(null);
 	const control = useControl({
@@ -404,6 +376,7 @@ export function FormCheckbox({
 
 	return (
 		<>
+			{/* BaseControl is the only named form control. */}
 			<BaseControl
 				type="checkbox"
 				name={name}
@@ -414,9 +387,8 @@ export function FormCheckbox({
 			<Checkbox
 				ref={checkboxRef}
 				id={id}
-				checked={control.checked}
-				onCheckedChange={control.change}
-				onFocus={control.focus}
+				checked={control.checked ?? false}
+				onCheckedChange={(checked) => control.change(checked)}
 				onBlur={control.blur}
 				{...props}
 			/>
@@ -430,9 +402,13 @@ export function FormSwitch({
 	defaultChecked,
 	value = 'on',
 	...props
-}: Omit<SharedControlProps, 'defaultValue'> & {
+}: {
+	id: string;
+	name: string;
 	defaultChecked?: boolean;
 	value?: string;
+	'aria-describedby'?: string;
+	'aria-invalid'?: boolean;
 }) {
 	const switchRef = useRef<HTMLElement>(null);
 	const control = useControl({
@@ -445,6 +421,7 @@ export function FormSwitch({
 
 	return (
 		<>
+			{/* BaseControl is the only named form control. */}
 			<BaseControl
 				type="checkbox"
 				name={name}
@@ -455,9 +432,8 @@ export function FormSwitch({
 			<Switch
 				ref={switchRef}
 				id={id}
-				checked={control.checked}
-				onCheckedChange={control.change}
-				onFocus={control.focus}
+				checked={control.checked ?? false}
+				onCheckedChange={(checked) => control.change(checked)}
 				onBlur={control.blur}
 				{...props}
 			/>
@@ -470,9 +446,15 @@ export function DatePicker({
 	name,
 	defaultValue,
 	...props
-}: SharedControlProps) {
+}: {
+	id: string;
+	name: string;
+	defaultValue?: string;
+	'aria-describedby'?: string;
+	'aria-invalid'?: boolean;
+	'aria-labelledby'?: string;
+}) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
-	const openRef = useRef(false);
 	const [open, setOpen] = useState(false);
 	const control = useControl({
 		defaultValue,
@@ -481,37 +463,23 @@ export function DatePicker({
 		},
 	});
 	const selected = control.value ? new Date(control.value) : undefined;
-	function handleOpenChange(nextOpen: boolean) {
-		openRef.current = nextOpen;
-		setOpen(nextOpen);
-		if (nextOpen) {
-			control.focus();
-		} else {
-			control.blur();
-		}
-	}
 
 	return (
 		<>
+			{/* BaseControl is the only named form control. */}
 			<BaseControl
 				name={name}
 				ref={control.register}
 				defaultValue={control.defaultValue ?? ''}
 			/>
-			<Popover open={open} onOpenChange={handleOpenChange}>
+			<Popover open={open} onOpenChange={setOpen}>
 				<PopoverTrigger
 					ref={triggerRef}
 					render={
 						<Button
 							id={id}
 							type="button"
-							onBlur={() => {
-								queueMicrotask(() => {
-									if (!openRef.current) {
-										control.blur();
-									}
-								});
-							}}
+							onBlur={() => control.blur()}
 							variant="outline"
 							className={cn(
 								'w-full justify-start font-normal',
@@ -532,7 +500,7 @@ export function DatePicker({
 						selected={selected}
 						onSelect={(date) => {
 							control.change(date?.toISOString() ?? '');
-							handleOpenChange(false);
+							setOpen(false);
 							triggerRef.current?.focus();
 						}}
 					/>
@@ -547,7 +515,14 @@ export function InputOTP({
 	name,
 	defaultValue,
 	...props
-}: SharedControlProps) {
+}: {
+	id: string;
+	name: string;
+	defaultValue?: string;
+	'aria-describedby'?: string;
+	'aria-invalid'?: boolean;
+	'aria-labelledby'?: string;
+}) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const control = useControl({
 		defaultValue,
@@ -558,6 +533,7 @@ export function InputOTP({
 
 	return (
 		<>
+			{/* BaseControl is the only named form control. */}
 			<BaseControl
 				name={name}
 				ref={control.register}
@@ -569,8 +545,7 @@ export function InputOTP({
 				maxLength={6}
 				pattern="^[0-9]+$"
 				value={control.value ?? ''}
-				onChange={control.change}
-				onFocus={control.focus}
+				onChange={(value) => control.change(value)}
 				onBlur={control.blur}
 				{...props}
 			>

@@ -39,45 +39,18 @@ import { RadioGroupItem } from './components/ui/radio-group';
 import { Textarea } from './components/ui/textarea';
 import { useForm } from './forms';
 
-const countries = [
-	{ label: 'Afghanistan', value: 'AF' },
-	{ label: 'Åland Islands', value: 'AX' },
-	{ label: 'Italy', value: 'IT' },
-	{ label: 'Japan', value: 'JP' },
-	{ label: 'United States', value: 'US' },
-];
-
-const genderValues = ['male', 'female', 'other'] as const;
-const jobValues = ['developer', 'designer', 'manager'] as const;
-const accountTypeValues = ['personal', 'business'] as const;
-
-const jobs = [
-	{ label: 'Developer', value: 'developer' },
-	{ label: 'Designer', value: 'designer' },
-	{ label: 'Manager', value: 'manager' },
-];
-
-const interests = [
-	{ label: 'React', value: 'react' },
-	{ label: 'Vue', value: 'vue' },
-	{ label: 'Svelte', value: 'svelte' },
-	{ label: 'Angular', value: 'angular' },
-	{ label: 'Next', value: 'next' },
-	{ label: 'Nuxt', value: 'nuxt' },
-];
-
 const schema = coerceFormValue(
 	z.object({
 		name: z.string().min(3),
 		dateOfBirth: z.date(),
 		country: z.string(),
-		gender: z.enum(genderValues),
+		gender: z.enum(['male', 'female', 'other']),
 		agreeToTerms: z.boolean(),
-		job: z.enum(jobValues),
+		job: z.enum(['developer', 'designer', 'manager']),
 		age: z.number().min(18),
 		isAdult: z.boolean(),
 		description: z.string().min(10),
-		accountType: z.enum(accountTypeValues),
+		accountType: z.enum(['personal', 'business']),
 		interests: z.array(z.string()).min(3),
 		code: z.string().length(6),
 	}),
@@ -112,20 +85,26 @@ export function App() {
 	});
 
 	return (
-		<main className="mx-auto flex min-h-svh w-full max-w-2xl flex-col gap-6 p-6 md:p-10">
-			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold">shadcn/ui with Base UI</h1>
-				<p className="text-sm text-muted-foreground">
-					The Base UI counterpart to the Radix-based shadcn example.
-				</p>
-			</div>
-
+		<main className="min-h-svh bg-muted/40 px-4 py-12 md:px-6">
 			<form
 				{...form.props}
 				method="POST"
-				className="space-y-6"
+				className="mx-auto w-full max-w-2xl space-y-8 rounded-xl border bg-background p-6 shadow-sm md:p-10"
 				onChange={() => setSubmittedValue(null)}
 			>
+				<header className="space-y-2">
+					<p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+						Conform × shadcn/ui
+					</p>
+					<h1 className="text-3xl font-semibold tracking-tight">
+						shadcn/ui with Base UI
+					</h1>
+					<p className="text-sm text-muted-foreground">
+						Generated shadcn/ui components with Conform owning validation and
+						form state.
+					</p>
+				</header>
+
 				<FieldGroup>
 					<Field data-invalid={fields.name.ariaInvalid}>
 						<FieldLabel htmlFor={fields.name.id}>Name</FieldLabel>
@@ -147,7 +126,8 @@ export function App() {
 							</InputGroupAddon>
 						</InputGroup>
 						<FieldDescription id={fields.name.descriptionId}>
-							Use at least three characters.
+							A native input receives Conform props directly. Use at least three
+							characters.
 						</FieldDescription>
 						<FieldError id={fields.name.errorId}>
 							{fields.name.errors}
@@ -166,7 +146,8 @@ export function App() {
 							// aria-describedby={[fields.description.descriptionId, fields.description.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
 						<FieldDescription id={fields.description.descriptionId}>
-							Tell us about yourself in at least ten characters.
+							A native textarea receives Conform props directly. Use at least
+							ten characters.
 						</FieldDescription>
 						<FieldError id={fields.description.errorId}>
 							{fields.description.errors}
@@ -193,7 +174,7 @@ export function App() {
 							<NativeSelectOption value="business">Business</NativeSelectOption>
 						</NativeSelect>
 						<FieldDescription id={fields.accountType.descriptionId}>
-							This uses a browser-native select.
+							The browser-native select owns its name and serialization.
 						</FieldDescription>
 						<FieldError id={fields.accountType.errorId}>
 							{fields.accountType.errors}
@@ -203,7 +184,7 @@ export function App() {
 					<FieldSet data-invalid={fields.gender.ariaInvalid}>
 						<FieldLegend id={`${fields.gender.id}-label`}>Gender</FieldLegend>
 						<FieldDescription id={fields.gender.descriptionId}>
-							Choose the option that best fits.
+							A scalar BaseControl stores the selected radio value.
 						</FieldDescription>
 						<FormRadioGroup
 							{...fields.gender.radioGroupProps}
@@ -216,7 +197,7 @@ export function App() {
 							// aria-describedby={[fields.gender.descriptionId, fields.gender.ariaDescribedBy].filter(Boolean).join(' ')}
 							className="grid-cols-3"
 						>
-							{genderValues.map((value) => (
+							{(['male', 'female', 'other'] as const).map((value) => (
 								<Field key={value} orientation="horizontal">
 									<RadioGroupItem
 										id={`${fields.gender.id}-${value}`}
@@ -253,7 +234,8 @@ export function App() {
 								Agree to terms
 							</FieldLabel>
 							<FieldDescription id={fields.agreeToTerms.descriptionId}>
-								Required to submit the form.
+								The visible checkbox is synchronized with a checkbox
+								BaseControl.
 							</FieldDescription>
 							<FieldError id={fields.agreeToTerms.errorId}>
 								{fields.agreeToTerms.errors}
@@ -266,7 +248,11 @@ export function App() {
 							Job
 						</FieldLabel>
 						<FormSelect
-							items={jobs}
+							items={[
+								{ label: 'Developer', value: 'developer' },
+								{ label: 'Designer', value: 'designer' },
+								{ label: 'Manager', value: 'manager' },
+							]}
 							{...fields.job.selectProps}
 							// Equivalent to:
 							// id={fields.job.id}
@@ -277,7 +263,7 @@ export function App() {
 							// aria-describedby={[fields.job.descriptionId, fields.job.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
 						<FieldDescription id={fields.job.descriptionId}>
-							A compound select backed by a Conform BaseControl.
+							The compound select is synchronized with a scalar BaseControl.
 						</FieldDescription>
 						<FieldError id={fields.job.errorId}>{fields.job.errors}</FieldError>
 					</Field>
@@ -285,7 +271,13 @@ export function App() {
 					<Field data-invalid={fields.country.ariaInvalid}>
 						<FieldLabel htmlFor={fields.country.id}>Country</FieldLabel>
 						<FormCombobox
-							items={countries}
+							items={[
+								{ label: 'Afghanistan', value: 'AF' },
+								{ label: 'Åland Islands', value: 'AX' },
+								{ label: 'Italy', value: 'IT' },
+								{ label: 'Japan', value: 'JP' },
+								{ label: 'United States', value: 'US' },
+							]}
 							{...fields.country.comboboxProps}
 							// Equivalent to:
 							// id={fields.country.id}
@@ -295,7 +287,7 @@ export function App() {
 							// aria-describedby={[fields.country.descriptionId, fields.country.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
 						<FieldDescription id={fields.country.descriptionId}>
-							Searchable, but serialized as the two-letter country code.
+							Filtering is transient; BaseControl stores the country code.
 						</FieldDescription>
 						<FieldError id={fields.country.errorId}>
 							{fields.country.errors}
@@ -318,7 +310,8 @@ export function App() {
 							// aria-describedby={[fields.age.descriptionId, fields.age.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
 						<FieldDescription id={fields.age.descriptionId}>
-							You must be at least 18.
+							The range input is controlled through useControl. You must be at
+							least 18.
 						</FieldDescription>
 						<FieldError id={fields.age.errorId}>{fields.age.errors}</FieldError>
 					</Field>
@@ -330,7 +323,7 @@ export function App() {
 						<FieldContent>
 							<FieldLabel htmlFor={fields.isAdult.id}>Is adult</FieldLabel>
 							<FieldDescription id={fields.isAdult.descriptionId}>
-								Confirms the slider value.
+								A checkbox BaseControl submits “on” while enabled.
 							</FieldDescription>
 							<FieldError id={fields.isAdult.errorId}>
 								{fields.isAdult.errors}
@@ -366,7 +359,7 @@ export function App() {
 							// aria-describedby={[fields.dateOfBirth.descriptionId, fields.dateOfBirth.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
 						<FieldDescription id={fields.dateOfBirth.descriptionId}>
-							A calendar backed by a Conform BaseControl.
+							The calendar stores an ISO date string in a scalar BaseControl.
 						</FieldDescription>
 						<FieldError id={fields.dateOfBirth.errorId}>
 							{fields.dateOfBirth.errors}
@@ -381,7 +374,14 @@ export function App() {
 							Interests
 						</FieldLabel>
 						<MultiCombobox
-							items={interests}
+							items={[
+								{ label: 'React', value: 'react' },
+								{ label: 'Vue', value: 'vue' },
+								{ label: 'Svelte', value: 'svelte' },
+								{ label: 'Angular', value: 'angular' },
+								{ label: 'Next', value: 'next' },
+								{ label: 'Nuxt', value: 'nuxt' },
+							]}
 							{...fields.interests.multiComboboxProps}
 							// Equivalent to:
 							// id={fields.interests.id}
@@ -392,7 +392,7 @@ export function App() {
 							// aria-describedby={[fields.interests.descriptionId, fields.interests.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
 						<FieldDescription id={fields.interests.descriptionId}>
-							Choose at least three. Each value is a separate FormData entry.
+							A multiple BaseControl serializes each selected value separately.
 						</FieldDescription>
 						<FieldError id={fields.interests.errorId}>
 							{fields.interests.errors}
@@ -414,7 +414,7 @@ export function App() {
 							// aria-describedby={[fields.code.descriptionId, fields.code.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
 						<FieldDescription id={fields.code.descriptionId}>
-							Enter the six-digit verification code.
+							BaseControl stores the value from the segmented OTP input.
 						</FieldDescription>
 						<FieldError id={fields.code.errorId}>
 							{fields.code.errors}
@@ -425,10 +425,10 @@ export function App() {
 				{submittedValue ? (
 					<section
 						aria-labelledby="submitted-value-heading"
-						className="space-y-2"
+						className="submitted space-y-2"
 					>
 						<h2 id="submitted-value-heading" className="font-medium">
-							Value submitted
+							Parsed submission
 						</h2>
 						<pre className="overflow-x-auto rounded-lg bg-muted p-4 text-xs">
 							{JSON.stringify(submittedValue, null, 2)}
@@ -436,8 +436,7 @@ export function App() {
 					</section>
 				) : null}
 
-				<div className="flex gap-2">
-					<Button type="submit">Submit</Button>
+				<footer className="flex justify-end gap-2">
 					<Button
 						type="button"
 						variant="outline"
@@ -448,7 +447,8 @@ export function App() {
 					>
 						Reset
 					</Button>
-				</div>
+					<Button type="submit">Submit</Button>
+				</footer>
 			</form>
 		</main>
 	);

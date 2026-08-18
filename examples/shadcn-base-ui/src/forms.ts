@@ -1,5 +1,6 @@
 import { configureForms } from '@conform-to/react/future';
 import { getConstraints } from '@conform-to/zod/v4/future';
+import type { ComponentProps } from 'react';
 import type {
 	DatePicker,
 	FormCheckbox,
@@ -15,47 +16,44 @@ import type { InputGroupInput } from './components/ui/input-group';
 import type { NativeSelect } from './components/ui/native-select';
 import type { Textarea } from './components/ui/textarea';
 
-function describedBy(descriptionId: string, errorId?: string) {
-	return [descriptionId, errorId].filter(Boolean).join(' ');
-}
-
 const forms = configureForms({
 	getConstraints,
 	shouldValidate: 'onBlur',
 	shouldRevalidate: 'onInput',
 	extendFieldMetadata(metadata) {
-		const ariaProps = {
-			'aria-invalid': metadata.ariaInvalid,
-			'aria-describedby': describedBy(
-				metadata.descriptionId,
-				metadata.ariaDescribedBy,
-			),
-		};
-
 		return {
 			get inputProps() {
 				return {
 					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
-					...ariaProps,
-				} satisfies Partial<React.ComponentProps<typeof InputGroupInput>>;
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof InputGroupInput>>;
 			},
 			get textareaProps() {
 				return {
 					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
-					...ariaProps,
-				} satisfies Partial<React.ComponentProps<typeof Textarea>>;
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof Textarea>>;
 			},
 			get nativeSelectProps() {
 				return {
 					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
-					...ariaProps,
-				} satisfies Partial<React.ComponentProps<typeof NativeSelect>>;
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof NativeSelect>>;
 			},
 			get checkboxProps() {
 				return {
@@ -63,8 +61,11 @@ const forms = configureForms({
 					name: metadata.name,
 					value: 'on',
 					defaultChecked: metadata.defaultChecked,
-					...ariaProps,
-				} satisfies Partial<React.ComponentProps<typeof FormCheckbox>>;
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof FormCheckbox>>;
 			},
 			get radioGroupProps() {
 				return {
@@ -72,11 +73,19 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
 					'aria-labelledby': `${metadata.id}-label`,
-					...ariaProps,
-				} satisfies Partial<React.ComponentProps<typeof FormRadioGroup>>;
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof FormRadioGroup>>;
 			},
 			get radioItemProps() {
-				return ariaProps;
+				return {
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				};
 			},
 			get selectProps() {
 				return {
@@ -84,16 +93,22 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
 					'aria-labelledby': `${metadata.id}-label`,
-					...ariaProps,
-				} satisfies Partial<React.ComponentProps<typeof FormSelect>>;
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof FormSelect>>;
 			},
 			get comboboxProps() {
 				return {
 					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
-					...ariaProps,
-				} satisfies Partial<React.ComponentProps<typeof FormCombobox>>;
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof FormCombobox>>;
 			},
 			get sliderProps() {
 				return {
@@ -101,8 +116,11 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
 					'aria-labelledby': `${metadata.id}-label`,
-					...ariaProps,
-				} satisfies Partial<React.ComponentProps<typeof FormSlider>>;
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof FormSlider>>;
 			},
 			get switchProps() {
 				return {
@@ -110,8 +128,11 @@ const forms = configureForms({
 					name: metadata.name,
 					value: 'on',
 					defaultChecked: metadata.defaultChecked,
-					...ariaProps,
-				} satisfies Partial<React.ComponentProps<typeof FormSwitch>>;
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof FormSwitch>>;
 			},
 			get datePickerProps() {
 				return {
@@ -119,8 +140,11 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
 					'aria-labelledby': `${metadata.id}-label`,
-					...ariaProps,
-				} satisfies Partial<React.ComponentProps<typeof DatePicker>>;
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof DatePicker>>;
 			},
 			get multiComboboxProps() {
 				return {
@@ -128,8 +152,11 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultOptions,
 					'aria-labelledby': `${metadata.id}-label`,
-					...ariaProps,
-				} satisfies Partial<React.ComponentProps<typeof MultiCombobox>>;
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof MultiCombobox>>;
 			},
 			get inputOTPProps() {
 				return {
@@ -137,8 +164,11 @@ const forms = configureForms({
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
 					'aria-labelledby': `${metadata.id}-label`,
-					...ariaProps,
-				} satisfies Partial<React.ComponentProps<typeof InputOTP>>;
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof InputOTP>>;
 			},
 		};
 	},
