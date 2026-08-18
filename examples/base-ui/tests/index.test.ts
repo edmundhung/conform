@@ -73,6 +73,7 @@ test.describe('base-ui', () => {
 		await expect(controls.fullName).toHaveAccessibleDescription(
 			'A native Base UI Input. Enter at least 2 characters',
 		);
+		await expect(controls.fullName).toHaveAttribute('aria-invalid', 'true');
 
 		await controls.design.focus();
 		await controls.heading.click();
@@ -89,6 +90,7 @@ test.describe('base-ui', () => {
 		await expect(controls.acceptTerms).toHaveAccessibleDescription(
 			'The visible checkbox is synchronized with a BaseControl. Accept the terms to continue',
 		);
+		await expect(controls.acceptTerms).toHaveAttribute('aria-invalid', 'true');
 		await controls.acceptTerms.click();
 
 		await controls.submitButton.click();

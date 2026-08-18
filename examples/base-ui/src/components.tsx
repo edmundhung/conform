@@ -10,12 +10,8 @@ import { BaseControl, useControl } from '@conform-to/react/future';
 import { useRef, type FocusEvent, type ReactNode } from 'react';
 
 type ControlProps = {
-	id: string;
 	name: string;
 	defaultValue?: string;
-	invalid: boolean;
-	'aria-describedby'?: string;
-	'aria-labelledby'?: string;
 };
 
 type CheckedControlProps = Omit<ControlProps, 'defaultValue'> & {
@@ -34,7 +30,7 @@ function isFocusLeaving(event: FocusEvent<HTMLElement>) {
 export type CheckboxControlProps = CheckedControlProps;
 
 export function CheckboxControl(props: CheckboxControlProps) {
-	const { id, invalid, name, defaultChecked } = props;
+	const { name, defaultChecked } = props;
 	const checkboxRef = useRef<HTMLElement>(null);
 	const control = useControl({
 		defaultChecked,
@@ -54,15 +50,11 @@ export function CheckboxControl(props: CheckboxControlProps) {
 				ref={control.register}
 			/>
 			<Checkbox.Root
-				id={id}
 				className="checkbox"
 				ref={checkboxRef}
 				checked={control.checked ?? false}
 				onCheckedChange={(checked) => control.change(checked)}
 				onBlur={() => control.blur()}
-				aria-labelledby={props['aria-labelledby']}
-				aria-describedby={props['aria-describedby']}
-				aria-invalid={invalid || undefined}
 			>
 				<Checkbox.Indicator className="checkbox-indicator">
 					✓
@@ -78,7 +70,7 @@ export type CheckboxGroupControlProps = Omit<ControlProps, 'defaultValue'> & {
 };
 
 export function CheckboxGroupControl(props: CheckboxGroupControlProps) {
-	const { invalid, name, defaultValue, children } = props;
+	const { name, defaultValue, children } = props;
 	const groupRef = useRef<HTMLDivElement>(null);
 	const control = useControl({
 		defaultValue,
@@ -107,9 +99,6 @@ export function CheckboxGroupControl(props: CheckboxGroupControlProps) {
 						control.blur();
 					}
 				}}
-				aria-labelledby={props['aria-labelledby']}
-				aria-describedby={props['aria-describedby']}
-				aria-invalid={invalid || undefined}
 			>
 				{children}
 			</CheckboxGroup>
@@ -122,7 +111,7 @@ export type RadioGroupControlProps = ControlProps & {
 };
 
 export function RadioGroupControl(props: RadioGroupControlProps) {
-	const { invalid, name, defaultValue, children } = props;
+	const { name, defaultValue, children } = props;
 	const groupRef = useRef<HTMLDivElement>(null);
 	const control = useControl({
 		defaultValue,
@@ -148,9 +137,6 @@ export function RadioGroupControl(props: RadioGroupControlProps) {
 						control.blur();
 					}
 				}}
-				aria-labelledby={props['aria-labelledby']}
-				aria-describedby={props['aria-describedby']}
-				aria-invalid={invalid || undefined}
 			>
 				{children}
 			</RadioGroup>
@@ -164,7 +150,7 @@ export type SelectControlProps = ControlProps & {
 };
 
 export function SelectControl(props: SelectControlProps) {
-	const { id, invalid, name, defaultValue, items, placeholder } = props;
+	const { name, defaultValue, items, placeholder } = props;
 	const labels = Object.fromEntries(
 		items.map((item) => [item.value, item.label]),
 	);
@@ -188,12 +174,8 @@ export function SelectControl(props: SelectControlProps) {
 				onValueChange={(value) => control.change(value ?? '')}
 			>
 				<Select.Trigger
-					id={id}
 					className="select-trigger"
 					ref={triggerRef}
-					aria-labelledby={props['aria-labelledby']}
-					aria-describedby={props['aria-describedby']}
-					aria-invalid={invalid || undefined}
 					onBlur={() => control.blur()}
 				>
 					<Select.Value placeholder={placeholder}>
@@ -235,8 +217,7 @@ export type ComboboxControlProps = ControlProps & {
 };
 
 export function ComboboxControl(props: ComboboxControlProps) {
-	const { id, invalid, name, defaultValue, items, placeholder, triggerLabel } =
-		props;
+	const { name, defaultValue, items, placeholder, triggerLabel } = props;
 	const labels = Object.fromEntries(
 		items.map((item) => [item.value, item.label]),
 	);
@@ -264,13 +245,9 @@ export function ComboboxControl(props: ComboboxControlProps) {
 			>
 				<Combobox.InputGroup className="combobox-group">
 					<Combobox.Input
-						id={id}
 						className="combobox-input"
 						ref={inputRef}
 						placeholder={placeholder}
-						aria-labelledby={props['aria-labelledby']}
-						aria-describedby={props['aria-describedby']}
-						aria-invalid={invalid || undefined}
 						onBlur={() => control.blur()}
 					/>
 					<Combobox.Trigger
@@ -309,7 +286,7 @@ export type NumberFieldControlProps = ControlProps & {
 };
 
 export function NumberFieldControl(props: NumberFieldControlProps) {
-	const { id, invalid, label, name, defaultValue } = props;
+	const { label, name, defaultValue } = props;
 	const inputRef = useRef<HTMLInputElement>(null);
 	const control = useControl({
 		defaultValue,
@@ -329,7 +306,6 @@ export function NumberFieldControl(props: NumberFieldControlProps) {
 				ref={control.register}
 			/>
 			<NumberField.Root
-				id={id}
 				value={value}
 				onValueChange={(nextValue) =>
 					control.change(nextValue == null ? '' : String(nextValue))
@@ -349,13 +325,7 @@ export function NumberFieldControl(props: NumberFieldControlProps) {
 					>
 						−
 					</NumberField.Decrement>
-					<NumberField.Input
-						className="number-input"
-						ref={inputRef}
-						aria-labelledby={props['aria-labelledby']}
-						aria-describedby={props['aria-describedby']}
-						aria-invalid={invalid || undefined}
-					/>
+					<NumberField.Input className="number-input" ref={inputRef} />
 					<NumberField.Increment
 						className="stepper"
 						aria-label={`Increase ${label}`}
@@ -371,7 +341,7 @@ export function NumberFieldControl(props: NumberFieldControlProps) {
 export type SliderControlProps = ControlProps;
 
 export function SliderControl(props: SliderControlProps) {
-	const { invalid, name, defaultValue } = props;
+	const { name, defaultValue } = props;
 	const thumbInputRef = useRef<HTMLInputElement>(null);
 	const control = useControl({
 		defaultValue: defaultValue || '50',
@@ -405,9 +375,6 @@ export function SliderControl(props: SliderControlProps) {
 							className="slider-thumb"
 							inputRef={thumbInputRef}
 							onBlur={() => control.blur()}
-							aria-labelledby={props['aria-labelledby']}
-							aria-describedby={props['aria-describedby']}
-							aria-invalid={invalid || undefined}
 						/>
 					</Slider.Track>
 				</Slider.Control>
@@ -419,7 +386,7 @@ export function SliderControl(props: SliderControlProps) {
 export type SwitchControlProps = CheckedControlProps;
 
 export function SwitchControl(props: SwitchControlProps) {
-	const { id, invalid, name, defaultChecked } = props;
+	const { name, defaultChecked } = props;
 	const switchRef = useRef<HTMLElement>(null);
 	const control = useControl({
 		defaultChecked,
@@ -439,15 +406,11 @@ export function SwitchControl(props: SwitchControlProps) {
 				ref={control.register}
 			/>
 			<Switch.Root
-				id={id}
 				className="switch"
 				ref={switchRef}
 				checked={control.checked ?? false}
 				onCheckedChange={(checked) => control.change(checked)}
 				onBlur={() => control.blur()}
-				aria-labelledby={props['aria-labelledby']}
-				aria-describedby={props['aria-describedby']}
-				aria-invalid={invalid || undefined}
 			>
 				<Switch.Thumb className="switch-thumb" />
 			</Switch.Root>

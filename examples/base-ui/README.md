@@ -6,9 +6,9 @@ This Vite React project demonstrates how to use `@base-ui/react` directly with C
 
 ## Integration
 
-Base UI Input and the native textarea rendered by Field.Control receive Conform's `name`, `defaultValue`, and validation attributes directly. Compound controls use [`useControl`](../../docs/api/react/future/useControl.md) with a [`BaseControl`](../../docs/api/react/future/BaseControl.md). The base control is the single named form control, while the Base UI primitive handles interaction.
+Base UI Input and the native textarea rendered by Field.Control receive Conform's `name` and `defaultValue` directly. Base UI's Field generates and associates the control, label, description, and error IDs, and propagates the invalid state to its controls. Compound controls use [`useControl`](../../docs/api/react/future/useControl.md) with a [`BaseControl`](../../docs/api/react/future/BaseControl.md). The base control is the single named form control, while the Base UI primitive handles interaction.
 
-The adapters leave Base UI's internal inputs unnamed to avoid duplicate `FormData` entries. They translate boolean, array, and numeric values, forward value changes to the base control, move focus to the interactive element after invalid submission, and report blur only when focus leaves a compound control. `Field.Error` uses Base UI's external-validation mode so its context associates Conform's error with every nested control. Because `useControl` follows Conform's current default, reset restores updated defaults without remounting the components.
+The adapters leave Base UI's internal inputs unnamed to avoid duplicate `FormData` entries. They translate boolean, array, and numeric values, forward value changes to the base control, move focus to the interactive element after invalid submission, and report blur only when focus leaves a compound control. `Field.Error` uses Base UI's external-validation mode so its context associates Conform's error with every nested control, while `Field.Item` associates each checkbox and radio with its own label. Because `useControl` follows Conform's current default, reset restores updated defaults without remounting the components.
 
 | Pattern | Components | Form integration |
 | --- | --- | --- |

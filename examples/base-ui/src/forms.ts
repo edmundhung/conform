@@ -27,120 +27,64 @@ const forms = configureForms({
 	shouldRevalidate: 'onInput',
 	extendFieldMetadata(metadata) {
 		return {
-			get labelId() {
-				return `${metadata.id}-label`;
-			},
-			get descriptionId() {
-				return `${metadata.id}-description`;
-			},
 			get inputProps() {
 				return {
-					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
-					'aria-labelledby': `${metadata.id}-label`,
-					'aria-describedby':
-						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
-					'aria-invalid': metadata.ariaInvalid,
 				} satisfies Partial<ComponentProps<typeof Input>>;
 			},
 			get textareaProps() {
 				return {
-					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
-					'aria-labelledby': `${metadata.id}-label`,
-					'aria-describedby':
-						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
-					'aria-invalid': metadata.ariaInvalid,
 				} satisfies Partial<ComponentProps<'textarea'>>;
 			},
 			get checkboxProps() {
 				return {
-					id: metadata.id,
 					name: metadata.name,
 					defaultChecked: metadata.defaultChecked,
-					'aria-labelledby': `${metadata.id}-label`,
-					'aria-describedby':
-						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
-					invalid: !metadata.valid,
 				} satisfies Partial<ComponentProps<typeof CheckboxControl>>;
 			},
 			get checkboxGroupProps() {
 				return {
-					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultOptions,
-					'aria-labelledby': `${metadata.id}-label`,
-					'aria-describedby':
-						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
-					invalid: !metadata.valid,
 				} satisfies Partial<ComponentProps<typeof CheckboxGroupControl>>;
 			},
 			get radioGroupProps() {
 				return {
-					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
-					'aria-labelledby': `${metadata.id}-label`,
-					'aria-describedby':
-						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
-					invalid: !metadata.valid,
 				} satisfies Partial<ComponentProps<typeof RadioGroupControl>>;
 			},
 			get selectProps() {
 				return {
-					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
-					'aria-labelledby': `${metadata.id}-label`,
-					'aria-describedby':
-						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
-					invalid: !metadata.valid,
 				} satisfies Partial<ComponentProps<typeof SelectControl>>;
 			},
 			get comboboxProps() {
 				return {
-					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
-					'aria-labelledby': `${metadata.id}-label`,
-					'aria-describedby':
-						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
-					invalid: !metadata.valid,
 				} satisfies Partial<ComponentProps<typeof ComboboxControl>>;
 			},
 			get numberFieldProps() {
 				return {
-					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
-					'aria-labelledby': `${metadata.id}-label`,
-					'aria-describedby':
-						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
-					invalid: !metadata.valid,
 				} satisfies Partial<ComponentProps<typeof NumberFieldControl>>;
 			},
 			get sliderProps() {
 				return {
-					id: metadata.id,
 					name: metadata.name,
 					defaultValue: metadata.defaultValue,
-					'aria-labelledby': `${metadata.id}-label`,
-					'aria-describedby':
-						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
-					invalid: !metadata.valid,
 				} satisfies Partial<ComponentProps<typeof SliderControl>>;
 			},
 			get switchProps() {
 				return {
-					id: metadata.id,
 					name: metadata.name,
 					defaultChecked: metadata.defaultChecked,
-					'aria-labelledby': `${metadata.id}-label`,
-					'aria-describedby':
-						`${metadata.id}-description ${metadata.ariaDescribedBy ?? ''}`.trim(),
-					invalid: !metadata.valid,
 				} satisfies Partial<ComponentProps<typeof SwitchControl>>;
 			},
 		};
