@@ -9,28 +9,17 @@ import { Switch } from '@base-ui/react/switch';
 import { BaseControl, useControl } from '@conform-to/react/future';
 import { useRef, type FocusEvent, type ReactNode } from 'react';
 
-type ControlProps = {
-	name: string;
-	defaultValue?: string;
-};
-
-type CheckedControlProps = Omit<ControlProps, 'defaultValue'> & {
-	defaultChecked?: boolean;
-};
-
-type Option = {
-	label: string;
-	value: string;
-};
-
 function isFocusLeaving(event: FocusEvent<HTMLElement>) {
 	return !event.currentTarget.contains(event.relatedTarget);
 }
 
-export type CheckboxControlProps = CheckedControlProps;
-
-export function CheckboxControl(props: CheckboxControlProps) {
-	const { name, defaultChecked } = props;
+export function CheckboxControl({
+	name,
+	defaultChecked,
+}: {
+	name: string;
+	defaultChecked?: boolean;
+}) {
 	const checkboxRef = useRef<HTMLElement>(null);
 	const control = useControl({
 		defaultChecked,
@@ -64,13 +53,15 @@ export function CheckboxControl(props: CheckboxControlProps) {
 	);
 }
 
-export type CheckboxGroupControlProps = Omit<ControlProps, 'defaultValue'> & {
+export function CheckboxGroupControl({
+	name,
+	defaultValue,
+	children,
+}: {
+	name: string;
 	defaultValue?: string[];
 	children: ReactNode;
-};
-
-export function CheckboxGroupControl(props: CheckboxGroupControlProps) {
-	const { name, defaultValue, children } = props;
+}) {
 	const groupRef = useRef<HTMLDivElement>(null);
 	const control = useControl({
 		defaultValue,
@@ -106,12 +97,15 @@ export function CheckboxGroupControl(props: CheckboxGroupControlProps) {
 	);
 }
 
-export type RadioGroupControlProps = ControlProps & {
+export function RadioGroupControl({
+	name,
+	defaultValue,
+	children,
+}: {
+	name: string;
+	defaultValue?: string;
 	children: ReactNode;
-};
-
-export function RadioGroupControl(props: RadioGroupControlProps) {
-	const { name, defaultValue, children } = props;
+}) {
 	const groupRef = useRef<HTMLDivElement>(null);
 	const control = useControl({
 		defaultValue,
@@ -144,13 +138,17 @@ export function RadioGroupControl(props: RadioGroupControlProps) {
 	);
 }
 
-export type SelectControlProps = ControlProps & {
-	items: Option[];
+export function SelectControl({
+	name,
+	defaultValue,
+	items,
+	placeholder,
+}: {
+	name: string;
+	defaultValue?: string;
+	items: Array<{ label: string; value: string }>;
 	placeholder?: string;
-};
-
-export function SelectControl(props: SelectControlProps) {
-	const { name, defaultValue, items, placeholder } = props;
+}) {
 	const labels = Object.fromEntries(
 		items.map((item) => [item.value, item.label]),
 	);
@@ -210,14 +208,19 @@ export function SelectControl(props: SelectControlProps) {
 	);
 }
 
-export type ComboboxControlProps = ControlProps & {
-	items: Option[];
+export function ComboboxControl({
+	name,
+	defaultValue,
+	items,
+	placeholder,
+	triggerLabel,
+}: {
+	name: string;
+	defaultValue?: string;
+	items: Array<{ label: string; value: string }>;
 	placeholder?: string;
 	triggerLabel: string;
-};
-
-export function ComboboxControl(props: ComboboxControlProps) {
-	const { name, defaultValue, items, placeholder, triggerLabel } = props;
+}) {
 	const labels = Object.fromEntries(
 		items.map((item) => [item.value, item.label]),
 	);
@@ -281,12 +284,15 @@ export function ComboboxControl(props: ComboboxControlProps) {
 	);
 }
 
-export type NumberFieldControlProps = ControlProps & {
+export function NumberFieldControl({
+	name,
+	defaultValue,
+	label,
+}: {
+	name: string;
+	defaultValue?: string;
 	label: string;
-};
-
-export function NumberFieldControl(props: NumberFieldControlProps) {
-	const { label, name, defaultValue } = props;
+}) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const control = useControl({
 		defaultValue,
@@ -338,10 +344,13 @@ export function NumberFieldControl(props: NumberFieldControlProps) {
 	);
 }
 
-export type SliderControlProps = ControlProps;
-
-export function SliderControl(props: SliderControlProps) {
-	const { name, defaultValue } = props;
+export function SliderControl({
+	name,
+	defaultValue,
+}: {
+	name: string;
+	defaultValue?: string;
+}) {
 	const thumbInputRef = useRef<HTMLInputElement>(null);
 	const control = useControl({
 		defaultValue: defaultValue || '50',
@@ -383,10 +392,13 @@ export function SliderControl(props: SliderControlProps) {
 	);
 }
 
-export type SwitchControlProps = CheckedControlProps;
-
-export function SwitchControl(props: SwitchControlProps) {
-	const { name, defaultChecked } = props;
+export function SwitchControl({
+	name,
+	defaultChecked,
+}: {
+	name: string;
+	defaultChecked?: boolean;
+}) {
 	const switchRef = useRef<HTMLElement>(null);
 	const control = useControl({
 		defaultChecked,

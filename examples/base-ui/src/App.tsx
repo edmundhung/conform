@@ -53,30 +53,6 @@ const schema = coerceFormValue(
 	}),
 );
 
-const interestOptions = [
-	{ value: 'design', label: 'Design' },
-	{ value: 'engineering', label: 'Engineering' },
-	{ value: 'research', label: 'Research' },
-];
-
-const planOptions = [
-	{ value: 'starter', label: 'Starter' },
-	{ value: 'professional', label: 'Professional' },
-	{ value: 'enterprise', label: 'Enterprise' },
-];
-
-const countryOptions = [
-	{ value: 'gb', label: 'United Kingdom' },
-	{ value: 'ca', label: 'Canada' },
-	{ value: 'jp', label: 'Japan' },
-];
-
-const frameworkOptions = [
-	{ value: 'react', label: 'React' },
-	{ value: 'vue', label: 'Vue' },
-	{ value: 'svelte', label: 'Svelte' },
-];
-
 export default function App() {
 	const [submittedValue, setSubmittedValue] = useState<z.output<
 		typeof schema
@@ -142,11 +118,7 @@ export default function App() {
 						<Field.Description className="description">
 							A native Base UI Input.
 						</Field.Description>
-						<Field.Error
-							className="error"
-							match
-							role={fields.fullName.errors?.length ? 'alert' : undefined}
-						>
+						<Field.Error className="error" match>
 							{fields.fullName.errors?.join(', ')}
 						</Field.Error>
 					</Field.Root>
@@ -164,11 +136,7 @@ export default function App() {
 						<Field.Description className="description">
 							Field.Control renders a native textarea.
 						</Field.Description>
-						<Field.Error
-							className="error"
-							match
-							role={fields.bio.errors?.length ? 'alert' : undefined}
-						>
+						<Field.Error className="error" match>
 							{fields.bio.errors?.join(', ')}
 						</Field.Error>
 					</Field.Root>
@@ -186,11 +154,7 @@ export default function App() {
 						<Field.Description className="description">
 							The visible checkbox is synchronized with a BaseControl.
 						</Field.Description>
-						<Field.Error
-							className="error"
-							match
-							role={fields.acceptTerms.errors?.length ? 'alert' : undefined}
-						>
+						<Field.Error className="error" match>
 							{fields.acceptTerms.errors?.join(', ')}
 						</Field.Error>
 					</Field.Root>
@@ -209,7 +173,11 @@ export default function App() {
 							// name={fields.interests.name}
 							// defaultValue={fields.interests.defaultOptions}
 						>
-							{interestOptions.map((item) => (
+							{[
+								{ value: 'design', label: 'Design' },
+								{ value: 'engineering', label: 'Engineering' },
+								{ value: 'research', label: 'Research' },
+							].map((item) => (
 								<Field.Item className="choice-label" key={item.value}>
 									<Checkbox.Root className="checkbox" value={item.value}>
 										<Checkbox.Indicator className="checkbox-indicator">
@@ -223,11 +191,7 @@ export default function App() {
 						<Field.Description className="description">
 							A multiple BaseControl serializes the selected values.
 						</Field.Description>
-						<Field.Error
-							className="error"
-							match
-							role={fields.interests.errors?.length ? 'alert' : undefined}
-						>
+						<Field.Error className="error" match>
 							{fields.interests.errors?.join(', ')}
 						</Field.Error>
 					</Field.Root>
@@ -246,7 +210,11 @@ export default function App() {
 							// name={fields.plan.name}
 							// defaultValue={fields.plan.defaultValue}
 						>
-							{planOptions.map((item) => (
+							{[
+								{ value: 'starter', label: 'Starter' },
+								{ value: 'professional', label: 'Professional' },
+								{ value: 'enterprise', label: 'Enterprise' },
+							].map((item) => (
 								<Field.Item className="choice-label" key={item.value}>
 									<Radio.Root className="radio" value={item.value}>
 										<Radio.Indicator className="radio-indicator" />
@@ -258,11 +226,7 @@ export default function App() {
 						<Field.Description className="description">
 							The BaseControl serializes one scalar value.
 						</Field.Description>
-						<Field.Error
-							className="error"
-							match
-							role={fields.plan.errors?.length ? 'alert' : undefined}
-						>
+						<Field.Error className="error" match>
 							{fields.plan.errors?.join(', ')}
 						</Field.Error>
 					</Field.Root>
@@ -271,7 +235,11 @@ export default function App() {
 						<Field.Label className="label">Country</Field.Label>
 						<SelectControl
 							placeholder="Choose a country"
-							items={countryOptions}
+							items={[
+								{ value: 'gb', label: 'United Kingdom' },
+								{ value: 'ca', label: 'Canada' },
+								{ value: 'jp', label: 'Japan' },
+							]}
 							{...fields.country.selectProps}
 							// Equivalent to:
 							// name={fields.country.name}
@@ -280,11 +248,7 @@ export default function App() {
 						<Field.Description className="description">
 							Select is synchronized with a scalar BaseControl.
 						</Field.Description>
-						<Field.Error
-							className="error"
-							match
-							role={fields.country.errors?.length ? 'alert' : undefined}
-						>
+						<Field.Error className="error" match>
 							{fields.country.errors?.join(', ')}
 						</Field.Error>
 					</Field.Root>
@@ -294,7 +258,11 @@ export default function App() {
 						<ComboboxControl
 							placeholder="Search frameworks"
 							triggerLabel="Open Framework"
-							items={frameworkOptions}
+							items={[
+								{ value: 'react', label: 'React' },
+								{ value: 'vue', label: 'Vue' },
+								{ value: 'svelte', label: 'Svelte' },
+							]}
 							{...fields.framework.comboboxProps}
 							// Equivalent to:
 							// name={fields.framework.name}
@@ -303,11 +271,7 @@ export default function App() {
 						<Field.Description className="description">
 							Filtering is transient; BaseControl stores the selection.
 						</Field.Description>
-						<Field.Error
-							className="error"
-							match
-							role={fields.framework.errors?.length ? 'alert' : undefined}
-						>
+						<Field.Error className="error" match>
 							{fields.framework.errors?.join(', ')}
 						</Field.Error>
 					</Field.Root>
@@ -324,11 +288,7 @@ export default function App() {
 						<Field.Description className="description">
 							BaseControl stores the raw value before Zod coercion.
 						</Field.Description>
-						<Field.Error
-							className="error"
-							match
-							role={fields.quantity.errors?.length ? 'alert' : undefined}
-						>
+						<Field.Error className="error" match>
 							{fields.quantity.errors?.join(', ')}
 						</Field.Error>
 					</Field.Root>
@@ -344,11 +304,7 @@ export default function App() {
 						<Field.Description className="description">
 							The range input is controlled through useControl.
 						</Field.Description>
-						<Field.Error
-							className="error"
-							match
-							role={fields.budget.errors?.length ? 'alert' : undefined}
-						>
+						<Field.Error className="error" match>
 							{fields.budget.errors?.join(', ')}
 						</Field.Error>
 					</Field.Root>
@@ -366,11 +322,7 @@ export default function App() {
 						<Field.Description className="description">
 							A checkbox BaseControl submits “on” while enabled.
 						</Field.Description>
-						<Field.Error
-							className="error"
-							match
-							role={fields.notifications.errors?.length ? 'alert' : undefined}
-						>
+						<Field.Error className="error" match>
 							{fields.notifications.errors?.join(', ')}
 						</Field.Error>
 					</Field.Root>
