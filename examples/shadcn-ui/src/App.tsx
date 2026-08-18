@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { z } from 'zod/v4';
 import {
 	Field,
+	FieldDescription,
 	FieldError,
 	FieldGroup,
 	Button,
@@ -54,35 +55,48 @@ export default function App() {
 		() => new URLSearchParams(window.location.search),
 	);
 	const { form, fields, intent } = useForm(schema, {
+		// The URL is the source of the form's defaults in this client-only example.
 		defaultValue: searchParams,
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 
 			// Demo only - This emulates a GET request with the form data populated in the URL.
 			const url = new URL(document.URL);
-			const searchParams = new URLSearchParams(
+			const nextSearchParams = new URLSearchParams(
 				Array.from(formData).filter(
 					// Skip the file as it is not serializable
 					(entry): entry is [string, string] => typeof entry[1] === 'string',
 				),
 			);
-			url.search = searchParams.toString();
+			url.search = nextSearchParams.toString();
 			window.history.pushState(null, '', url);
 
-			setSearchParams(searchParams);
+			setSearchParams(nextSearchParams);
 			setSubmittedValue(value);
 		},
 	});
 
 	return (
-		<div className="flex flex-col gap-6 p-10">
-			<h1 className="text-2xl">shadcn/ui with Radix</h1>
+		<main className="min-h-svh bg-muted/40 px-4 py-12 md:px-6">
 			<form
 				{...form.props}
 				method="POST"
 				onChange={() => setSubmittedValue(null)}
-				className="flex flex-col gap-4 items-start"
+				className="mx-auto w-full max-w-2xl space-y-8 rounded-xl border bg-background p-6 shadow-sm md:p-10"
 			>
+				<header className="space-y-2">
+					<p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+						Conform × shadcn/ui
+					</p>
+					<h1 className="text-3xl font-semibold tracking-tight">
+						shadcn/ui with Radix
+					</h1>
+					<p className="text-sm text-muted-foreground">
+						Generated shadcn/ui components with Conform owning validation and
+						form state.
+					</p>
+				</header>
+
 				<FieldGroup>
 					<Field data-invalid={fields.name.ariaInvalid}>
 						<FieldLabel htmlFor={fields.name.id}>Name</FieldLabel>
@@ -95,9 +109,13 @@ export default function App() {
 								// name={fields.name.name}
 								// defaultValue={fields.name.defaultValue}
 								// aria-invalid={fields.name.ariaInvalid}
-								// aria-describedby={fields.name.ariaDescribedBy}
+								// aria-describedby={[fields.name.descriptionId, fields.name.ariaDescribedBy].filter(Boolean).join(' ')}
 							/>
 						</InputGroup>
+						<FieldDescription id={fields.name.descriptionId}>
+							A native input receives Conform props directly. Use at least three
+							characters.
+						</FieldDescription>
 						<FieldError id={fields.name.errorId}>
 							{fields.name.errors}
 						</FieldError>
@@ -113,8 +131,11 @@ export default function App() {
 							// name={fields.dateOfBirth.name}
 							// defaultValue={fields.dateOfBirth.defaultValue}
 							// aria-invalid={fields.dateOfBirth.ariaInvalid}
-							// aria-describedby={fields.dateOfBirth.ariaDescribedBy}
+							// aria-describedby={[fields.dateOfBirth.descriptionId, fields.dateOfBirth.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
+						<FieldDescription id={fields.dateOfBirth.descriptionId}>
+							A scalar BaseControl stores the selected date as an ISO string.
+						</FieldDescription>
 						<FieldError id={fields.dateOfBirth.errorId}>
 							{fields.dateOfBirth.errors}
 						</FieldError>
@@ -128,14 +149,20 @@ export default function App() {
 							// name={fields.country.name}
 							// defaultValue={fields.country.defaultValue}
 							// aria-invalid={fields.country.ariaInvalid}
-							// aria-describedby={fields.country.ariaDescribedBy}
+							// aria-describedby={[fields.country.descriptionId, fields.country.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
+						<FieldDescription id={fields.country.descriptionId}>
+							Filtering is transient; BaseControl stores the country code.
+						</FieldDescription>
 						<FieldError id={fields.country.errorId}>
 							{fields.country.errors}
 						</FieldError>
 					</Field>
 					<FieldSet data-invalid={fields.gender.ariaInvalid}>
 						<FieldLegend id={`${fields.gender.id}-label`}>Gender</FieldLegend>
+						<FieldDescription id={fields.gender.descriptionId}>
+							A scalar BaseControl stores the selected radio value.
+						</FieldDescription>
 						<RadioGroup
 							items={[
 								{ value: 'male', label: 'male' },
@@ -150,7 +177,7 @@ export default function App() {
 							// defaultValue={fields.gender.defaultValue}
 							// aria-labelledby={`${fields.gender.id}-label`}
 							// aria-invalid={fields.gender.ariaInvalid}
-							// aria-describedby={fields.gender.ariaDescribedBy}
+							// aria-describedby={[fields.gender.descriptionId, fields.gender.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
 						<FieldError id={fields.gender.errorId}>
 							{fields.gender.errors}
@@ -166,12 +193,15 @@ export default function App() {
 								// value="on"
 								// defaultChecked={fields.agreeToTerms.defaultChecked}
 								// aria-invalid={fields.agreeToTerms.ariaInvalid}
-								// aria-describedby={fields.agreeToTerms.ariaDescribedBy}
+								// aria-describedby={[fields.agreeToTerms.descriptionId, fields.agreeToTerms.ariaDescribedBy].filter(Boolean).join(' ')}
 							/>
 							<FieldLabel htmlFor={fields.agreeToTerms.id}>
 								Agree to terms
 							</FieldLabel>
 						</div>
+						<FieldDescription id={fields.agreeToTerms.descriptionId}>
+							The visible checkbox is synchronized with a checkbox BaseControl.
+						</FieldDescription>
 						<FieldError id={fields.agreeToTerms.errorId}>
 							{fields.agreeToTerms.errors}
 						</FieldError>
@@ -191,8 +221,11 @@ export default function App() {
 							// name={fields.job.name}
 							// defaultValue={fields.job.defaultValue}
 							// aria-invalid={fields.job.ariaInvalid}
-							// aria-describedby={fields.job.ariaDescribedBy}
+							// aria-describedby={[fields.job.descriptionId, fields.job.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
+						<FieldDescription id={fields.job.descriptionId}>
+							The compound select is synchronized with a scalar BaseControl.
+						</FieldDescription>
 						<FieldError id={fields.job.errorId}>{fields.job.errors}</FieldError>
 					</Field>
 					<Field data-invalid={fields.age.ariaInvalid}>
@@ -207,8 +240,12 @@ export default function App() {
 							// defaultValue={fields.age.defaultValue}
 							// aria-labelledby={`${fields.age.id}-label`}
 							// aria-invalid={fields.age.ariaInvalid}
-							// aria-describedby={fields.age.ariaDescribedBy}
+							// aria-describedby={[fields.age.descriptionId, fields.age.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
+						<FieldDescription id={fields.age.descriptionId}>
+							The slider is controlled through useControl; BaseControl stores
+							its numeric string.
+						</FieldDescription>
 						<FieldError id={fields.age.errorId}>{fields.age.errors}</FieldError>
 					</Field>
 					<Field data-invalid={fields.isAdult.ariaInvalid}>
@@ -222,9 +259,12 @@ export default function App() {
 								// value="on"
 								// defaultChecked={fields.isAdult.defaultChecked}
 								// aria-invalid={fields.isAdult.ariaInvalid}
-								// aria-describedby={fields.isAdult.ariaDescribedBy}
+								// aria-describedby={[fields.isAdult.descriptionId, fields.isAdult.ariaDescribedBy].filter(Boolean).join(' ')}
 							/>
 						</div>
+						<FieldDescription id={fields.isAdult.descriptionId}>
+							The visible switch is synchronized with a checkbox BaseControl.
+						</FieldDescription>
 						<FieldError id={fields.isAdult.errorId}>
 							{fields.isAdult.errors}
 						</FieldError>
@@ -238,8 +278,12 @@ export default function App() {
 							// name={fields.description.name}
 							// defaultValue={fields.description.defaultValue}
 							// aria-invalid={fields.description.ariaInvalid}
-							// aria-describedby={fields.description.ariaDescribedBy}
+							// aria-describedby={[fields.description.descriptionId, fields.description.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
+						<FieldDescription id={fields.description.descriptionId}>
+							A native textarea receives Conform props directly. Use at least
+							ten characters.
+						</FieldDescription>
 						<FieldError id={fields.description.errorId}>
 							{fields.description.errors}
 						</FieldError>
@@ -248,6 +292,9 @@ export default function App() {
 						<FieldLegend id={`${fields.accountType.id}-label`}>
 							Account type
 						</FieldLegend>
+						<FieldDescription id={fields.accountType.descriptionId}>
+							A scalar BaseControl stores the selected toggle value.
+						</FieldDescription>
 						<SingleToggleGroup
 							items={[
 								{ value: 'personal', label: 'Personal' },
@@ -260,7 +307,7 @@ export default function App() {
 							// defaultValue={fields.accountType.defaultValue}
 							// aria-labelledby={`${fields.accountType.id}-label`}
 							// aria-invalid={fields.accountType.ariaInvalid}
-							// aria-describedby={fields.accountType.ariaDescribedBy}
+							// aria-describedby={[fields.accountType.descriptionId, fields.accountType.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
 						<FieldError id={fields.accountType.errorId}>
 							{fields.accountType.errors}
@@ -270,6 +317,10 @@ export default function App() {
 						<FieldLegend id={`${fields.categories.id}-label`}>
 							Categories
 						</FieldLegend>
+						<FieldDescription id={fields.categories.descriptionId}>
+							A multiple BaseControl serializes the selected toggles as repeated
+							values.
+						</FieldDescription>
 						<MultiToggleGroup
 							items={[
 								{ value: 'blog', label: 'Blog' },
@@ -283,7 +334,7 @@ export default function App() {
 							// defaultValue={fields.categories.defaultOptions}
 							// aria-labelledby={`${fields.categories.id}-label`}
 							// aria-invalid={fields.categories.ariaInvalid}
-							// aria-describedby={fields.categories.ariaDescribedBy}
+							// aria-describedby={[fields.categories.descriptionId, fields.categories.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
 						<FieldError id={fields.categories.errorId}>
 							{fields.categories.errors}
@@ -291,6 +342,10 @@ export default function App() {
 					</FieldSet>
 					<FieldSet data-invalid={fields.interests.ariaInvalid}>
 						<FieldLegend id={fields.interests.id}>Interests</FieldLegend>
+						<FieldDescription id={fields.interests.descriptionId}>
+							Checkbox BaseControls with the same name serialize repeated
+							values.
+						</FieldDescription>
 						{[
 							{ value: 'react', name: 'React' },
 							{ value: 'vue', name: 'Vue' },
@@ -311,7 +366,12 @@ export default function App() {
 										option.value,
 									)}
 									aria-invalid={fields.interests.ariaInvalid}
-									aria-describedby={fields.interests.ariaDescribedBy}
+									aria-describedby={[
+										fields.interests.descriptionId,
+										fields.interests.ariaDescribedBy,
+									]
+										.filter(Boolean)
+										.join(' ')}
 								/>
 								<FieldLabel htmlFor={`${fields.interests.id}-${option.value}`}>
 									{option.name}
@@ -324,6 +384,10 @@ export default function App() {
 					</FieldSet>
 					<Field data-invalid={fields.members.ariaInvalid}>
 						<FieldLabel id={fields.members.id}>Team Members</FieldLabel>
+						<FieldDescription id={fields.members.descriptionId}>
+							A fieldset BaseControl serializes the selected members as a
+							structured array.
+						</FieldDescription>
 						<TeamMemberSelect
 							{...fields.members.teamMemberSelectProps}
 							// Equivalent to:
@@ -331,7 +395,7 @@ export default function App() {
 							// defaultValue={fields.members.defaultPayload}
 							// aria-labelledby={fields.members.id}
 							// aria-invalid={fields.members.ariaInvalid}
-							// aria-describedby={fields.members.ariaDescribedBy}
+							// aria-describedby={[fields.members.descriptionId, fields.members.ariaDescribedBy].filter(Boolean).join(' ')}
 							members={[
 								{
 									id: '1',
@@ -391,8 +455,11 @@ export default function App() {
 							// name={fields.code.name}
 							// defaultValue={fields.code.defaultValue}
 							// aria-invalid={fields.code.ariaInvalid}
-							// aria-describedby={fields.code.ariaDescribedBy}
+							// aria-describedby={[fields.code.descriptionId, fields.code.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
+						<FieldDescription id={fields.code.descriptionId}>
+							BaseControl stores the value from the segmented OTP input.
+						</FieldDescription>
 						<FieldError id={fields.code.errorId}>
 							{fields.code.errors}
 						</FieldError>
@@ -400,23 +467,31 @@ export default function App() {
 				</FieldGroup>
 
 				{submittedValue ? (
-					<div>
-						<h4>Value submitted</h4>
+					<section
+						aria-labelledby="submitted-value-heading"
+						className="submitted space-y-2"
+					>
+						<h2 id="submitted-value-heading" className="font-medium">
+							Value submitted
+						</h2>
 						<pre>{JSON.stringify(submittedValue, null, 2)}</pre>
-					</div>
+					</section>
 				) : null}
 
-				<div className="flex gap-2">
-					<Button type="submit">Submit</Button>
+				<footer className="flex justify-end gap-2">
 					<Button
 						type="button"
 						variant="outline"
-						onClick={() => intent.reset()}
+						onClick={() => {
+							intent.reset();
+							setSubmittedValue(null);
+						}}
 					>
 						Reset
 					</Button>
-				</div>
+					<Button type="submit">Submit</Button>
+				</footer>
 			</form>
-		</div>
+		</main>
 	);
 }

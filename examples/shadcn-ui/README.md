@@ -1,151 +1,39 @@
 # shadcn/ui with Radix
 
-> This guide focuses on behavior specific to shadcn/ui's Radix base. See [Integrating with UI Libraries](../../docs/integration/ui-libraries.md) for the general concept and the [`useControl`](../../docs/api/react/future/useControl.md) API.
+[shadcn/ui](https://ui.shadcn.com/) provides component source code that applications can adapt directly. This Vite React project uses its current [Radix UI](https://www.radix-ui.com/) registry with React 19, Tailwind CSS 4, Conform, and Zod 4 validation through `@conform-to/zod/v4/future`. It is the direct counterpart to the Base UI-based [`shadcn-base-ui`](../shadcn-base-ui) example.
 
-This Vite example uses the current shadcn/ui Radix registry with React 19, Tailwind CSS 4, and Zod 4. It keeps the generated shadcn components in [`src/components/ui`](./src/components/ui) and the Conform-specific adapters in [`src/components/form-controls.tsx`](./src/components/form-controls.tsx).
+For a lower-level integration with Radix primitives, see the [`radix-ui`](../radix-ui) example. This example focuses on the generated shadcn/ui component layer, including Field, InputGroup, DatePicker, toggle groups, InputOTP, and TeamMemberSelect composition.
 
-It covers Input, Textarea, DatePicker, Combobox, RadioGroup, Checkbox, Select, Slider, Switch, single and multiple toggle groups, InputOTP, and TeamMemberSelect. It also uses the current shadcn Field, FieldSet, InputGroup, and NativeSelect composition.
+## Integration
 
-## Use Native Controls Where Possible
+When a component renders a normal form control, the example passes Conform's field props directly to it. InputGroupInput (composed from Input) and Textarea receive their name, default value, and validation attributes this way. NativeSelect is also native, although this form uses it only as TeamMemberSelect's local role filter.
 
-`InputGroupInput` (composed from Input) and `Textarea` receive Conform's `id`, `name`, default value, and ARIA metadata directly without `useControl`. NativeSelect is native too; this form uses it for TeamMemberSelect's local role filter because the schema fields are reserved for the controls being compared.
+Compound controls use [`useControl`](../../docs/api/react/future/useControl.md) with a [`BaseControl`](../../docs/api/react/future/BaseControl.md). This covers DatePicker, Combobox, RadioGroup, Checkbox, Select, Slider, Switch, toggle groups, InputOTP, and TeamMemberSelect. The base control is the only named form control; the visible Radix primitive stays controlled through `control.value`, `control.checked`, `control.options`, or `control.payload` and reports changes through `control.change()`.
 
-The other controls expose a custom value or interaction model and use a small adapter built with `useControl`.
+The adapters preserve initial and updated defaults, restore visible state on reset, and forward validation focus from BaseControl to the interactive trigger, item, thumb, or input. Group and popup controls report blur only when the interaction leaves the whole control. Scalar values use a standard BaseControl, Checkbox and Switch use its checkbox mode, the multiple toggle group uses a multiple select, and TeamMemberSelect uses a fieldset for its structured payload.
 
-## Use a Single Named Control
+Radix primitives that can render hidden inputs are left unnamed to avoid duplicate `FormData` entries. The accessible element receives the field label, invalid state, and error description. See [Integrating with UI Libraries](../../docs/integration/ui-libraries.md) for the general pattern.
 
-Several Radix primitives create an internal input when they receive a `name`. The adapters leave the Radix primitive unnamed and register an explicit Conform `BaseControl` instead:
+| Pattern | Components | Form integration |
+| --- | --- | --- |
+| Native form control | Input, Textarea | The interactive element owns the name and serialization |
+| Unnamed compound control | DatePicker, Combobox, RadioGroup, Checkbox, Select, Slider, Switch, toggle groups, InputOTP, TeamMemberSelect | The generated component handles interaction and accessible focus |
+| `useControl` with `BaseControl` | All compound controls above | A hidden input or checkbox owns scalar and boolean values |
+| Array or structured `BaseControl` | Multiple toggle group, repeated interests, TeamMemberSelect | A multiple select, repeated checkboxes, or fieldset serializes arrays and structured values |
 
-```tsx
-const control = useControl({
-  defaultValue,
-  onFocus() {
-    selectRef.current?.focus();
-  },
-});
+Conform remains the source of validation and form state, while shadcn/ui supplies field layout and styled interaction. The application keeps its native `<form {...form.props}>`.
 
-return (
-  <>
-    <BaseControl
-      ref={control.register}
-      name={name}
-      defaultValue={control.defaultValue ?? ''}
-    />
-    <ShadcnSelect
-      value={control.value ?? ''}
-      onValueChange={(value) => control.change(value)}
-    >
-      {/* ... */}
-    </ShadcnSelect>
-  </>
-);
-```
+## Project Structure
 
-The base control is the only named control for the field. This avoids duplicate `FormData` entries and gives primitives with and without built-in form support the same Conform behavior.
-
-## Match Each Value Shape
-
-Checkbox and Switch use a checkbox `BaseControl` and read `control.checked`. RadioGroup, Select, DatePicker, Combobox, and InputOTP use a single string value. Slider converts Radix's number array to one string value.
-
-The multiple toggle group registers a multiple select, so arrays remain repeated `FormData` entries:
-
-```tsx
-<BaseControl
-  type="select"
-  multiple
-  ref={control.register}
-  name={name}
-  defaultValue={control.defaultValue ?? []}
-/>
-```
-
-TeamMemberSelect demonstrates a structured payload. A fieldset `BaseControl` renders the member fields, while Zod 4 `coerceStructure` parses them back into the component's member array:
-
-```tsx
-const control = useControl({
-  defaultValue,
-  parse(payload) {
-    return coerceStructure(membersSchema).parse(payload);
-  },
-});
-
-<BaseControl
-  type="fieldset"
-  name={name}
-  ref={control.register}
-  defaultValue={control.defaultValue}
-/>
-```
-
-`useControl` keeps standard, array, and structured base controls synchronized through changes, Conform resets, and native `form.reset()` calls.
-
-## Forward Focus to the Interactive Element
-
-When Conform focuses a hidden base control after an invalid submission, each adapter forwards focus to the element users interact with:
-
-| Control | Focus target |
-| --- | --- |
-| DatePicker and Combobox | Trigger button |
-| RadioGroup | Checked item or first radio |
-| Checkbox and Switch | Radix root |
-| Select | Select trigger |
-| Slider | Slider thumb |
-| Toggle groups | Active item or first button |
-| InputOTP | OTP input |
-| TeamMemberSelect | InputGroup trigger |
-
-RadioGroup and toggle groups locate their focusable item rather than focusing the composite root.
-
-## Match Interaction Boundaries
-
-Blur events bubble while focus moves between RadioGroup or toggle-group items. Their adapters notify Conform only when focus leaves the whole group:
-
-```tsx
-onBlur={(event) => {
-  if (!event.currentTarget.contains(event.relatedTarget)) {
-    control.blur();
-  }
-}}
-```
-
-DatePicker, Combobox, Select, and TeamMemberSelect treat closing their popup as the end of the field interaction. The remaining controls forward blur directly.
-
-## Apply ARIA Metadata to the Accessible Control
-
-The hidden base control owns the field name and value. `aria-invalid`, `aria-describedby`, and `aria-labelledby` belong on the visible accessible element: the trigger, group root, slider thumb, or input as appropriate.
-
-RadioGroup, Slider, and toggle groups use an explicit label ID:
-
-```tsx
-<FieldLegend id={`${fields.gender.id}-label`}>Gender</FieldLegend>
-<RadioGroup {...fields.gender.radioGroupProps} />
-```
-
-The metadata mapping supplies that relationship together with Conform's error description:
-
-```tsx
-get radioGroupProps() {
-  return {
-    id: metadata.id,
-    name: metadata.name,
-    defaultValue: metadata.defaultValue,
-    'aria-invalid': metadata.ariaInvalid,
-    'aria-describedby': metadata.ariaDescribedBy,
-    'aria-labelledby': `${metadata.id}-label`,
-  } satisfies Partial<React.ComponentProps<typeof RadioGroup>>;
-}
-```
-
-## Custom Metadata
-
-[`src/forms.ts`](./src/forms.ts) uses [`configureForms`](../../docs/api/react/future/configureForms.md#integrating-with-ui-libraries) to expose typed props for every adapter. [`src/App.tsx`](./src/App.tsx) spreads those props while keeping the equivalent explicit mapping in nearby comments.
-
-This matches the pattern used by the Radix UI and Headless UI examples: generic form behavior stays in Conform, library-specific value conversion, focus, blur, and ARIA behavior stays in the adapter, and custom metadata only removes repetitive prop mapping.
+- [`App.tsx`](./src/App.tsx) contains the form and keeps useful explicit Conform prop mappings in nearby comments.
+- [`form-controls.tsx`](./src/components/form-controls.tsx) contains the shadcn/Radix adapters.
+- [`forms.ts`](./src/forms.ts) uses [`configureForms`](../../docs/api/react/future/configureForms.md#integrating-with-ui-libraries) to expose those mappings as typed field props.
+- [`tests/index.test.ts`](./tests/index.test.ts) verifies validation, focus delegation, submission, updated defaults, and reset behavior.
 
 ## Demo
 
 <!-- sandbox src="/examples/shadcn-ui" -->
 
-Try it on [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/shadcn-ui).
+Try it out on [StackBlitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/shadcn-ui).
 
 <!-- /sandbox -->
