@@ -118,10 +118,10 @@ importers:
         specifier: ^1.7.0
         version: 1.7.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@conform-to/react':
-        specifier: ^1.21.0
+        specifier: ^1.21.1
         version: file:packages/conform-react(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@conform-to/zod':
-        specifier: ^1.21.0
+        specifier: ^1.21.1
         version: file:packages/conform-zod(zod@4.4.3)
       react:
         specifier: ^19.2.7
@@ -169,10 +169,10 @@ importers:
         specifier: ^3.36.1
         version: 3.36.1(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@conform-to/react':
-        specifier: ^1.21.0
+        specifier: ^1.21.1
         version: file:packages/conform-react(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@conform-to/zod':
-        specifier: ^1.21.0
+        specifier: ^1.21.1
         version: file:packages/conform-zod(zod@4.4.3)
       '@emotion/react':
         specifier: ^11.14.0
@@ -220,10 +220,10 @@ importers:
   examples/headless-ui:
     dependencies:
       '@conform-to/react':
-        specifier: ^1.20.0
+        specifier: ^1.21.1
         version: file:packages/conform-react(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@conform-to/zod':
-        specifier: ^1.20.0
+        specifier: ^1.21.1
         version: file:packages/conform-zod(zod@4.4.3)
       '@headlessui/react':
         specifier: ^2.2.10
@@ -283,10 +283,10 @@ importers:
         specifier: ^1.6.0
         version: 1.6.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@conform-to/react':
-        specifier: ^1.21.0
+        specifier: ^1.21.1
         version: file:packages/conform-react(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@conform-to/zod':
-        specifier: ^1.21.0
+        specifier: ^1.21.1
         version: file:packages/conform-zod(zod@4.4.3)
       '@emotion/react':
         specifier: ^11.14.0
@@ -343,10 +343,10 @@ importers:
   examples/nextjs:
     dependencies:
       '@conform-to/react':
-        specifier: 1.21.0
+        specifier: 1.21.1
         version: file:packages/conform-react(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@conform-to/zod':
-        specifier: 1.21.0
+        specifier: 1.21.1
         version: file:packages/conform-zod(zod@4.4.3)
       next:
         specifier: 16.2.11
@@ -391,10 +391,10 @@ importers:
   examples/radix-ui:
     dependencies:
       '@conform-to/react':
-        specifier: ^1.21.0
+        specifier: ^1.21.1
         version: file:packages/conform-react(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@conform-to/zod':
-        specifier: ^1.21.0
+        specifier: ^1.21.1
         version: file:packages/conform-zod(zod@4.4.3)
       '@radix-ui/react-icons':
         specifier: ^1.3.2
@@ -454,10 +454,10 @@ importers:
   examples/react-aria:
     dependencies:
       '@conform-to/react':
-        specifier: ^1.21.0
+        specifier: ^1.21.1
         version: file:packages/conform-react(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@conform-to/zod':
-        specifier: ^1.21.0
+        specifier: ^1.21.1
         version: file:packages/conform-zod(zod@4.4.3)
       '@internationalized/date':
         specifier: ^3.12.2
@@ -508,10 +508,10 @@ importers:
   examples/react-router:
     dependencies:
       '@conform-to/react':
-        specifier: 1.21.0
+        specifier: 1.21.1
         version: file:packages/conform-react(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@conform-to/zod':
-        specifier: 1.21.0
+        specifier: 1.21.1
         version: file:packages/conform-zod(zod@4.4.3)
       '@react-router/node':
         specifier: 8.2.0
@@ -565,10 +565,10 @@ importers:
   examples/react-spa:
     dependencies:
       '@conform-to/react':
-        specifier: 1.21.0
+        specifier: 1.21.1
         version: file:packages/conform-react(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@conform-to/zod':
-        specifier: 1.21.0
+        specifier: 1.21.1
         version: file:packages/conform-zod(zod@4.4.3)
       react:
         specifier: ^19.2.7
@@ -616,10 +616,10 @@ importers:
   examples/remix:
     dependencies:
       '@conform-to/react':
-        specifier: 1.21.0
+        specifier: 1.21.1
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: 1.21.0
+        specifier: 1.21.1
         version: link:../../packages/conform-zod
       '@remix-run/node':
         specifier: ^1.19.3
@@ -671,10 +671,10 @@ importers:
   examples/shadcn-ui:
     dependencies:
       '@conform-to/react':
-        specifier: ^1.21.0
+        specifier: ^1.21.1
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: ^1.21.0
+        specifier: ^1.21.1
         version: link:../../packages/conform-zod
       '@radix-ui/react-checkbox':
         specifier: ^1.0.4
