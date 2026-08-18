@@ -9,8 +9,8 @@
 		"test": "playwright test"
 	},
 	"dependencies": {
-		"@conform-to/react": "1.21.0",
-		"@conform-to/zod": "1.21.0",
+		"@conform-to/react": "1.21.1",
+		"@conform-to/zod": "1.21.1",
 		"next": "16.2.11",
 		"react": "19.2.7",
 		"react-dom": "19.2.7",

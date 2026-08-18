@@ -12,8 +12,8 @@
 	},
 	"dependencies": {
 		"@chakra-ui/react": "^3.36.1",
-		"@conform-to/react": "^1.21.0",
-		"@conform-to/zod": "^1.21.0",
+		"@conform-to/react": "^1.21.1",
+		"@conform-to/zod": "^1.21.1",
 		"@emotion/react": "^11.14.0",
 		"react": "^19.2.7",
 		"react-dom": "^19.2.7",

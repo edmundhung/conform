@@ -12,8 +12,8 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"@conform-to/react": "^1.21.0",
-		"@conform-to/zod": "^1.21.0",
+		"@conform-to/react": "^1.21.1",
+		"@conform-to/zod": "^1.21.1",
 		"@internationalized/date": "^3.12.2",
 		"react": "^19.2.7",
 		"react-aria-components": "1.19.0",

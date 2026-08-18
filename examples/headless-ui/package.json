@@ -12,8 +12,8 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"@conform-to/react": "^1.20.0",
-		"@conform-to/zod": "^1.20.0",
+		"@conform-to/react": "^1.21.1",
+		"@conform-to/zod": "^1.21.1",
 		"@headlessui/react": "^2.2.10",
 		"@heroicons/react": "^2.2.0",
 		"react": "^19.2.7",

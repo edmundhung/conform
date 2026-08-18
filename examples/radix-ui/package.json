@@ -11,8 +11,8 @@
 		"typecheck": "tsc -b"
 	},
 	"dependencies": {
-		"@conform-to/react": "^1.21.0",
-		"@conform-to/zod": "^1.21.0",
+		"@conform-to/react": "^1.21.1",
+		"@conform-to/zod": "^1.21.1",
 		"@radix-ui/react-icons": "^1.3.2",
 		"clsx": "^2.1.0",
 		"radix-ui": "^1.6.4",
