@@ -26,8 +26,7 @@ Conform remains the source of validation and form state, while shadcn/ui supplie
 ## Project Structure
 
 - [`App.tsx`](./src/App.tsx) contains the form, schema, URL-backed defaults, and explicit Conform prop mappings.
-- [`form.tsx`](./src/components/form.tsx) contains only the compound-control adapters; shadcn Field composition stays in `App.tsx`.
-- [`forms.ts`](./src/forms.ts) uses [`configureForms`](../../docs/api/react/future/configureForms.md#integrating-with-ui-libraries) to expose those mappings as typed field props.
+- [`forms.tsx`](./src/forms.tsx) contains the compound-control adapters and uses [`configureForms`](../../docs/api/react/future/configureForms.md#integrating-with-ui-libraries) to expose their mappings as typed field props.
 - [`tests/index.test.ts`](./tests/index.test.ts) verifies validation, submission, focus, updated defaults, reset behavior, and repeated-value serialization.
 
 ## Demo

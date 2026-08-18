@@ -1,12 +1,16 @@
-import { BaseControl, useControl } from '@conform-to/react/future';
+import {
+	BaseControl,
+	configureForms,
+	useControl,
+} from '@conform-to/react/future';
+import { getConstraints } from '@conform-to/zod/v4/future';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import { useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type ComponentProps, type ReactNode } from 'react';
 
-import { cn } from '../lib/utils';
-import { Button } from './ui/button';
-import { Calendar } from './ui/calendar';
-import { Checkbox } from './ui/checkbox';
+import { Button } from './components/ui/button';
+import { Calendar } from './components/ui/calendar';
+import { Checkbox } from './components/ui/checkbox';
 import {
 	Combobox,
 	ComboboxChip,
@@ -20,23 +24,31 @@ import {
 	ComboboxList,
 	ComboboxValue,
 	useComboboxAnchor,
-} from './ui/combobox';
+} from './components/ui/combobox';
 import {
 	InputOTP as ShadcnInputOTP,
 	InputOTPGroup,
 	InputOTPSlot,
-} from './ui/input-otp';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { RadioGroup } from './ui/radio-group';
-import { Slider } from './ui/slider';
+} from './components/ui/input-otp';
+import { InputGroupInput } from './components/ui/input-group';
+import { NativeSelect } from './components/ui/native-select';
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from './components/ui/popover';
+import { RadioGroup } from './components/ui/radio-group';
+import { Slider } from './components/ui/slider';
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from './ui/select';
-import { Switch } from './ui/switch';
+} from './components/ui/select';
+import { Switch } from './components/ui/switch';
+import { Textarea } from './components/ui/textarea';
+import { cn } from './lib/utils';
 
 export function MultiCombobox({
 	id,
@@ -51,7 +63,6 @@ export function MultiCombobox({
 	items: Array<{ label: string; value: string }>;
 	'aria-describedby'?: string;
 	'aria-invalid'?: boolean;
-	'aria-labelledby'?: string;
 }) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const anchor = useComboboxAnchor();
@@ -193,7 +204,6 @@ export function FormSelect({
 	items: Array<{ label: string; value: string }>;
 	'aria-describedby'?: string;
 	'aria-invalid'?: boolean;
-	'aria-labelledby'?: string;
 }) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const control = useControl({
@@ -244,7 +254,6 @@ export function FormRadioGroup({
 	className,
 	...props
 }: {
-	id: string;
 	name: string;
 	defaultValue?: string;
 	children: ReactNode;
@@ -291,7 +300,6 @@ export function FormRadioGroup({
 }
 
 export function FormSlider({
-	id,
 	name,
 	defaultValue,
 	min = 0,
@@ -299,7 +307,6 @@ export function FormSlider({
 	step = 1,
 	...props
 }: {
-	id: string;
 	name: string;
 	defaultValue?: string;
 	min?: number;
@@ -330,7 +337,6 @@ export function FormSlider({
 			/>
 			<Slider
 				ref={rootRef}
-				id={id}
 				min={min}
 				max={max}
 				step={step}
@@ -452,7 +458,6 @@ export function DatePicker({
 	defaultValue?: string;
 	'aria-describedby'?: string;
 	'aria-invalid'?: boolean;
-	'aria-labelledby'?: string;
 }) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const [open, setOpen] = useState(false);
@@ -521,7 +526,6 @@ export function InputOTP({
 	defaultValue?: string;
 	'aria-describedby'?: string;
 	'aria-invalid'?: boolean;
-	'aria-labelledby'?: string;
 }) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const control = useControl({
@@ -558,3 +562,159 @@ export function InputOTP({
 		</>
 	);
 }
+
+const forms = configureForms({
+	getConstraints,
+	shouldValidate: 'onBlur',
+	shouldRevalidate: 'onInput',
+	extendFieldMetadata(metadata) {
+		return {
+			get inputProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof InputGroupInput>>;
+			},
+			get textareaProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof Textarea>>;
+			},
+			get nativeSelectProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof NativeSelect>>;
+			},
+			get checkboxProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					value: 'on',
+					defaultChecked: metadata.defaultChecked,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof FormCheckbox>>;
+			},
+			get radioGroupProps() {
+				return {
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					'aria-labelledby': `${metadata.id}-label`,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof FormRadioGroup>>;
+			},
+			get radioItemProps() {
+				return {
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				};
+			},
+			get selectProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof FormSelect>>;
+			},
+			get comboboxProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof FormCombobox>>;
+			},
+			get sliderProps() {
+				return {
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					'aria-labelledby': `${metadata.id}-label`,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof FormSlider>>;
+			},
+			get switchProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					value: 'on',
+					defaultChecked: metadata.defaultChecked,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof FormSwitch>>;
+			},
+			get datePickerProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof DatePicker>>;
+			},
+			get multiComboboxProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultOptions,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof MultiCombobox>>;
+			},
+			get inputOTPProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-describedby': [metadata.descriptionId, metadata.ariaDescribedBy]
+						.filter(Boolean)
+						.join(' '),
+				} satisfies Partial<ComponentProps<typeof InputOTP>>;
+			},
+		};
+	},
+});
+
+// This module intentionally keeps the form configuration with its controls.
+// oxlint-disable-next-line react/only-export-components
+export const useForm = forms.useForm;

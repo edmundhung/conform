@@ -13,7 +13,8 @@ import {
 	FormSwitch,
 	InputOTP,
 	MultiCombobox,
-} from './components/form';
+	useForm,
+} from './forms';
 import { Button } from './components/ui/button';
 import {
 	Field,
@@ -37,7 +38,6 @@ import {
 } from './components/ui/native-select';
 import { RadioGroupItem } from './components/ui/radio-group';
 import { Textarea } from './components/ui/textarea';
-import { useForm } from './forms';
 
 const schema = coerceFormValue(
 	z.object({
@@ -189,7 +189,6 @@ export function App() {
 						<FormRadioGroup
 							{...fields.gender.radioGroupProps}
 							// Equivalent to:
-							// id={fields.gender.id}
 							// name={fields.gender.name}
 							// defaultValue={fields.gender.defaultValue}
 							// aria-labelledby={`${fields.gender.id}-label`}
@@ -244,9 +243,7 @@ export function App() {
 					</Field>
 
 					<Field data-invalid={fields.job.ariaInvalid}>
-						<FieldLabel id={`${fields.job.id}-label`} htmlFor={fields.job.id}>
-							Job
-						</FieldLabel>
+						<FieldLabel htmlFor={fields.job.id}>Job</FieldLabel>
 						<FormSelect
 							items={[
 								{ label: 'Developer', value: 'developer' },
@@ -258,7 +255,6 @@ export function App() {
 							// id={fields.job.id}
 							// name={fields.job.name}
 							// defaultValue={fields.job.defaultValue}
-							// aria-labelledby={`${fields.job.id}-label`}
 							// aria-invalid={fields.job.ariaInvalid}
 							// aria-describedby={[fields.job.descriptionId, fields.job.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
@@ -302,7 +298,6 @@ export function App() {
 							step={1}
 							{...fields.age.sliderProps}
 							// Equivalent to:
-							// id={fields.age.id}
 							// name={fields.age.name}
 							// defaultValue={fields.age.defaultValue}
 							// aria-labelledby={`${fields.age.id}-label`}
@@ -342,10 +337,7 @@ export function App() {
 					</Field>
 
 					<Field data-invalid={fields.dateOfBirth.ariaInvalid}>
-						<FieldLabel
-							id={`${fields.dateOfBirth.id}-label`}
-							htmlFor={fields.dateOfBirth.id}
-						>
+						<FieldLabel htmlFor={fields.dateOfBirth.id}>
 							Date of Birth
 						</FieldLabel>
 						<DatePicker
@@ -354,7 +346,6 @@ export function App() {
 							// id={fields.dateOfBirth.id}
 							// name={fields.dateOfBirth.name}
 							// defaultValue={fields.dateOfBirth.defaultValue}
-							// aria-labelledby={`${fields.dateOfBirth.id}-label`}
 							// aria-invalid={fields.dateOfBirth.ariaInvalid}
 							// aria-describedby={[fields.dateOfBirth.descriptionId, fields.dateOfBirth.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
@@ -367,12 +358,7 @@ export function App() {
 					</Field>
 
 					<Field data-invalid={fields.interests.ariaInvalid}>
-						<FieldLabel
-							id={`${fields.interests.id}-label`}
-							htmlFor={fields.interests.id}
-						>
-							Interests
-						</FieldLabel>
+						<FieldLabel htmlFor={fields.interests.id}>Interests</FieldLabel>
 						<MultiCombobox
 							items={[
 								{ label: 'React', value: 'react' },
@@ -387,7 +373,6 @@ export function App() {
 							// id={fields.interests.id}
 							// name={fields.interests.name}
 							// defaultValue={fields.interests.defaultOptions}
-							// aria-labelledby={`${fields.interests.id}-label`}
 							// aria-invalid={fields.interests.ariaInvalid}
 							// aria-describedby={[fields.interests.descriptionId, fields.interests.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
@@ -400,16 +385,13 @@ export function App() {
 					</Field>
 
 					<Field data-invalid={fields.code.ariaInvalid}>
-						<FieldLabel id={`${fields.code.id}-label`} htmlFor={fields.code.id}>
-							Code
-						</FieldLabel>
+						<FieldLabel htmlFor={fields.code.id}>Code</FieldLabel>
 						<InputOTP
 							{...fields.code.inputOTPProps}
 							// Equivalent to:
 							// id={fields.code.id}
 							// name={fields.code.name}
 							// defaultValue={fields.code.defaultValue}
-							// aria-labelledby={`${fields.code.id}-label`}
 							// aria-invalid={fields.code.ariaInvalid}
 							// aria-describedby={[fields.code.descriptionId, fields.code.ariaDescribedBy].filter(Boolean).join(' ')}
 						/>
