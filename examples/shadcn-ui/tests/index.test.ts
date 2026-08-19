@@ -74,7 +74,7 @@ test.describe('shadcn-ui', () => {
 	function dateInCurrentMonth(day: number) {
 		const now = new Date();
 		return new Date(
-			Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), day),
+			Date.UTC(now.getFullYear(), now.getMonth(), day),
 		).toISOString();
 	}
 
