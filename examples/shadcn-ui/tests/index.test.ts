@@ -177,6 +177,7 @@ test.describe('shadcn-ui', () => {
 		await controls.members.press('Enter');
 		await expect(page.locator('[data-slot="popover-content"]')).toBeVisible();
 		await controls.members.press('Escape');
+		await expect(page.locator('[data-slot="popover-content"]')).toBeHidden();
 		await controls.selectMember('Alice Chen');
 
 		await controls.submitButton.click();
