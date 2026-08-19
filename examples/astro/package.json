@@ -10,7 +10,7 @@
 		"test": "playwright test"
 	},
 	"dependencies": {
-		"@astrojs/node": "^10.0.5",
+		"@astrojs/node": "^11.1.2",
 		"@astrojs/react": "^5.0.0",
 		"@conform-to/react": "workspace:*",
 		"@conform-to/zod": "workspace:*",
