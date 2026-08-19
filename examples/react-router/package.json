@@ -24,7 +24,7 @@
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {
-		"@playwright/test": "1.49.1",
+		"@playwright/test": "1.62.1",
 		"@react-router/dev": "8.2.0",
 		"@types/node": "^22",
 		"@types/react": "^19.2.17",

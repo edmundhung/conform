@@ -28,5 +28,10 @@ updates:
       default-days: 3
     open-pull-requests-limit: 3
     rebase-strategy: auto
+    groups:
+      playwright:
+        patterns:
+          - 'playwright'
+          - '@playwright/test'
     commit-message:
       prefix: 'chore(deps)'
