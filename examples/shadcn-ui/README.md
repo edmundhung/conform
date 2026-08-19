@@ -26,8 +26,7 @@ Conform remains the source of validation and form state, while shadcn/ui supplie
 ## Project Structure
 
 - [`App.tsx`](./src/App.tsx) contains the form and keeps useful explicit Conform prop mappings in nearby comments.
-- [`form-controls.tsx`](./src/components/form-controls.tsx) contains the shadcn/Radix adapters.
-- [`forms.ts`](./src/forms.ts) uses [`configureForms`](../../docs/api/react/future/configureForms.md#integrating-with-ui-libraries) to expose those mappings as typed field props.
+- [`forms.tsx`](./src/forms.tsx) contains the shadcn/Radix adapters and uses [`configureForms`](../../docs/api/react/future/configureForms.md#integrating-with-ui-libraries) to expose their mappings as typed field props.
 - [`tests/index.test.ts`](./tests/index.test.ts) verifies validation, focus delegation, submission, updated defaults, and reset behavior.
 
 ## Demo

@@ -5,17 +5,25 @@ import {
 	ChevronsUpDown as ChevronsUpDownIcon,
 	X as XIcon,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
-import { BaseControl, useControl } from '@conform-to/react/future';
-import { coerceStructure } from '@conform-to/zod/v4/future';
+import { useRef, useState, type ComponentProps } from 'react';
+import {
+	BaseControl,
+	configureForms,
+	useControl,
+} from '@conform-to/react/future';
+import { coerceStructure, getConstraints } from '@conform-to/zod/v4/future';
 import { z } from 'zod/v4';
-import { Button } from './ui/button';
-import { Calendar } from './ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Button } from './components/ui/button';
+import { Calendar } from './components/ui/calendar';
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from './components/ui/popover';
 import {
 	RadioGroup as ShadcnRadioGroup,
 	RadioGroupItem,
-} from './ui/radio-group';
+} from './components/ui/radio-group';
 import {
 	Command,
 	CommandEmpty,
@@ -23,28 +31,28 @@ import {
 	CommandInput,
 	CommandItem,
 	CommandList,
-} from './ui/command';
+} from './components/ui/command';
 import {
 	SelectTrigger,
 	Select as ShadcnSelect,
 	SelectValue,
 	SelectContent,
 	SelectItem,
-} from './ui/select';
+} from './components/ui/select';
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from 'input-otp';
 import {
 	InputOTP as ShadcnInputOTP,
 	InputOTPGroup,
 	InputOTPSlot,
-} from './ui/input-otp';
+} from './components/ui/input-otp';
 import {
 	ToggleGroup as ShadcnToggleGroup,
 	ToggleGroupItem,
-} from './ui/toggle-group';
-import { Switch as ShadcnSwitch } from './ui/switch';
-import { Slider as ShadcnSlider } from './ui/slider';
-import { Checkbox as ShadcnCheckbox } from './ui/checkbox';
-import { cn } from '../lib/utils';
+} from './components/ui/toggle-group';
+import { Switch as ShadcnSwitch } from './components/ui/switch';
+import { Slider as ShadcnSlider } from './components/ui/slider';
+import { Checkbox as ShadcnCheckbox } from './components/ui/checkbox';
+import { cn } from './lib/utils';
 import {
 	Field,
 	FieldDescription,
@@ -53,17 +61,20 @@ import {
 	FieldLabel,
 	FieldLegend,
 	FieldSet,
-} from './ui/field';
-import { Input } from './ui/input';
+} from './components/ui/field';
+import { Input } from './components/ui/input';
 import {
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
 	InputGroupText,
 	InputGroupTextarea,
-} from './ui/input-group';
-import { NativeSelect, NativeSelectOption } from './ui/native-select';
-import { Textarea } from './ui/textarea';
+} from './components/ui/input-group';
+import {
+	NativeSelect,
+	NativeSelectOption,
+} from './components/ui/native-select';
+import { Textarea } from './components/ui/textarea';
 
 export type DatePickerProps = {
 	id?: string;
@@ -686,6 +697,7 @@ function InputOTP({
 	);
 }
 
+// oxlint-disable-next-line react/only-export-components
 export const memberSchema = z.object({
 	id: z.string(),
 	name: z.string(),
@@ -877,6 +889,144 @@ function TeamMemberSelect({
 	);
 }
 
+const forms = configureForms({
+	getConstraints,
+	shouldValidate: 'onBlur',
+	shouldRevalidate: 'onInput',
+	extendFieldMetadata(metadata) {
+		const getAriaDescribedBy = () =>
+			[metadata.descriptionId, metadata.ariaDescribedBy]
+				.filter(Boolean)
+				.join(' ');
+
+		return {
+			get inputProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					'aria-describedby': getAriaDescribedBy(),
+					'aria-invalid': metadata.ariaInvalid,
+				} satisfies Partial<ComponentProps<'input'>>;
+			},
+			get textareaProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					'aria-describedby': getAriaDescribedBy(),
+					'aria-invalid': metadata.ariaInvalid,
+				} satisfies Partial<ComponentProps<'textarea'>>;
+			},
+			get datePickerProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					'aria-describedby': getAriaDescribedBy(),
+					'aria-invalid': metadata.ariaInvalid,
+				} satisfies Partial<ComponentProps<typeof DatePicker>>;
+			},
+			get comboBoxProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					'aria-describedby': getAriaDescribedBy(),
+					'aria-invalid': metadata.ariaInvalid,
+				} satisfies Partial<ComponentProps<typeof ComboBox>>;
+			},
+			get radioGroupProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					'aria-describedby': getAriaDescribedBy(),
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-labelledby': `${metadata.id}-label`,
+				} satisfies Partial<ComponentProps<typeof RadioGroup>>;
+			},
+			get checkboxProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					value: 'on',
+					defaultChecked: metadata.defaultChecked,
+					'aria-describedby': getAriaDescribedBy(),
+					'aria-invalid': metadata.ariaInvalid,
+				} satisfies Partial<ComponentProps<typeof Checkbox>>;
+			},
+			get selectProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					'aria-describedby': getAriaDescribedBy(),
+					'aria-invalid': metadata.ariaInvalid,
+				} satisfies Partial<ComponentProps<typeof Select>>;
+			},
+			get sliderProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					'aria-describedby': getAriaDescribedBy(),
+					'aria-invalid': metadata.ariaInvalid,
+					'aria-labelledby': `${metadata.id}-label`,
+				} satisfies Partial<ComponentProps<typeof Slider>>;
+			},
+			get switchProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					value: 'on',
+					defaultChecked: metadata.defaultChecked,
+					'aria-describedby': getAriaDescribedBy(),
+					'aria-invalid': metadata.ariaInvalid,
+				} satisfies Partial<ComponentProps<typeof Switch>>;
+			},
+			get singleToggleGroupProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					'aria-labelledby': `${metadata.id}-label`,
+					'aria-describedby': getAriaDescribedBy(),
+					'aria-invalid': metadata.ariaInvalid,
+				} satisfies Partial<ComponentProps<typeof SingleToggleGroup>>;
+			},
+			get multiToggleGroupProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultOptions,
+					'aria-labelledby': `${metadata.id}-label`,
+					'aria-describedby': getAriaDescribedBy(),
+					'aria-invalid': metadata.ariaInvalid,
+				} satisfies Partial<ComponentProps<typeof MultiToggleGroup>>;
+			},
+			get inputOTPProps() {
+				return {
+					id: metadata.id,
+					name: metadata.name,
+					defaultValue: metadata.defaultValue,
+					'aria-describedby': getAriaDescribedBy(),
+					'aria-invalid': metadata.ariaInvalid,
+				} satisfies Partial<ComponentProps<typeof InputOTP>>;
+			},
+			get teamMemberSelectProps() {
+				return {
+					name: metadata.name,
+					defaultValue: metadata.defaultPayload,
+					'aria-labelledby': metadata.id,
+					'aria-describedby': getAriaDescribedBy(),
+					'aria-invalid': metadata.ariaInvalid,
+				} satisfies Partial<ComponentProps<typeof TeamMemberSelect>>;
+			},
+		};
+	},
+});
+
 export {
 	Field,
 	FieldDescription,
@@ -905,3 +1055,7 @@ export {
 	InputOTP,
 	TeamMemberSelect,
 };
+
+// This module intentionally keeps the form configuration with its controls.
+// oxlint-disable-next-line react/only-export-components
+export const useForm = forms.useForm;
