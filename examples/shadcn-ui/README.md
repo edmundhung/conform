@@ -1,80 +1,38 @@
-# Shadcn UI Example
+# shadcn/ui with Radix
 
-[Shadcn UI](https://ui.shadcn.com/) is a comprehensive component library built with React. It provides a wide range of pre-built components that can be easily integrated into your projects.
+[shadcn/ui](https://ui.shadcn.com/) provides component source code that applications can adapt directly. This Vite React project uses its current [Radix UI](https://www.radix-ui.com/) registry with React 19, Tailwind CSS 4, Conform, and Zod 4 validation through `@conform-to/zod/v4/future`. It is the direct counterpart to the Base UI-based [`shadcn-base-ui`](../shadcn-base-ui) example.
 
-This example demonstrates how to integrate Conform with Shadcn UI using custom metadata. We leverage [Vite](https://vitejs.dev/) and [Tailwind CSS](https://tailwindcss.com/) for styling.
+For a lower-level integration with Radix primitives, see the [`radix-ui`](../radix-ui) example. This example focuses on the generated shadcn/ui component layer, including Field, InputGroup, DatePicker, toggle groups, InputOTP, and TeamMemberSelect composition.
 
-## Understanding the Integration
+## Integration
 
-The main application ([`App.tsx`](./src/App.tsx)) uses explicit prop assignment for educational purposes, making it easy to see how field metadata maps to Shadcn UI component props:
+When a component renders a normal form control, the example passes Conform's field props directly to it. InputGroupInput (composed from Input) and Textarea receive their name, default value, and validation attributes this way. NativeSelect is also native, although this form uses it only as TeamMemberSelect's local role filter.
 
-```tsx
-<Input
-  id={fields.email.id}
-  name={fields.email.name}
-  defaultValue={fields.email.defaultValue}
-  aria-invalid={!fields.email.valid || undefined}
-  aria-describedby={!fields.email.valid ? fields.email.errorId : undefined}
-/>
-```
+Compound controls use [`useControl`](../../docs/api/react/future/useControl.md) with a [`BaseControl`](../../docs/api/react/future/BaseControl.md). This covers DatePicker, Combobox, RadioGroup, Checkbox, Select, Slider, Switch, toggle groups, InputOTP, and TeamMemberSelect. The base control is the only named form control; the visible Radix primitive stays controlled through `control.value`, `control.checked`, `control.options`, or `control.payload` and reports changes through `control.change()`.
 
-While this is clear and straightforward for learning, it becomes repetitive in production applications.
+The adapters preserve initial and updated defaults, restore visible state on reset, and forward validation focus from BaseControl to the interactive trigger, item, thumb, or input. Group and popup controls report blur only when the interaction leaves the whole control. Scalar values use a standard BaseControl, Checkbox and Switch use its checkbox mode, the multiple toggle group uses a multiple select, and TeamMemberSelect uses a fieldset for its structured payload.
 
-## Custom Metadata
+Radix primitives that can render hidden inputs are left unnamed to avoid duplicate `FormData` entries. The accessible element receives the field label, invalid state, and error description. See [Integrating with UI Libraries](../../docs/integration/ui-libraries.md) for the general pattern.
 
-The example showcases metadata customization for a more DRY approach. Check [`forms.ts`](./src/forms.ts) to see how custom metadata is configured using `configureForms`:
+| Pattern | Components | Form integration |
+| --- | --- | --- |
+| Native form control | Input, Textarea | The interactive element owns the name and serialization |
+| Unnamed compound control | DatePicker, Combobox, RadioGroup, Checkbox, Select, Slider, Switch, toggle groups, InputOTP, TeamMemberSelect | The generated component handles interaction and accessible focus |
+| `useControl` with `BaseControl` | Scalar and boolean compound controls | A hidden input or checkbox owns scalar and boolean values |
+| Array or structured `BaseControl` | Multiple toggle group, repeated interests, TeamMemberSelect | A multiple select, repeated checkboxes, or fieldset serializes arrays and structured values |
 
-```tsx
-import { configureForms } from '@conform-to/react/future';
+Conform remains the source of validation and form state, while shadcn/ui supplies field layout and styled interaction. The application keeps its native `<form {...form.props}>`.
 
-const result = configureForms({
-  extendFieldMetadata(metadata) {
-    return {
-      get inputProps() {
-        return {
-          id: metadata.id,
-          name: metadata.name,
-          defaultValue: metadata.defaultValue,
-          'aria-describedby': metadata.ariaDescribedBy,
-        } satisfies Partial<React.ComponentProps<'input'>>;
-      },
-      // ... other component props
-    };
-  },
-});
+## Project Structure
 
-export const useForm = result.useForm;
-```
-
-Then use the custom metadata with full type safety:
-
-```tsx
-<Input {...fields.email.inputProps} />
-```
-
-This example also includes form components in [`src/components/form.tsx`](./src/components/form.tsx) that extend the base Shadcn components, making it even easier to build complex forms with full validation and error handling.
-
-## Installation
-
-To install Shadcn UI components, you can copy and paste the component code into your project, or use the Shadcn UI CLI to automatically add components. By default, the CLI places components into the `src/components/ui` folder.
-
-## Components
-
-- Checkbox
-- Checkbox group
-- Combobox
-- Date picker
-- Radio group
-- Select
-- Slider
-- Switch
-- Textarea
-- Toggle group
+- [`App.tsx`](./src/App.tsx) contains the form and keeps useful explicit Conform prop mappings in nearby comments.
+- [`forms.tsx`](./src/forms.tsx) contains the shadcn/Radix adapters and uses [`configureForms`](../../docs/api/react/future/configureForms.md#integrating-with-ui-libraries) to expose their mappings as typed field props.
+- [`tests/index.test.ts`](./tests/index.test.ts) verifies validation, focus delegation, submission, updated defaults, and reset behavior.
 
 ## Demo
 
 <!-- sandbox src="/examples/shadcn-ui" -->
 
-Try it out on [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/shadcn-ui).
+Try it out on [StackBlitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/shadcn-ui).
 
 <!-- /sandbox -->
