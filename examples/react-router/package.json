@@ -30,7 +30,7 @@
 		"@types/react": "^19.2.17",
 		"@types/react-dom": "^19.2.3",
 		"typescript": "^5.9.3",
-		"vite": "^8.0.3"
+		"vite": "^8.2.0"
 	},
 	"dependenciesMeta": {
 		"@conform-to/react": {
