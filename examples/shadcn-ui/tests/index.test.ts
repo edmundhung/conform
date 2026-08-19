@@ -25,7 +25,10 @@ test.describe('shadcn-ui', () => {
 			country,
 			async selectCountry(name: string) {
 				await country.click();
-				await page.getByText(name, { exact: true }).click();
+				await page
+					.locator('[data-slot="popover-content"]')
+					.getByRole('option', { name, exact: true })
+					.click();
 			},
 			gender: form.getByRole('radiogroup', { name: 'Gender' }),
 			agreeToTerms: form.getByLabel('Agree to terms'),
@@ -43,7 +46,11 @@ test.describe('shadcn-ui', () => {
 			members,
 			async selectMember(name: string) {
 				await members.click();
-				await page.getByText(name, { exact: true }).click();
+				await page
+					.locator('[data-slot="popover-content"]')
+					.getByRole('option')
+					.filter({ has: page.getByText(name, { exact: true }) })
+					.click();
 				await members.press('Escape');
 			},
 			async removeMember(name: string) {
@@ -72,6 +79,18 @@ test.describe('shadcn-ui', () => {
 	}
 
 	test('validation and submission', async ({ page }) => {
+		const malformedControls = await getForm(
+			page,
+			new URLSearchParams([
+				['dateOfBirth', 'invalid'],
+				['members[0].role', 'invalid'],
+			]),
+		);
+		await expect(malformedControls.dateOfBirth).toHaveText('Pick a date');
+		await expect(malformedControls.members).toContainText(
+			'Select team members',
+		);
+
 		const controls = await getForm(page);
 		const genderItems = controls.gender.getByRole('radio');
 
@@ -155,6 +174,9 @@ test.describe('shadcn-ui', () => {
 		await expect(controls.members).toHaveAccessibleDescription(
 			'A fieldset BaseControl serializes the selected members as a structured array. Invalid input',
 		);
+		await controls.members.press('Enter');
+		await expect(page.locator('[data-slot="popover-content"]')).toBeVisible();
+		await controls.members.press('Escape');
 		await controls.selectMember('Alice Chen');
 
 		await controls.submitButton.click();

@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import {
 	Calendar as CalendarIcon,
 	Check as CheckIcon,
@@ -83,6 +83,9 @@ function DatePicker({ name, defaultValue, ...props }: DatePickerProps) {
 			triggerRef.current?.focus();
 		},
 	});
+	const parsedDate = control.value ? new Date(control.value) : undefined;
+	const selectedDate =
+		parsedDate && isValid(parsedDate) ? parsedDate : undefined;
 
 	return (
 		<>
@@ -111,8 +114,8 @@ function DatePicker({ name, defaultValue, ...props }: DatePickerProps) {
 						)}
 					>
 						<CalendarIcon className="mr-2 h-4 w-4" />
-						{control.value ? (
-							format(new Date(control.value), 'PPP')
+						{selectedDate ? (
+							format(selectedDate, 'PPP')
 						) : (
 							<span>Pick a date</span>
 						)}
@@ -121,7 +124,7 @@ function DatePicker({ name, defaultValue, ...props }: DatePickerProps) {
 				<PopoverContent className="w-auto p-0">
 					<Calendar
 						mode="single"
-						selected={control.value ? new Date(control.value) : undefined}
+						selected={selectedDate}
 						onSelect={(value) => {
 							control.change(value?.toISOString() ?? '');
 							setOpen(false);
@@ -716,7 +719,9 @@ function TeamMemberSelect({
 	const control = useControl({
 		defaultValue,
 		parse(payload) {
-			return structuredMembersSchema.parse(payload);
+			const result = structuredMembersSchema.safeParse(payload);
+
+			return result.success ? result.data : [];
 		},
 		onFocus() {
 			triggerRef.current?.focus();
@@ -767,6 +772,15 @@ function TeamMemberSelect({
 						role="combobox"
 						tabIndex={0}
 						aria-expanded={open}
+						onKeyDown={(event) => {
+							if (
+								event.target === event.currentTarget &&
+								(event.key === 'Enter' || event.key === ' ')
+							) {
+								event.preventDefault();
+								event.currentTarget.click();
+							}
+						}}
 						className={cn(
 							'h-auto min-h-8 cursor-pointer py-1.5',
 							selected.length === 0 && 'text-muted-foreground',
