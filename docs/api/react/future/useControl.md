@@ -303,7 +303,7 @@ function DateRangeField(props: { name: string }) {
 }
 ```
 
-The fieldset descendants follow `control.defaultValue`. Both Conform resets and native `form.reset()` calls restore the original structured value automatically.
+The fieldset descendants follow `control.defaultValue`. Both Conform resets and native `form.reset()` calls restore the current structured default automatically.
 
 ## Tips
 
