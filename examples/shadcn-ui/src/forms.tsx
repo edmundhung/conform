@@ -897,7 +897,7 @@ const forms = configureForms({
 		const getAriaDescribedBy = () =>
 			[metadata.descriptionId, metadata.ariaDescribedBy]
 				.filter(Boolean)
-				.join(' ');
+				.join(' ') || undefined;
 
 		return {
 			get inputProps() {

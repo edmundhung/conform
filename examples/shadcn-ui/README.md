@@ -18,7 +18,7 @@ Radix primitives that can render hidden inputs are left unnamed to avoid duplica
 | --- | --- | --- |
 | Native form control | Input, Textarea | The interactive element owns the name and serialization |
 | Unnamed compound control | DatePicker, Combobox, RadioGroup, Checkbox, Select, Slider, Switch, toggle groups, InputOTP, TeamMemberSelect | The generated component handles interaction and accessible focus |
-| `useControl` with `BaseControl` | All compound controls above | A hidden input or checkbox owns scalar and boolean values |
+| `useControl` with `BaseControl` | Scalar and boolean compound controls | A hidden input or checkbox owns scalar and boolean values |
 | Array or structured `BaseControl` | Multiple toggle group, repeated interests, TeamMemberSelect | A multiple select, repeated checkboxes, or fieldset serializes arrays and structured values |
 
 Conform remains the source of validation and form state, while shadcn/ui supplies field layout and styled interaction. The application keeps its native `<form {...form.props}>`.
