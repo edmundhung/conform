@@ -23,7 +23,7 @@
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20240419.0",
-		"@octokit/types": "^12.4.0",
+		"@octokit/types": "^17.0.0",
 		"@remix-run/dev": "^2.5.1",
 		"@tailwindcss/forms": "^0.5.7",
 		"@tailwindcss/typography": "^0.5.10",
