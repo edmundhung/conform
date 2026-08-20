@@ -28,10 +28,38 @@ updates:
       default-days: 3
     open-pull-requests-limit: 3
     rebase-strategy: auto
+    # Keep packages that must use the same version in one pull request.
     groups:
       playwright:
         patterns:
           - 'playwright'
           - '@playwright/test'
+      react:
+        patterns:
+          - 'react'
+          - 'react-dom'
+      react-router:
+        patterns:
+          - 'react-router'
+          - '@react-router/dev'
+          - '@react-router/node'
+          - '@react-router/serve'
+      remix:
+        patterns:
+          - '@remix-run/cloudflare'
+          - '@remix-run/cloudflare-pages'
+          - '@remix-run/dev'
+          - '@remix-run/node'
+          - '@remix-run/react'
+          - '@remix-run/serve'
+      tailwindcss:
+        patterns:
+          - 'tailwindcss'
+          - '@tailwindcss/vite'
+      vitest:
+        patterns:
+          - 'vitest'
+          - '@vitest/browser'
+          - '@vitest/browser-playwright'
     commit-message:
       prefix: 'chore(deps)'
