@@ -37,6 +37,7 @@ export type {
 } from './types';
 export {
 	configureForms,
+	FormBoundary,
 	FormProvider,
 	useForm,
 	useFormMetadata,
