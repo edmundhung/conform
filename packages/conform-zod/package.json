@@ -78,11 +78,11 @@
 		"@babel/preset-typescript": "^7.20.2",
 		"@rollup/plugin-babel": "^5.3.1",
 		"@rollup/plugin-node-resolve": "^16.0.3",
-		"@vitest/browser-playwright": "^4.1.5",
+		"@vitest/browser-playwright": "^4.1.10",
 		"playwright": "^1.62.1",
 		"rollup": "^2.80.0",
 		"rollup-plugin-copy": "^3.4.0",
-		"vitest": "^4.1.5",
+		"vitest": "^4.1.10",
 		"zod": "^3.25.75",
 		"zod-v4": "npm:zod@^4.4.3"
 	},

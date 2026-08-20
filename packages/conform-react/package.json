@@ -62,14 +62,14 @@
 		"@rollup/plugin-node-resolve": "^16.0.3",
 		"@types/react": "^18.2.43",
 		"@types/react-dom": "^18.3.5",
-		"@vitest/browser-playwright": "^4.1.5",
+		"@vitest/browser-playwright": "^4.1.10",
 		"playwright": "^1.62.1",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
 		"rollup-plugin-copy": "^3.4.0",
 		"rollup": "^2.80.0",
 		"typescript": "^5.8.3",
-		"vitest": "^4.1.5",
+		"vitest": "^4.1.10",
 		"vitest-browser-react": "^1.0.1"
 	},
 	"peerDependencies": {
