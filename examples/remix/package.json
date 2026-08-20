@@ -13,7 +13,7 @@
 		"@conform-to/zod": "1.21.1",
 		"@remix-run/node": "^1.19.3",
 		"@remix-run/react": "^1.19.3",
-		"@remix-run/serve": "^1.19.3",
+		"@remix-run/serve": "^2.17.5",
 		"clsx": "^1.2.0",
 		"isbot": "^3",
 		"react": "^18.2.0",
