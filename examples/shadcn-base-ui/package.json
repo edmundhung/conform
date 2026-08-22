@@ -13,8 +13,8 @@
 	},
 	"dependencies": {
 		"@base-ui/react": "^1.7.0",
-		"@conform-to/react": "1.21.0",
-		"@conform-to/zod": "1.21.0",
+		"@conform-to/react": "1.21.1",
+		"@conform-to/zod": "1.21.1",
 		"@fontsource-variable/geist": "5.2.9",
 		"@tailwindcss/vite": "^4",
 		"class-variance-authority": "^0.7.1",
