@@ -27,6 +27,6 @@ export default defineConfig({
 		command: 'pnpm run build && pnpm run preview --port 5681',
 		port: 5681,
 		reuseExistingServer: !process.env.CI,
-		timeout: 30000,
+		timeout: 120000,
 	},
 });

@@ -15,5 +15,12 @@ allowBuilds:
 
 linkWorkspacePackages: true
 
+hoistPattern:
+  - '*'
+  - '!@types/react'
+  - '!@types/react-dom'
+  - '!react'
+  - '!react-dom'
+
 syncInjectedDepsAfterScripts:
   - build

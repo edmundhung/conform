@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 const schema = coerceFormValue(
 	z.object({
-		title: z.string().min(1, 'Title is required'),
+		title: z.string({ error: 'Title is required' }),
 		file: z.file({ error: 'File is required' }),
 	}),
 );

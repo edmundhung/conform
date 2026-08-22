@@ -30,8 +30,8 @@ export function validateLogin(
 	}
 
 	if (
-		error.formErrors.length === 0 &&
-		Object.values(error.fieldErrors).every((message) => message.length === 0)
+		!error.formErrors?.length &&
+		Object.values(error.fieldErrors).every((message) => !message?.length)
 	) {
 		return null;
 	}

@@ -8,14 +8,14 @@ export const Route = createFileRoute('/')({
 });
 
 function parseJson(value: string | undefined): unknown {
-	if (!value) {
-		return null;
+	if (value === undefined) {
+		return undefined;
 	}
 
 	try {
 		return JSON.parse(value);
 	} catch {
-		return null;
+		return undefined;
 	}
 }
 
@@ -23,7 +23,7 @@ function Home() {
 	const { value } = Route.useSearch();
 	const submittedValue = parseJson(value);
 
-	if (submittedValue === null) {
+	if (submittedValue === undefined) {
 		return null;
 	}
 

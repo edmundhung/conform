@@ -1,6 +1,6 @@
 # Astro Example
 
-This example demonstrates how to integrate Conform with [Astro Actions](https://docs.astro.build/en/guides/actions/) and a hydrated React island.
+This Astro 7 project is based on the current [`create astro`](https://docs.astro.build/en/install-and-setup/) minimal template. It demonstrates how to integrate Conform with [Astro Actions](https://docs.astro.build/en/guides/actions/) and a hydrated React island.
 
 - [Basic form with manual validation](./src/pages/login.astro)
 - [Async validation](./src/pages/signup.astro) ([with async schema](./src/pages/signup-async-schema.astro))

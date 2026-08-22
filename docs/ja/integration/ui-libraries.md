@@ -85,9 +85,9 @@ function MyInput({ name, defaultValue }) {
 
 一般的なUIライブラリと統合する際の例をいくつか紹介します。
 
+- [Base UI](../../examples/base-ui/)、または [shadcn/ui](../../examples/shadcn-base-ui/) 経由
+- [Radix UI](../../examples/radix-ui/)、または [shadcn/ui](../../examples/shadcn-ui/) 経由
 - [React Aria Components](../../examples/react-aria/)
-- [Shadcn UI](../../examples/shadcn-ui/)
-- [Radix UI](../../examples/radix-ui/)
 - [Chakra UI](../../examples/chakra-ui/)
 - [Headless UI](../../examples/headless-ui/)
 - [Material UI](../../examples/material-ui/)

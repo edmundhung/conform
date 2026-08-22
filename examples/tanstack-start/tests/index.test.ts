@@ -1,6 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 
 test.describe('tanstack-start', () => {
+	test('renders a submitted null value', async ({ page }) => {
+		await page.goto('/?value=%22null%22');
+
+		await expect(page.locator('pre')).toHaveText('null');
+	});
+
 	test.describe('login', () => {
 		async function getForm(page: Page) {
 			await page.goto('/login');
@@ -157,7 +163,7 @@ test.describe('tanstack-start', () => {
 			await expect(page.getByLabel('Task #1')).toHaveValue('Task C');
 			await expect(page.getByLabel('Task #2')).toHaveValue('Task B');
 
-			await page.reload({ waitUntil: 'networkidle' });
+			await page.reload();
 			await expect(form.title).toHaveValue('My Todo List');
 			await expect(page.getByLabel('Task #1')).toHaveValue('Task C');
 			await expect(page.getByLabel('Task #2')).toHaveValue('Task B');
@@ -165,6 +171,14 @@ test.describe('tanstack-start', () => {
 	});
 
 	test.describe('file-upload', () => {
+		test('required validation', async ({ page }) => {
+			await page.goto('/file-upload');
+			const title = page.getByLabel('Title');
+
+			await page.getByRole('button', { name: 'Submit' }).click();
+			await expect(title).toHaveAccessibleDescription('Title is required');
+		});
+
 		test('submit', async ({ page }) => {
 			await page.goto('/file-upload');
 
