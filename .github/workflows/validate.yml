@@ -92,14 +92,17 @@ jobs:
         run: |
           pnpm --filter nextjs-example exec next typegen
           pnpm --filter react-router-example exec react-router typegen
+      - name: Check Astro
+        run: pnpm --filter astro-example run check
       - name: Typecheck examples
-        # Astro supports TypeScript 5 only and the legacy Remix example will be removed.
+        # The legacy Remix example will be removed.
         env:
           TYPESCRIPT_SPEC: ${{ matrix.typescript }}
         run: |
           pnpm --package="typescript@$TYPESCRIPT_SPEC" dlx tsc --version
           pnpm --package="typescript@$TYPESCRIPT_SPEC" dlx tsc \
             --build \
+            examples/astro \
             examples/chakra-ui \
             examples/headless-ui \
             examples/material-ui \
