@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 test.describe('tanstack-start', () => {
 	test('renders a submitted null value', async ({ page }) => {
-		await page.goto('/?value=%22null%22');
+		await page.goto('/?value=null');
 
 		await expect(page.locator('pre')).toHaveText('null');
 	});
