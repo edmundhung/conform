@@ -674,11 +674,11 @@ importers:
         specifier: ^1.7.0
         version: 1.7.0(@date-fns/tz@1.5.0)(@types/react@19.2.17)(date-fns@4.4.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@conform-to/react':
-        specifier: 1.21.0
-        version: 1.21.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: 1.21.1
+        version: file:packages/conform-react(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@conform-to/zod':
-        specifier: 1.21.0
-        version: 1.21.0(zod@4.4.3)
+        specifier: 1.21.1
+        version: file:packages/conform-zod(zod@4.4.3)
       '@fontsource-variable/geist':
         specifier: 5.2.9
         version: 5.2.9
@@ -2381,25 +2381,11 @@ packages:
   '@cloudflare/workers-types@4.20240502.0':
     resolution: {integrity: sha512-OB1jIyPOzyOcuZFHWhsQnkRLN6u8+jmU9X3T4KZlGgn3Ivw8pBiswhLOp+yFeChR3Y4/5+V0hPFRko5SReordg==}
 
-  '@conform-to/dom@1.21.0':
-    resolution: {integrity: sha512-Z4mZkWfFpKjD7/yDOPu/NFp2UEW3+Cc62Ox3WCyJI2kUcUILYrXfwwm9l0n+/+xBtMbDHatAPKMLaFMpJ0ajEQ==}
-
-  '@conform-to/react@1.21.0':
-    resolution: {integrity: sha512-DIjEHrxzwhzIORvU+/7VLXZn6V6LdDThzgDb+1MlPZPVdMJqaHVwQxH6LJ1zeAb40LnSitqBR6s0xxmsaghULg==}
-    peerDependencies:
-      react: '>=18'
-      react-dom: '>=18'
-
   '@conform-to/react@file:packages/conform-react':
     resolution: {directory: packages/conform-react, type: directory}
     peerDependencies:
       react: '>=18'
       react-dom: '>=18'
-
-  '@conform-to/zod@1.21.0':
-    resolution: {integrity: sha512-TN0tDFC+A5AXpkGXV43J3aTjGIwvidHzlPgpfJxcyZzJwWdsh5K0hBSuGA7ZfK/i7x/yAAC8zY/FVoO8VKIaJA==}
-    peerDependencies:
-      zod: ^3.21.0 || ^4.0.0
 
   '@conform-to/zod@file:packages/conform-zod':
     resolution: {directory: packages/conform-zod, type: directory}
@@ -14299,24 +14285,11 @@ snapshots:
 
   '@cloudflare/workers-types@4.20240502.0': {}
 
-  '@conform-to/dom@1.21.0': {}
-
-  '@conform-to/react@1.21.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      '@conform-to/dom': 1.21.0
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
-
   '@conform-to/react@file:packages/conform-react(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
       '@conform-to/dom': link:packages/conform-dom
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
-
-  '@conform-to/zod@1.21.0(zod@4.4.3)':
-    dependencies:
-      '@conform-to/dom': 1.21.0
-      zod: 4.4.3
 
   '@conform-to/zod@file:packages/conform-zod(zod@4.4.3)':
     dependencies:
