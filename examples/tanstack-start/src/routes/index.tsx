@@ -1,9 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/')({
-	validateSearch: (search: Record<string, unknown>) => ({
-		value: typeof search.value === 'string' ? search.value : undefined,
-	}),
+	validateSearch: (search: Record<string, unknown>) => {
+		const value = search.value;
+
+		return {
+			value:
+				typeof value === 'string' || value === null ? String(value) : undefined,
+		};
+	},
 	component: Home,
 });
 

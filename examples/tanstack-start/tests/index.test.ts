@@ -1,6 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 
 test.describe('tanstack-start', () => {
+	test('renders a submitted null value', async ({ page }) => {
+		await page.goto('/?value=null');
+
+		await expect(page.locator('pre')).toHaveText('null');
+	});
+
 	test.describe('login', () => {
 		async function getForm(page: Page) {
 			await page.goto('/login');
