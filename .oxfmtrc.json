@@ -33,7 +33,8 @@
 		"!rollup.config.js",
 		"/packages/**/*.js",
 		"/packages/**/*.mjs",
-		"/guide/functions/"
+		"/guide/functions/",
+		"/examples/tanstack-start/src/routeTree.gen.ts"
 	],
 	"overrides": [
 		{
