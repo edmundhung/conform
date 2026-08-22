@@ -1,11 +1,15 @@
+// @ts-check
 import { defineConfig } from 'astro/config';
-import node from '@astrojs/node';
-import react from '@astrojs/react';
 
+import react from '@astrojs/react';
+import node from '@astrojs/node';
+
+// https://astro.build/config
 export default defineConfig({
 	output: 'server',
+	integrations: [react()],
+
 	adapter: node({
 		mode: 'standalone',
 	}),
-	integrations: [react()],
 });

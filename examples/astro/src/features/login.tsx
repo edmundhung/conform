@@ -14,7 +14,10 @@ type LoginFormProps = {
 export function validateLogin(
 	value: Record<string, unknown>,
 ): FormError | null {
-	const error: FormError = {
+	const error: {
+		formErrors: string[];
+		fieldErrors: Record<string, string[]>;
+	} = {
 		formErrors: [],
 		fieldErrors: {},
 	};
