@@ -85,9 +85,9 @@ If the same field metadata is repeatedly mapped to your custom component props, 
 
 We've prepared examples for integrating with popular UI libraries:
 
+- [Base UI](../../examples/base-ui/), or via [shadcn/ui](../../examples/shadcn-base-ui/)
+- [Radix UI](../../examples/radix-ui/), or via [shadcn/ui](../../examples/shadcn-ui/)
 - [React Aria Components](../../examples/react-aria/)
-- [Shadcn UI](../../examples/shadcn-ui/)
-- [Radix UI](../../examples/radix-ui/)
 - [Chakra UI](../../examples/chakra-ui/)
 - [Headless UI](../../examples/headless-ui/)
 - [Material UI](../../examples/material-ui/)
