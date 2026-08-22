@@ -1,0 +1,27 @@
+main {
+	max-width: 600px;
+	margin: 0 auto;
+}
+
+hr {
+	margin: 30px 0;
+	color: gainsboro;
+}
+
+label {
+	display: block;
+}
+
+.form-error {
+	color: red;
+}
+
+input.error {
+	outline: red;
+	color: red;
+	border: 1px solid red;
+}
+
+input.error + div {
+	color: red;
+}
