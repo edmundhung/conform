@@ -14,10 +14,7 @@ type LoginFormProps = {
 export function validateLogin(
 	value: Record<string, unknown>,
 ): FormError | null {
-	const error: {
-		formErrors: string[];
-		fieldErrors: Record<string, string[]>;
-	} = {
+	const error: FormError = {
 		formErrors: [],
 		fieldErrors: {},
 	};
@@ -33,8 +30,8 @@ export function validateLogin(
 	}
 
 	if (
-		error.formErrors.length === 0 &&
-		Object.values(error.fieldErrors).every((message) => message.length === 0)
+		!error.formErrors?.length &&
+		Object.values(error.fieldErrors).every((message) => !message?.length)
 	) {
 		return null;
 	}
