@@ -44,6 +44,11 @@ updates:
           - '@react-router/dev'
           - '@react-router/node'
           - '@react-router/serve'
+      tanstack:
+        patterns:
+          - '@tanstack/react-router'
+          - '@tanstack/react-start'
+          - '@tanstack/router-cli'
       remix:
         patterns:
           - '@remix-run/cloudflare'
