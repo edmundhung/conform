@@ -17,8 +17,8 @@
 		"@remix-run/react": "2.16.5",
 		"cross-env": "^7.0.3",
 		"isbot": "^3",
-		"react": "^18.2.0",
-		"react-dom": "^18.2.0",
+		"react": "^19.2.8",
+		"react-dom": "^19.2.8",
 		"react-syntax-highlighter": "^15.5.0"
 	},
 	"devDependencies": {
@@ -27,8 +27,8 @@
 		"@remix-run/dev": "2.16.5",
 		"@tailwindcss/forms": "^0.5.7",
 		"@tailwindcss/typography": "^0.5.10",
-		"@types/react": "^18.2.46",
-		"@types/react-dom": "^18.2.18",
+		"@types/react": "^19.2.18",
+		"@types/react-dom": "^19.2.4",
 		"@types/react-syntax-highlighter": "^15.5.11",
 		"replace-in-file": "^8.3.0",
 		"tailwindcss": "^3.4.0",
