@@ -5,13 +5,20 @@ import {
 	defaultSerialize,
 	FormValue,
 } from '@conform-to/dom/future';
-import { useContext, useMemo, useId, useState, createContext } from 'react';
+import {
+	useContext,
+	useMemo,
+	useId,
+	useState,
+	createContext,
+	useRef,
+} from 'react';
 import {
 	focusFirstInvalidField,
 	createIntentDispatcher,
 	getFormElement,
 } from './dom';
-import { useLatest, useConform } from './hooks';
+import { useLatest, useConform, useSafeLayoutEffect } from './hooks';
 import { StandardSchemaV1 } from './standard-schema';
 import {
 	isTouched,
@@ -51,6 +58,52 @@ import {
 	parseIntent,
 	resolveIntent,
 } from './intent';
+import {
+	FormBoundaryContext,
+	type FormBoundaryContextValue,
+	type FormBoundaryListener,
+} from './boundary';
+
+/**
+ * Delegates input and blur events from associated forms and controls rendered
+ * within the boundary.
+ */
+export function FormBoundary(props: {
+	children: React.ReactNode;
+}): React.ReactElement {
+	const listenersRef = useRef(new Set<FormBoundaryListener>());
+	const context = useMemo<FormBoundaryContextValue>(
+		() => ({
+			register(listener) {
+				const listeners = listenersRef.current;
+
+				listeners.add(listener);
+				return () => listeners.delete(listener);
+			},
+		}),
+		[],
+	);
+
+	return (
+		<FormBoundaryContext.Provider value={context}>
+			<div
+				style={{ display: 'contents' }}
+				onInput={(event) => {
+					for (const listener of Array.from(listenersRef.current)) {
+						listener.handleInput(event);
+					}
+				}}
+				onBlur={(event) => {
+					for (const listener of Array.from(listenersRef.current)) {
+						listener.handleBlur(event);
+					}
+				}}
+			>
+				{props.children}
+			</div>
+		</FormBoundaryContext.Provider>
+	);
+}
 
 export function configureForms<
 	BaseErrorShape = any,
@@ -371,6 +424,7 @@ export function configureForms<
 		const constraint =
 			options.constraint ??
 			(schema ? globalConfig.getConstraints?.(schema) : undefined);
+		const boundary = useContext(FormBoundaryContext);
 		const optionsRef = useLatest(options);
 		const serialize = useMemo(
 			() => resolveSerialize(options.serialize, globalSerialize),
@@ -490,6 +544,7 @@ export function configureForms<
 		>(
 			() => ({
 				formId,
+				eventDelegated: boundary !== null,
 				intentName: globalConfig.intentName,
 				state,
 				serialize,
@@ -572,7 +627,24 @@ export function configureForms<
 					}
 				},
 			}),
-			[formId, state, serialize, constraint, handleSubmit, intent, optionsRef],
+			[
+				formId,
+				boundary,
+				state,
+				serialize,
+				constraint,
+				handleSubmit,
+				intent,
+				optionsRef,
+			],
+		);
+		useSafeLayoutEffect(
+			() =>
+				boundary?.register({
+					handleInput: context.handleInput,
+					handleBlur: context.handleBlur,
+				}),
+			[boundary, context],
 		);
 		const form = useMemo(
 			() =>
