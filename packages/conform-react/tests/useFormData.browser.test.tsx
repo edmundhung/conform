@@ -305,14 +305,18 @@ describe('future export: useFormData', () => {
 			</>,
 		);
 
-		await expect.element(renderCount).toHaveTextContent(5);
-		await expect.element(result).toHaveTextContent('foo');
+		await expect.element(renderCount).toHaveTextContent(6);
+		await expect.element(result).toHaveTextContent('bar');
+
+		await userEvent.fill(input, 'baz');
+		await expect.element(renderCount).toHaveTextContent(7);
+		await expect.element(result).toHaveTextContent('baz');
 
 		// Reset the form again (with a different form)
-		// This will reset to "bar" if it is resetting the original form
+		// This will reset to "bar" if it resets the original form
 		await userEvent.click(resetButton);
-		await expect.element(renderCount).toHaveTextContent(5);
-		await expect.element(result).toHaveTextContent('foo');
+		await expect.element(renderCount).toHaveTextContent(7);
+		await expect.element(result).toHaveTextContent('baz');
 	});
 
 	it('updates the formData when the "name" attribute changes', async () => {
