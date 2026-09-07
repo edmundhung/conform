@@ -59,6 +59,7 @@
     - [configureForms](./api/react/future/configureForms.md)
     - [isDirty](./api/react/future/isDirty.md)
     - [BaseControl](./api/react/future/BaseControl.md)
+    - [FormBoundary](./api/react/future/FormBoundary.md)
     - [FormProvider](./api/react/future/FormProvider.md)
     - [PreserveBoundary](./api/react/future/PreserveBoundary.md)
     - [memoize](./api/react/future/memoize.md)

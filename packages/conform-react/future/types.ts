@@ -608,6 +608,8 @@ export interface FormContext<
 > {
 	/** The form's unique identifier */
 	formId: string;
+	/** Whether input and blur events are delegated to a FormBoundary. */
+	eventDelegated?: boolean;
 	/** The name of the submit button field that indicates the submission intent. */
 	intentName: string;
 	/** Internal form state with validation results and field data */
@@ -1058,8 +1060,8 @@ export type FormMetadata<
 		props: Readonly<{
 			id: string;
 			onSubmit: React.FormEventHandler<HTMLFormElement>;
-			onBlur: React.FocusEventHandler<HTMLFormElement>;
-			onInput: React.FormEventHandler<HTMLFormElement>;
+			onBlur?: React.FocusEventHandler<HTMLFormElement> | undefined;
+			onInput?: React.FormEventHandler<HTMLFormElement> | undefined;
 			noValidate: boolean;
 		}>;
 		/** The current state of the form */

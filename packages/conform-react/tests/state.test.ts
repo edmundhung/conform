@@ -38,6 +38,7 @@ function createContext(
 ): FormContext<any> {
 	return {
 		formId: 'test-id',
+		eventDelegated: false,
 		intentName: DEFAULT_INTENT_NAME,
 		serialize: defaultSerialize,
 		constraint: null,
@@ -1746,7 +1747,17 @@ test('getFormMetadata', () => {
 	// Test props
 	expect(metadata.props.id).toBe('test-id');
 	expect(metadata.props.onSubmit).toBe(context.handleSubmit);
+	expect(metadata.props.onInput).toBe(context.handleInput);
+	expect(metadata.props.onBlur).toBe(context.handleBlur);
 	expect(metadata.props.noValidate).toBe(true);
+
+	const delegatedMetadata = getFormMetadata({
+		...context,
+		eventDelegated: true,
+	});
+
+	expect(delegatedMetadata.props.onInput).toBeUndefined();
+	expect(delegatedMetadata.props.onBlur).toBeUndefined();
 
 	// Test methods exist
 	expect(typeof metadata.getField).toBe('function');
