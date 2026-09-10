@@ -82,7 +82,7 @@
 		"playwright": "^1.62.1",
 		"rollup": "^2.80.0",
 		"rollup-plugin-copy": "^3.4.0",
-		"vitest": "^4.1.10",
+		"vitest": "^4.1.11",
 		"zod": "^3.25.75",
 		"zod-v4": "npm:zod@^4.4.3"
 	},
