@@ -55,7 +55,7 @@
 		"rollup-plugin-copy": "^3.4.0",
 		"rollup": "^2.80.0",
 		"typescript": "^5.8.3",
-		"vitest": "^4.1.10",
+		"vitest": "^4.1.11",
 		"yup": "^0.32.11"
 	},
 	"keywords": [
