@@ -358,6 +358,35 @@ describe('createGlobalFormsObserver', () => {
 		});
 	});
 
+	it('ignores canceled reset events', async (ctx) => {
+		const observer = createGlobalFormsObserver();
+		const form = document.createElement('form');
+		const input = document.createElement('input');
+		const resetButton = document.createElement('button');
+		resetButton.type = 'reset';
+		form.append(input, resetButton);
+		document.body.append(form);
+
+		const formListener = vi.fn();
+		const fieldListener = vi.fn();
+		const resetHandler = (event: Event) => event.preventDefault();
+		form.addEventListener('reset', resetHandler);
+		ctx.onTestFinished(observer.onFormUpdate(formListener));
+		ctx.onTestFinished(observer.onFieldUpdate(fieldListener));
+		ctx.onTestFinished(() => form.removeEventListener('reset', resetHandler));
+		ctx.onTestFinished(() => {
+			observer.dispose();
+			form.remove();
+		});
+
+		await userEvent.click(resetButton);
+		// Let the observer's next-tick reset callback run before checking that it
+		// returned early for the canceled event.
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect(formListener).not.toBeCalled();
+		expect(fieldListener).not.toBeCalled();
+	});
+
 	it('listens to submit event', async (ctx) => {
 		const observer = createGlobalFormsObserver();
 		const form = document.createElement('form');
