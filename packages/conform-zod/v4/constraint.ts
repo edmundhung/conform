@@ -21,6 +21,30 @@ const keys: Array<keyof Constraint> = [
 	'accept',
 ];
 
+function getCheckDefs(def: unknown): Array<Record<string, unknown>> {
+	if (!def || typeof def !== 'object' || !('checks' in def)) {
+		return [];
+	}
+
+	const checks = (def as { checks?: unknown }).checks;
+
+	if (!Array.isArray(checks)) {
+		return [];
+	}
+
+	return checks.flatMap((check) => {
+		if (!check || typeof check !== 'object' || !('_zod' in check)) {
+			return [];
+		}
+
+		const checkDef = (check as { _zod?: { def?: unknown } })._zod?.def;
+
+		return checkDef && typeof checkDef === 'object'
+			? [checkDef as Record<string, unknown>]
+			: [];
+	});
+}
+
 export function getZodConstraint(
 	schema: $ZodType,
 	options: { preserveBranchSpecificRequired?: boolean } = {},
@@ -134,14 +158,39 @@ export function getZodConstraint(
 			updateConstraint(def.element, data, `${name}[]`);
 		} else if (def.type === 'string') {
 			const _schema = schema as $ZodString;
-			if (_schema._zod.bag.minimum != null) {
-				constraint.minLength = _schema._zod.bag.minimum;
+			const checkDefs = getCheckDefs(def);
+			let minimum = _schema._zod.bag.minimum;
+			let maximum = _schema._zod.bag.maximum;
+			const patterns: RegExp[] = [];
+
+			for (const check of checkDefs) {
+				if (check.check === 'min_length' && typeof check.minimum === 'number') {
+					minimum = check.minimum;
+				} else if (
+					check.check === 'max_length' &&
+					typeof check.maximum === 'number'
+				) {
+					maximum = check.maximum;
+				} else if (
+					check.check === 'string_format' &&
+					check.format === 'regex' &&
+					check.pattern instanceof RegExp
+				) {
+					patterns.push(check.pattern);
+				}
 			}
-			if (_schema._zod.bag.maximum != null) {
-				constraint.maxLength = _schema._zod.bag.maximum;
+
+			if (minimum != null) {
+				constraint.minLength = minimum;
 			}
-			if (_schema._zod.bag.patterns?.size) {
-				const pattern = serializeHtmlPattern([..._schema._zod.bag.patterns]);
+			if (maximum != null) {
+				constraint.maxLength = maximum;
+			}
+			if (patterns.length === 0 && _schema._zod.bag.patterns?.size) {
+				patterns.push(..._schema._zod.bag.patterns);
+			}
+			if (patterns.length > 0) {
+				const pattern = serializeHtmlPattern(patterns);
 				if (pattern) {
 					constraint.pattern = pattern;
 				}
@@ -156,11 +205,31 @@ export function getZodConstraint(
 			updateConstraint(def.innerType, data, name);
 		} else if (def.type === 'number') {
 			const _schema = schema as $ZodNumber;
-			if (_schema._zod.bag.minimum != null) {
-				constraint.min = _schema._zod.bag.minimum;
+			const checkDefs = getCheckDefs(def);
+			let minimum = _schema._zod.bag.minimum;
+			let maximum = _schema._zod.bag.maximum;
+
+			for (const check of checkDefs) {
+				if (
+					check.check === 'greater_than' &&
+					check.inclusive === true &&
+					typeof check.value === 'number'
+				) {
+					minimum = check.value;
+				} else if (
+					check.check === 'less_than' &&
+					check.inclusive === true &&
+					typeof check.value === 'number'
+				) {
+					maximum = check.value;
+				}
 			}
-			if (_schema._zod.bag.maximum != null) {
-				constraint.max = _schema._zod.bag.maximum;
+
+			if (minimum != null) {
+				constraint.min = minimum;
+			}
+			if (maximum != null) {
+				constraint.max = maximum;
 			}
 		} else if (def.type === 'enum') {
 			constraint.pattern = Object.keys(def.entries)
@@ -176,8 +245,22 @@ export function getZodConstraint(
 			}
 		} else if (def.type === 'file') {
 			const _schema = schema as $ZodFile;
-			if (_schema._zod.bag.mime) {
-				constraint.accept = _schema._zod.bag.mime.join();
+			const checkDefs = getCheckDefs(def);
+			let mime = checkDefs.reduce<string[] | undefined>((result, check) => {
+				if (check.check === 'mime_type' && Array.isArray(check.mime)) {
+					return check.mime.filter(
+						(type): type is string => typeof type === 'string',
+					);
+				}
+
+				return result;
+			}, undefined);
+
+			if (!mime && _schema._zod.bag.mime) {
+				mime = _schema._zod.bag.mime;
+			}
+			if (mime) {
+				constraint.accept = mime.join();
 			}
 		} else if (def.type === 'lazy') {
 			const inner = def.getter();

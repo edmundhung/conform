@@ -519,4 +519,45 @@ describe('getZodConstraint', () => {
 			},
 		});
 	});
+
+	test('reads constraints from checks when the bag is empty', () => {
+		const text = z
+			.string()
+			.min(2)
+			.max(5)
+			.regex(/^[a-z]+$/);
+		const number = z.number().min(1).max(10);
+		const file = z.file().mime(['image/png']);
+
+		// Zod 4.6 lazily materializes these values, leaving the bag empty.
+		text._zod.bag = {};
+		number._zod.bag = {};
+		file._zod.bag = {};
+
+		expect(
+			getZodConstraint(
+				z.object({
+					text,
+					number,
+					file,
+				}),
+			),
+		).toEqual({
+			text: {
+				required: true,
+				minLength: 2,
+				maxLength: 5,
+				pattern: '^(?=.*(?:^[a-z]+$)).*$',
+			},
+			number: {
+				required: true,
+				min: 1,
+				max: 10,
+			},
+			file: {
+				required: true,
+				accept: 'image/png',
+			},
+		});
+	});
 });
