@@ -1,10 +1,5 @@
 import { isFieldElement, FieldName } from '@conform-to/dom';
-import {
-	type Submission,
-	DEFAULT_INTENT_NAME,
-	defaultSerialize,
-	FormValue,
-} from '@conform-to/dom/future';
+import { DEFAULT_INTENT_NAME, defaultSerialize } from '@conform-to/dom/future';
 import { useContext, useMemo, useId, useState, createContext } from 'react';
 import {
 	focusFirstInvalidField,
@@ -36,7 +31,6 @@ import type {
 	IntentDispatcher,
 	RequireKey,
 	ValidateResult,
-	FormIntent,
 	CustomStateHandler,
 } from './types';
 import {
@@ -46,10 +40,9 @@ import {
 	validateStandardSchemaV1,
 } from './util';
 import {
+	createSubmissionResolver,
 	defaultIntentHandlers,
 	mergeIntentHandlers,
-	parseIntent,
-	resolveIntent,
 } from './intent';
 
 export function configureForms<
@@ -84,6 +77,7 @@ export function configureForms<
 		defaultIntentHandlers,
 		config.intents,
 	);
+	const resolveSubmission = createSubmissionResolver(globalIntentHandlers);
 
 	/**
 	 * Global configuration with defaults applied
@@ -746,43 +740,6 @@ export function configureForms<
 		);
 	}
 
-	/**
-	 * Parses and resolves a submission payload using the configured default and global intent handlers.
-	 * Pass `handlers` to extend or override them for a specific call.
-	 */
-	function resolveSubmission<
-		IntentHandlers extends Record<string, IntentHandler<any, any>> = {},
-	>(
-		submission: Submission,
-		options?: {
-			handlers?: IntentHandlers;
-		},
-	): {
-		intent:
-			| FormIntent<
-					Record<string, any>,
-					DefaultIntentHandlers & GlobalIntentHandlers & IntentHandlers
-			  >
-			| { type: 'submit'; payload: string | undefined }
-			| undefined;
-		targetValue: Record<string, FormValue> | undefined;
-	} {
-		const handlers = mergeIntentHandlers(
-			globalIntentHandlers,
-			options?.handlers,
-		);
-		const intent = parseIntent(submission.intent, { handlers });
-		const targetValue = resolveIntent(submission, {
-			handlers,
-			intent,
-		});
-
-		return {
-			intent,
-			targetValue,
-		};
-	}
-
 	return {
 		FormProvider,
 		useForm,
@@ -916,10 +873,3 @@ export const useField = defaultForms.useField;
  * ```
  */
 export const useIntent = defaultForms.useIntent;
-
-/**
- * Parses and resolves a submission payload using the default configured form intent handlers.
- *
- * See https://conform.guide/api/react/future/resolveSubmission
- */
-export const resolveSubmission = defaultForms.resolveSubmission;
