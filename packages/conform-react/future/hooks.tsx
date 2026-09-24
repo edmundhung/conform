@@ -691,6 +691,24 @@ export function useControl(options: ControlOptions = {}): Control<any> {
 		[observer],
 	);
 
+	useEffect(
+		() =>
+			observer.onFormUpdate((event) => {
+				const input = inputRef.current;
+
+				if (
+					event.type === 'reset' &&
+					input instanceof HTMLFieldSetElement &&
+					event.target === input.form
+				) {
+					flushSync(() => {
+						setStructuralOverride(null);
+					});
+				}
+			}),
+		[observer],
+	);
+
 	const payloadSnapshot = useSyncExternalStore(
 		useCallback(
 			(callback) =>
