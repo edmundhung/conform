@@ -818,8 +818,12 @@ export function getFormMetadata<
 		props: {
 			id: context.formId,
 			onSubmit: context.handleSubmit,
-			onInput: context.handleInput,
-			onBlur: context.handleBlur,
+			...(context.eventDelegated
+				? {}
+				: {
+						onInput: context.handleInput,
+						onBlur: context.handleBlur,
+					}),
 			noValidate: true,
 		},
 		context,
