@@ -7,6 +7,7 @@ import {
 	$ZodString,
 	$ZodType,
 	$ZodTypes,
+	util,
 } from 'zod/v4/core';
 
 const keys: Array<keyof Constraint> = [
@@ -22,27 +23,28 @@ const keys: Array<keyof Constraint> = [
 ];
 
 function getCheckDefs(def: unknown): Array<Record<string, unknown>> {
-	if (!def || typeof def !== 'object' || !('checks' in def)) {
+	if (!def || typeof def !== 'object') {
 		return [];
 	}
 
 	const checks = (def as { checks?: unknown }).checks;
 
-	if (!Array.isArray(checks)) {
-		return [];
+	const definitions = new Set<Record<string, unknown>>();
+	if ('check' in def) {
+		definitions.add(def as Record<string, unknown>);
 	}
-
-	return checks.flatMap((check) => {
+	for (const check of Array.isArray(checks) ? checks : []) {
 		if (!check || typeof check !== 'object' || !('_zod' in check)) {
-			return [];
+			continue;
 		}
 
 		const checkDef = (check as { _zod?: { def?: unknown } })._zod?.def;
 
-		return checkDef && typeof checkDef === 'object'
-			? [checkDef as Record<string, unknown>]
-			: [];
-	});
+		if (checkDef && typeof checkDef === 'object') {
+			definitions.add(checkDef as Record<string, unknown>);
+		}
+	}
+	return [...definitions];
 }
 
 export function getZodConstraint(
@@ -165,15 +167,14 @@ export function getZodConstraint(
 
 			for (const check of checkDefs) {
 				if (check.check === 'min_length' && typeof check.minimum === 'number') {
-					minimum = check.minimum;
+					minimum = Math.max(minimum ?? -Infinity, check.minimum);
 				} else if (
 					check.check === 'max_length' &&
 					typeof check.maximum === 'number'
 				) {
-					maximum = check.maximum;
+					maximum = Math.min(maximum ?? Infinity, check.maximum);
 				} else if (
 					check.check === 'string_format' &&
-					check.format === 'regex' &&
 					check.pattern instanceof RegExp
 				) {
 					patterns.push(check.pattern);
@@ -215,13 +216,27 @@ export function getZodConstraint(
 					check.inclusive === true &&
 					typeof check.value === 'number'
 				) {
-					minimum = check.value;
+					minimum = Math.max(minimum ?? -Infinity, check.value);
 				} else if (
 					check.check === 'less_than' &&
 					check.inclusive === true &&
 					typeof check.value === 'number'
 				) {
-					maximum = check.value;
+					maximum = Math.min(maximum ?? Infinity, check.value);
+				} else if (
+					check.check === 'number_format' &&
+					typeof check.format === 'string' &&
+					Object.prototype.hasOwnProperty.call(
+						util.NUMBER_FORMAT_RANGES,
+						check.format,
+					)
+				) {
+					const [formatMinimum, formatMaximum] =
+						util.NUMBER_FORMAT_RANGES[
+							check.format as keyof typeof util.NUMBER_FORMAT_RANGES
+						];
+					minimum = Math.max(minimum ?? -Infinity, formatMinimum);
+					maximum = Math.min(maximum ?? Infinity, formatMaximum);
 				}
 			}
 
