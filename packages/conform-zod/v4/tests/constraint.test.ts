@@ -519,4 +519,126 @@ describe('getZodConstraint', () => {
 			},
 		});
 	});
+
+	test('retains all string formats with an empty bag', () => {
+		const emailPatternSource = /^[a-z]+@[a-z]+\.[a-z]+$/;
+		const email = z.email({ pattern: emailPatternSource });
+		const mixed = z
+			.string()
+			.email({ pattern: emailPatternSource })
+			.regex(/example\.com$/);
+		email._zod.bag = {};
+		mixed._zod.bag = {};
+		const constraints = getZodConstraint(z.object({ email, mixed }));
+		const emailPattern = new RegExp(constraints.email!.pattern!, 'u');
+		const mixedPattern = new RegExp(constraints.mixed!.pattern!, 'u');
+		expect(emailPattern.test('me@example.com')).toBe(true);
+		expect(emailPattern.test('invalid')).toBe(false);
+		expect(mixedPattern.test('me@example.com')).toBe(true);
+		expect(mixedPattern.test('@example.com')).toBe(false);
+		expect(mixedPattern.test('me@other.com')).toBe(false);
+	});
+
+	test('retains direct UUID formats and combined startsWith checks', () => {
+		const uuid = z.uuid();
+		const text = z
+			.string()
+			.startsWith('abc')
+			.regex(/[0-9]$/);
+		uuid._zod.bag = {};
+		text._zod.bag = {};
+		const constraints = getZodConstraint(z.object({ uuid, text }));
+		expect(new RegExp(constraints.uuid!.pattern!, 'u').test('invalid')).toBe(
+			false,
+		);
+		const pattern = new RegExp(constraints.text!.pattern!, 'u');
+		expect(pattern.test('abc1')).toBe(true);
+		expect(pattern.test('xyz1')).toBe(false);
+		expect(pattern.test('abc')).toBe(false);
+	});
+
+	test('retains the strongest repeated bounds regardless of check order', () => {
+		const text = z.string().min(10).min(2).max(20).max(100);
+		const number = z.number().min(10).min(2).max(20).max(100);
+		text._zod.bag = {};
+		number._zod.bag = {};
+		expect(getZodConstraint(z.object({ text, number }))).toEqual({
+			text: { required: true, minLength: 10, maxLength: 20 },
+			number: { required: true, min: 10, max: 20 },
+		});
+	});
+
+	test('retains exact string length with an empty bag', () => {
+		const text = z.string().length(5);
+		text._zod.bag = {};
+
+		expect(getZodConstraint(z.object({ text }))).toEqual({
+			text: { required: true, minLength: 5, maxLength: 5 },
+		});
+	});
+
+	test.each([
+		['safeint', z.int(), Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
+		['int32', z.int32(), -2147483648, 2147483647],
+		['uint32', z.uint32(), 0, 4294967295],
+		['float32', z.float32(), -3.4028234663852886e38, 3.4028234663852886e38],
+		['float64', z.float64(), -Number.MAX_VALUE, Number.MAX_VALUE],
+	] as const)(
+		'retains %s format bounds with an empty bag',
+		(_, value, min, max) => {
+			value._zod.bag = {};
+			expect(getZodConstraint(z.object({ value }))).toEqual({
+				value: { required: true, min, max },
+			});
+		},
+	);
+
+	test('intersects numeric format bounds with explicit bounds', () => {
+		const value = z.uint32().min(-10).max(100);
+		value._zod.bag = {};
+		expect(getZodConstraint(z.object({ value }))).toEqual({
+			value: { required: true, min: 0, max: 100 },
+		});
+	});
+
+	test('reads constraints from checks when the bag is empty', () => {
+		const text = z
+			.string()
+			.min(2)
+			.max(5)
+			.regex(/^[a-z]+$/);
+		const number = z.number().min(1).max(10);
+		const file = z.file().mime(['image/png']);
+
+		// Zod 4.6 lazily materializes these values, leaving the bag empty.
+		text._zod.bag = {};
+		number._zod.bag = {};
+		file._zod.bag = {};
+
+		expect(
+			getZodConstraint(
+				z.object({
+					text,
+					number,
+					file,
+				}),
+			),
+		).toEqual({
+			text: {
+				required: true,
+				minLength: 2,
+				maxLength: 5,
+				pattern: '^(?=.*(?:^[a-z]+$)).*$',
+			},
+			number: {
+				required: true,
+				min: 1,
+				max: 10,
+			},
+			file: {
+				required: true,
+				accept: 'image/png',
+			},
+		});
+	});
 });

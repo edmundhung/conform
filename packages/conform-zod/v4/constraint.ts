@@ -7,6 +7,7 @@ import {
 	$ZodString,
 	$ZodType,
 	$ZodTypes,
+	util,
 } from 'zod/v4/core';
 
 const keys: Array<keyof Constraint> = [
@@ -20,6 +21,31 @@ const keys: Array<keyof Constraint> = [
 	'pattern',
 	'accept',
 ];
+
+function getCheckDefs(def: unknown): Array<Record<string, unknown>> {
+	if (!def || typeof def !== 'object') {
+		return [];
+	}
+
+	const checks = (def as { checks?: unknown }).checks;
+
+	const definitions = new Set<Record<string, unknown>>();
+	if ('check' in def) {
+		definitions.add(def as Record<string, unknown>);
+	}
+	for (const check of Array.isArray(checks) ? checks : []) {
+		if (!check || typeof check !== 'object' || !('_zod' in check)) {
+			continue;
+		}
+
+		const checkDef = (check as { _zod?: { def?: unknown } })._zod?.def;
+
+		if (checkDef && typeof checkDef === 'object') {
+			definitions.add(checkDef as Record<string, unknown>);
+		}
+	}
+	return [...definitions];
+}
 
 export function getZodConstraint(
 	schema: $ZodType,
@@ -134,14 +160,47 @@ export function getZodConstraint(
 			updateConstraint(def.element, data, `${name}[]`);
 		} else if (def.type === 'string') {
 			const _schema = schema as $ZodString;
-			if (_schema._zod.bag.minimum != null) {
-				constraint.minLength = _schema._zod.bag.minimum;
+			const checkDefs = getCheckDefs(def);
+			let minimum = _schema._zod.bag.minimum;
+			let maximum = _schema._zod.bag.maximum;
+			const patterns: RegExp[] = [];
+
+			for (const check of checkDefs) {
+				if (
+					check.check === 'length_equals' &&
+					typeof check.length === 'number'
+				) {
+					minimum = Math.max(minimum ?? -Infinity, check.length);
+					maximum = Math.min(maximum ?? Infinity, check.length);
+				} else if (
+					check.check === 'min_length' &&
+					typeof check.minimum === 'number'
+				) {
+					minimum = Math.max(minimum ?? -Infinity, check.minimum);
+				} else if (
+					check.check === 'max_length' &&
+					typeof check.maximum === 'number'
+				) {
+					maximum = Math.min(maximum ?? Infinity, check.maximum);
+				} else if (
+					check.check === 'string_format' &&
+					check.pattern instanceof RegExp
+				) {
+					patterns.push(check.pattern);
+				}
 			}
-			if (_schema._zod.bag.maximum != null) {
-				constraint.maxLength = _schema._zod.bag.maximum;
+
+			if (minimum != null) {
+				constraint.minLength = minimum;
 			}
-			if (_schema._zod.bag.patterns?.size) {
-				const pattern = serializeHtmlPattern([..._schema._zod.bag.patterns]);
+			if (maximum != null) {
+				constraint.maxLength = maximum;
+			}
+			if (patterns.length === 0 && _schema._zod.bag.patterns?.size) {
+				patterns.push(..._schema._zod.bag.patterns);
+			}
+			if (patterns.length > 0) {
+				const pattern = serializeHtmlPattern(patterns);
 				if (pattern) {
 					constraint.pattern = pattern;
 				}
@@ -156,11 +215,45 @@ export function getZodConstraint(
 			updateConstraint(def.innerType, data, name);
 		} else if (def.type === 'number') {
 			const _schema = schema as $ZodNumber;
-			if (_schema._zod.bag.minimum != null) {
-				constraint.min = _schema._zod.bag.minimum;
+			const checkDefs = getCheckDefs(def);
+			let minimum = _schema._zod.bag.minimum;
+			let maximum = _schema._zod.bag.maximum;
+
+			for (const check of checkDefs) {
+				if (
+					check.check === 'greater_than' &&
+					check.inclusive === true &&
+					typeof check.value === 'number'
+				) {
+					minimum = Math.max(minimum ?? -Infinity, check.value);
+				} else if (
+					check.check === 'less_than' &&
+					check.inclusive === true &&
+					typeof check.value === 'number'
+				) {
+					maximum = Math.min(maximum ?? Infinity, check.value);
+				} else if (
+					check.check === 'number_format' &&
+					typeof check.format === 'string' &&
+					Object.prototype.hasOwnProperty.call(
+						util.NUMBER_FORMAT_RANGES,
+						check.format,
+					)
+				) {
+					const [formatMinimum, formatMaximum] =
+						util.NUMBER_FORMAT_RANGES[
+							check.format as keyof typeof util.NUMBER_FORMAT_RANGES
+						];
+					minimum = Math.max(minimum ?? -Infinity, formatMinimum);
+					maximum = Math.min(maximum ?? Infinity, formatMaximum);
+				}
 			}
-			if (_schema._zod.bag.maximum != null) {
-				constraint.max = _schema._zod.bag.maximum;
+
+			if (minimum != null) {
+				constraint.min = minimum;
+			}
+			if (maximum != null) {
+				constraint.max = maximum;
 			}
 		} else if (def.type === 'enum') {
 			constraint.pattern = Object.keys(def.entries)
@@ -176,8 +269,22 @@ export function getZodConstraint(
 			}
 		} else if (def.type === 'file') {
 			const _schema = schema as $ZodFile;
-			if (_schema._zod.bag.mime) {
-				constraint.accept = _schema._zod.bag.mime.join();
+			const checkDefs = getCheckDefs(def);
+			let mime = checkDefs.reduce<string[] | undefined>((result, check) => {
+				if (check.check === 'mime_type' && Array.isArray(check.mime)) {
+					return check.mime.filter(
+						(type): type is string => typeof type === 'string',
+					);
+				}
+
+				return result;
+			}, undefined);
+
+			if (!mime && _schema._zod.bag.mime) {
+				mime = _schema._zod.bag.mime;
+			}
+			if (mime) {
+				constraint.accept = mime.join();
 			}
 		} else if (def.type === 'lazy') {
 			const inner = def.getter();
