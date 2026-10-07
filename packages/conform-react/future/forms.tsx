@@ -38,6 +38,8 @@ import type {
 	ValidateResult,
 	FormIntent,
 	CustomStateHandler,
+	FormInputEvent,
+	FormFocusEvent,
 } from './types';
 import {
 	isStandardSchemaV1,
@@ -508,13 +510,18 @@ export function configureForms<
 						return;
 					}
 
-					optionsRef.current.onInput?.({
-						...event,
-						target: event.target,
-						currentTarget: event.target.form,
-					});
+					// Inherit from the React event so `preventDefault()` keeps working
+					const inputEvent: FormInputEvent = Object.assign(
+						Object.create(event),
+						{
+							target: event.target,
+							currentTarget: event.target.form,
+						},
+					);
 
-					if (event.defaultPrevented) {
+					optionsRef.current.onInput?.(inputEvent);
+
+					if (inputEvent.defaultPrevented) {
 						return;
 					}
 
@@ -546,13 +553,18 @@ export function configureForms<
 						return;
 					}
 
-					optionsRef.current.onBlur?.({
-						...event,
-						target: event.target,
-						currentTarget: event.target.form,
-					});
+					// Inherit from the React event so `preventDefault()` keeps working
+					const blurEvent: FormFocusEvent = Object.assign(
+						Object.create(event),
+						{
+							target: event.target,
+							currentTarget: event.target.form,
+						},
+					);
 
-					if (event.defaultPrevented) {
+					optionsRef.current.onBlur?.(blurEvent);
+
+					if (blurEvent.defaultPrevented) {
 						return;
 					}
 

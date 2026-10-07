@@ -785,6 +785,54 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 	});
 
+	test('onBlur handler can skip validation with preventDefault', async () => {
+		const screen = render(
+			<Form
+				shouldValidate="onBlur"
+				onBlur={(event) => {
+					if (event.target.name === 'title') {
+						event.preventDefault();
+					}
+				}}
+			/>,
+		);
+		const form = getForm(screen);
+
+		await userEvent.type(form.title, 'example');
+		await userEvent.clear(form.title);
+		await userEvent.click(document.body);
+		await expectNoErrorMessages(form.title, form.description);
+
+		await userEvent.type(form.description, 'hello world');
+		await userEvent.clear(form.description);
+		await userEvent.click(document.body);
+		await expectNoErrorMessages(form.title);
+		await expectErrorMessage(form.description, 'Description is required');
+	});
+
+	test('onInput handler can skip validation with preventDefault', async () => {
+		const screen = render(
+			<Form
+				shouldValidate="onInput"
+				onInput={(event) => {
+					if (event.target.name === 'title') {
+						event.preventDefault();
+					}
+				}}
+			/>,
+		);
+		const form = getForm(screen);
+
+		await userEvent.type(form.title, 'example');
+		await userEvent.clear(form.title);
+		await expectNoErrorMessages(form.title, form.description);
+
+		await userEvent.type(form.description, 'hello world');
+		await userEvent.clear(form.description);
+		await expectNoErrorMessages(form.title);
+		await expectErrorMessage(form.description, 'Description is required');
+	});
+
 	test('validate intent', async () => {
 		const screen = render(<Form />);
 		const form = getForm(screen);
