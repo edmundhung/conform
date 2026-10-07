@@ -166,7 +166,16 @@ export function getZodConstraint(
 			const patterns: RegExp[] = [];
 
 			for (const check of checkDefs) {
-				if (check.check === 'min_length' && typeof check.minimum === 'number') {
+				if (
+					check.check === 'length_equals' &&
+					typeof check.length === 'number'
+				) {
+					minimum = Math.max(minimum ?? -Infinity, check.length);
+					maximum = Math.min(maximum ?? Infinity, check.length);
+				} else if (
+					check.check === 'min_length' &&
+					typeof check.minimum === 'number'
+				) {
 					minimum = Math.max(minimum ?? -Infinity, check.minimum);
 				} else if (
 					check.check === 'max_length' &&

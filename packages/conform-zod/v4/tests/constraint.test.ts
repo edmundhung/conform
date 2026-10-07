@@ -568,6 +568,15 @@ describe('getZodConstraint', () => {
 		});
 	});
 
+	test('retains exact string length with an empty bag', () => {
+		const text = z.string().length(5);
+		text._zod.bag = {};
+
+		expect(getZodConstraint(z.object({ text }))).toEqual({
+			text: { required: true, minLength: 5, maxLength: 5 },
+		});
+	});
+
 	test.each([
 		['safeint', z.int(), Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
 		['int32', z.int32(), -2147483648, 2147483647],
