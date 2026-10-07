@@ -833,6 +833,26 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 		await expectErrorMessage(form.description, 'Description is required');
 	});
 
+	test('onBlur and onInput handlers can stop propagation to ancestors', async () => {
+		const parentBlur = vi.fn();
+		const parentInput = vi.fn();
+		const screen = render(
+			<div onBlur={parentBlur} onInput={parentInput}>
+				<Form
+					onBlur={(event) => event.stopPropagation()}
+					onInput={(event) => event.stopPropagation()}
+				/>
+			</div>,
+		);
+		const form = getForm(screen);
+
+		await userEvent.type(form.title, 'example');
+		await userEvent.click(document.body);
+
+		expect(parentInput).not.toHaveBeenCalled();
+		expect(parentBlur).not.toHaveBeenCalled();
+	});
+
 	test('validate intent', async () => {
 		const screen = render(<Form />);
 		const form = getForm(screen);

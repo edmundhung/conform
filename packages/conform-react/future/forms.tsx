@@ -510,18 +510,21 @@ export function configureForms<
 						return;
 					}
 
-					// Inherit from the React event so `preventDefault()` keeps working
+					// Inherit from the React event and forward the control methods to it,
+					// so React and ancestor handlers see `preventDefault()` and `stopPropagation()`
 					const inputEvent: FormInputEvent = Object.assign(
 						Object.create(event),
 						{
 							target: event.target,
 							currentTarget: event.target.form,
+							preventDefault: () => event.preventDefault(),
+							stopPropagation: () => event.stopPropagation(),
 						},
 					);
 
 					optionsRef.current.onInput?.(inputEvent);
 
-					if (inputEvent.defaultPrevented) {
+					if (event.defaultPrevented) {
 						return;
 					}
 
@@ -553,18 +556,21 @@ export function configureForms<
 						return;
 					}
 
-					// Inherit from the React event so `preventDefault()` keeps working
+					// Inherit from the React event and forward the control methods to it,
+					// so React and ancestor handlers see `preventDefault()` and `stopPropagation()`
 					const blurEvent: FormFocusEvent = Object.assign(
 						Object.create(event),
 						{
 							target: event.target,
 							currentTarget: event.target.form,
+							preventDefault: () => event.preventDefault(),
+							stopPropagation: () => event.stopPropagation(),
 						},
 					);
 
 					optionsRef.current.onBlur?.(blurEvent);
 
-					if (blurEvent.defaultPrevented) {
+					if (event.defaultPrevented) {
 						return;
 					}
 
