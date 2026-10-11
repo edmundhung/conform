@@ -33,71 +33,6 @@ const numberFormatRanges: Record<string, [number, number]> = {
 	float64: [-Number.MAX_VALUE, Number.MAX_VALUE],
 };
 
-function getCheckDefs(schema: $ZodType): CheckDef[] {
-	const checkDefs = (schema._zod.def.checks ?? []).map(
-		(check) => check._zod.def as CheckDef,
-	);
-
-	// A format schema such as `z.email()` is its own first check
-	return schema._zod.traits.has('$ZodCheck')
-		? [schema._zod.def as unknown as CheckDef, ...checkDefs]
-		: checkDefs;
-}
-
-function narrowMinimum(summary: CheckSummary, value: unknown): void {
-	if (
-		typeof value === 'number' &&
-		(summary.minimum === undefined || value > summary.minimum)
-	) {
-		summary.minimum = value;
-	}
-}
-
-function narrowMaximum(summary: CheckSummary, value: unknown): void {
-	if (
-		typeof value === 'number' &&
-		(summary.maximum === undefined || value < summary.maximum)
-	) {
-		summary.maximum = value;
-	}
-}
-
-function narrowBoth(summary: CheckSummary, value: unknown): void {
-	narrowMinimum(summary, value);
-	narrowMaximum(summary, value);
-}
-
-function addPattern(summary: CheckSummary, pattern: unknown): void {
-	if (pattern instanceof RegExp) {
-		summary.patterns.set(pattern.toString(), pattern);
-	}
-}
-
-function intersectMime(summary: CheckSummary, mime: unknown): void {
-	if (!Array.isArray(mime)) {
-		return;
-	}
-
-	const types = mime.filter((type): type is string => typeof type === 'string');
-
-	summary.mime = summary.mime
-		? summary.mime.filter((type) => types.includes(type))
-		: types;
-}
-
-function mergeBag(summary: CheckSummary, bag: Record<string, unknown>): void {
-	narrowMinimum(summary, bag.minimum);
-	narrowMaximum(summary, bag.maximum);
-
-	if (bag.patterns instanceof Set) {
-		for (const pattern of bag.patterns) {
-			addPattern(summary, pattern);
-		}
-	}
-
-	intersectMime(summary, bag.mime);
-}
-
 /**
  * Collects the HTML-relevant bounds of a schema from its check definitions.
  *
@@ -110,51 +45,110 @@ function mergeBag(summary: CheckSummary, bag: Record<string, unknown>): void {
  */
 function summarizeChecks(schema: $ZodType): CheckSummary {
 	const summary: CheckSummary = { patterns: new Map() };
+	const checkDefs = (schema._zod.def.checks ?? []).map(
+		(check) => check._zod.def as CheckDef,
+	);
 
-	for (const def of getCheckDefs(schema)) {
+	// A format schema such as `z.email()` is its own first check
+	if (schema._zod.traits.has('$ZodCheck')) {
+		checkDefs.unshift(schema._zod.def as unknown as CheckDef);
+	}
+
+	for (const def of checkDefs) {
+		let minimum: unknown;
+		let maximum: unknown;
+
 		switch (def.check) {
 			case 'greater_than':
 				if (def.inclusive) {
-					narrowMinimum(summary, def.value);
+					minimum = def.value;
 				}
 				break;
 			case 'less_than':
 				if (def.inclusive) {
-					narrowMaximum(summary, def.value);
+					maximum = def.value;
 				}
 				break;
 			case 'number_format': {
 				const range = numberFormatRanges[def.format];
 				if (range) {
-					narrowMinimum(summary, range[0]);
-					narrowMaximum(summary, range[1]);
+					[minimum, maximum] = range;
 				}
 				break;
 			}
 			case 'min_length':
 			case 'min_size':
-				narrowMinimum(summary, def.minimum);
+				minimum = def.minimum;
 				break;
 			case 'max_length':
 			case 'max_size':
-				narrowMaximum(summary, def.maximum);
+				maximum = def.maximum;
 				break;
 			case 'length_equals':
-				narrowBoth(summary, def.length);
+				minimum = maximum = def.length;
 				break;
 			case 'size_equals':
-				narrowBoth(summary, def.size);
+				minimum = maximum = def.size;
 				break;
 			case 'string_format':
-				addPattern(summary, def.pattern);
+				if (def.pattern instanceof RegExp) {
+					summary.patterns.set(def.pattern.toString(), def.pattern);
+				}
 				break;
 			case 'mime_type':
-				intersectMime(summary, def.mime);
+				if (Array.isArray(def.mime)) {
+					const types = def.mime.filter(
+						(type): type is string => typeof type === 'string',
+					);
+					summary.mime = summary.mime
+						? summary.mime.filter((type) => types.includes(type))
+						: types;
+				}
 				break;
+		}
+
+		if (
+			typeof minimum === 'number' &&
+			(summary.minimum === undefined || minimum > summary.minimum)
+		) {
+			summary.minimum = minimum;
+		}
+		if (
+			typeof maximum === 'number' &&
+			(summary.maximum === undefined || maximum < summary.maximum)
+		) {
+			summary.maximum = maximum;
 		}
 	}
 
-	mergeBag(summary, schema._zod.bag);
+	const { minimum, maximum, patterns, mime } = schema._zod.bag;
+	if (
+		typeof minimum === 'number' &&
+		(summary.minimum === undefined || minimum > summary.minimum)
+	) {
+		summary.minimum = minimum;
+	}
+	if (
+		typeof maximum === 'number' &&
+		(summary.maximum === undefined || maximum < summary.maximum)
+	) {
+		summary.maximum = maximum;
+	}
+	if (patterns instanceof Set) {
+		for (const pattern of patterns) {
+			if (pattern instanceof RegExp) {
+				summary.patterns.set(pattern.toString(), pattern);
+			}
+		}
+	}
+	if (Array.isArray(mime)) {
+		const types = mime.filter(
+			(type): type is string => typeof type === 'string',
+		);
+		summary.mime = summary.mime
+			? summary.mime.filter((type) => types.includes(type))
+			: types;
+	}
 
 	return summary;
 }
