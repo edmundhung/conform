@@ -785,6 +785,74 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 	});
 
+	test('onBlur handler can skip validation with preventDefault', async () => {
+		const screen = render(
+			<Form
+				shouldValidate="onBlur"
+				onBlur={(event) => {
+					if (event.target.name === 'title') {
+						event.preventDefault();
+					}
+				}}
+			/>,
+		);
+		const form = getForm(screen);
+
+		await userEvent.type(form.title, 'example');
+		await userEvent.clear(form.title);
+		await userEvent.click(document.body);
+		await expectNoErrorMessages(form.title, form.description);
+
+		await userEvent.type(form.description, 'hello world');
+		await userEvent.clear(form.description);
+		await userEvent.click(document.body);
+		await expectNoErrorMessages(form.title);
+		await expectErrorMessage(form.description, 'Description is required');
+	});
+
+	test('onInput handler can skip validation with preventDefault', async () => {
+		const screen = render(
+			<Form
+				shouldValidate="onInput"
+				onInput={(event) => {
+					if (event.target.name === 'title') {
+						event.preventDefault();
+					}
+				}}
+			/>,
+		);
+		const form = getForm(screen);
+
+		await userEvent.type(form.title, 'example');
+		await userEvent.clear(form.title);
+		await expectNoErrorMessages(form.title, form.description);
+
+		await userEvent.type(form.description, 'hello world');
+		await userEvent.clear(form.description);
+		await expectNoErrorMessages(form.title);
+		await expectErrorMessage(form.description, 'Description is required');
+	});
+
+	test('onBlur and onInput handlers can stop propagation to ancestors', async () => {
+		const parentBlur = vi.fn();
+		const parentInput = vi.fn();
+		const screen = render(
+			<div onBlur={parentBlur} onInput={parentInput}>
+				<Form
+					onBlur={(event) => event.stopPropagation()}
+					onInput={(event) => event.stopPropagation()}
+				/>
+			</div>,
+		);
+		const form = getForm(screen);
+
+		await userEvent.type(form.title, 'example');
+		await userEvent.click(document.body);
+
+		expect(parentInput).not.toHaveBeenCalled();
+		expect(parentBlur).not.toHaveBeenCalled();
+	});
+
 	test('validate intent', async () => {
 		const screen = render(<Form />);
 		const form = getForm(screen);
