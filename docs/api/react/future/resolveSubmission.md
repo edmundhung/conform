@@ -4,8 +4,6 @@
 
 `resolveSubmission` interprets the intent in a parsed submission and returns the form value produced by it. This lets a server action distinguish a submit intent from a form intent, such as inserting or removing a list item, and validate the updated form value before reporting it back. Use it to support form intent controls through native form submissions as part of progressive enhancement.
 
-The API can be called from React Server Components and Server Functions. It includes the default intent handlers. Pass custom handlers through `options.handlers` explicitly.
-
 ```ts
 import {
   parseSubmission,
