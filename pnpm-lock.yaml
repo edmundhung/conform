@@ -1170,7 +1170,10 @@ importers:
         specifier: ^3.25.75
         version: 3.25.76
       zod-v4:
-        specifier: npm:zod@^4.4.3
+        specifier: npm:zod@^4.6.5
+        version: zod@4.6.5
+      zod-v4-legacy:
+        specifier: npm:zod@4.4.3
         version: zod@4.4.3
 
   playground:
