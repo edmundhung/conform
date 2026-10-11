@@ -72,7 +72,7 @@ export default defineConfig({
 			{
 				// Zod before 4.6 writes check metadata to `_zod.bag` eagerly
 				resolve: {
-					alias: [{ find: /^zod-v4$/, replacement: 'zod-v4-legacy' }],
+					alias: [{ find: 'zod-v4', replacement: 'zod-v4-legacy' }],
 				},
 				test: {
 					name: 'conform-zod (node, zod v4.4)',
