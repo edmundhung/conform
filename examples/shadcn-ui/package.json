@@ -12,8 +12,8 @@
 		"typecheck": "tsc -b"
 	},
 	"dependencies": {
-		"@conform-to/react": "^1.21.1",
-		"@conform-to/zod": "^1.21.1",
+		"@conform-to/react": "^1.21.2",
+		"@conform-to/zod": "^1.21.2",
 		"@fontsource-variable/geist": "5.2.9",
 		"@tailwindcss/vite": "^4.3.3",
 		"class-variance-authority": "^0.7.1",
