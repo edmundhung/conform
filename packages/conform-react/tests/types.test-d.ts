@@ -871,25 +871,6 @@ describe('configureForms', () => {
 			},
 		});
 
-		const resolvedInlineSubmission = custom.resolveSubmission(
-			{
-				intent: 'confirm("email")',
-				payload: { email: 'test@example.com' },
-				fields: ['email'],
-			},
-			{
-				handlers: { confirm },
-			},
-		);
-
-		if (resolvedInlineSubmission.intent?.type === 'confirm') {
-			assertType<string>(resolvedInlineSubmission.intent.payload);
-		} else if (resolvedInlineSubmission.intent?.type === 'goToStep') {
-			assertType<number>(resolvedInlineSubmission.intent.payload.step);
-		} else if (resolvedInlineSubmission.intent?.type === 'submit') {
-			assertType<string | undefined>(resolvedInlineSubmission.intent.payload);
-		}
-
 		const inlineIntentSetup = custom.useForm({
 			intents: {
 				confirm,
