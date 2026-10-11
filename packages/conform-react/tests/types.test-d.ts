@@ -25,6 +25,7 @@ import {
 	shape,
 	defineIntent,
 	defineCustomState,
+	resolveSubmission,
 } from '@conform-to/react/future';
 import { useRef } from 'react';
 
@@ -827,35 +828,38 @@ describe('configureForms', () => {
 		// @ts-expect-error unknown custom intents should not be exposed without typing
 		custom.useIntent('form-id').unknownIntent();
 
+		const resolvedSubmission = resolveSubmission(
+			{
+				intent: 'goToStep({"step":1})',
+				payload: { step: '0' },
+				fields: ['step'],
+			},
+			{
+				handlers: { goToStep },
+			},
+		);
+
+		assertType<Record<string, FormValue> | undefined>(
+			resolvedSubmission.targetValue,
+		);
+		// @ts-expect-error resolveSubmission no longer returns `value`
+		void resolvedSubmission.value;
+
+		if (resolvedSubmission.intent?.type === 'goToStep') {
+			assertType<number>(resolvedSubmission.intent.payload.step);
+		} else if (resolvedSubmission.intent?.type === 'submit') {
+			assertType<string | undefined>(resolvedSubmission.intent.payload);
+		}
+
 		const resolvedConfiguredSubmission = custom.resolveSubmission({
 			intent: 'goToStep({"step":1})',
 			payload: { step: '0' },
 			fields: ['step'],
 		});
 
-		assertType<Record<string, FormValue> | undefined>(
-			resolvedConfiguredSubmission.targetValue,
-		);
-		// @ts-expect-error resolveSubmission no longer returns `value`
-		void resolvedConfiguredSubmission.value;
-
-		if (resolvedConfiguredSubmission.intent?.type === 'goToStep') {
-			assertType<number>(resolvedConfiguredSubmission.intent.payload.step);
-		} else if (resolvedConfiguredSubmission.intent?.type === 'submit') {
-			assertType<string | undefined>(
-				resolvedConfiguredSubmission.intent.payload,
-			);
-		}
-
-		const unresolvedConfiguredSubmission = custom.resolveSubmission({
-			intent: 'unknown',
-			payload: { step: '0' },
-			fields: ['step'],
-		});
-
-		assertType<Record<string, FormValue> | undefined>(
-			unresolvedConfiguredSubmission.targetValue,
-		);
+		expectTypeOf(resolvedConfiguredSubmission).toEqualTypeOf<
+			typeof resolvedSubmission
+		>();
 
 		const confirm = defineIntent<string>({
 			parse(payload) {

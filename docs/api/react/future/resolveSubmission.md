@@ -4,8 +4,6 @@
 
 `resolveSubmission` interprets the intent in a parsed submission and returns the form value produced by it. This lets a server action distinguish a submit intent from a form intent, such as inserting or removing a list item, and validate the updated form value before reporting it back. Use it to support form intent controls through native form submissions as part of progressive enhancement.
 
-If you already created a customized forms factory with [`configureForms`](./configureForms.md), use `forms.resolveSubmission(...)` so the factory's custom intent handlers are included too.
-
 ```ts
 import {
   parseSubmission,
@@ -50,7 +48,7 @@ The submission object returned by [`parseSubmission`](./parseSubmission.md).
 
 ### `options.handlers?: Record<string, IntentHandler>`
 
-Optional intent handlers used to extend or override the configured intent handlers for this call.
+Optional intent handlers used to extend or override the default intent handlers for this call.
 
 ## Returns
 

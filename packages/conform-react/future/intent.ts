@@ -560,3 +560,41 @@ export const defaultIntentHandlers: DefaultIntentHandlers = {
 	remove,
 	reorder,
 };
+
+/**
+ * Parses and resolves a submission payload using the default form intent handlers.
+ *
+ * See https://conform.guide/api/react/future/resolveSubmission
+ */
+export function resolveSubmission<
+	IntentHandlers extends Record<string, IntentHandler<any, any>> = {},
+>(
+	submission: Submission,
+	options?: {
+		handlers?: IntentHandlers;
+	},
+): {
+	intent:
+		| FormIntent<
+				Record<string, any>,
+				DefaultIntentHandlers & IntentHandlers
+			  >
+		| { type: 'submit'; payload: string | undefined }
+		| undefined;
+	targetValue: Record<string, FormValue> | undefined;
+} {
+	const handlers = mergeIntentHandlers(
+		defaultIntentHandlers,
+		options?.handlers,
+	);
+	const intent = parseIntent(submission.intent, { handlers });
+	const targetValue = resolveIntent(submission, {
+		handlers,
+		intent,
+	});
+
+	return {
+		intent,
+		targetValue,
+	};
+}

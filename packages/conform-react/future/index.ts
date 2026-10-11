@@ -42,9 +42,8 @@ export {
 	useFormMetadata,
 	useField,
 	useIntent,
-	resolveSubmission,
 } from './forms';
-export { defineIntent } from './intent';
+export { defineIntent, resolveSubmission } from './intent';
 export { defineCustomState } from './state';
 export {
 	BaseControl,
