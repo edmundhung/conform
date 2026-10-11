@@ -69,6 +69,22 @@ export default defineConfig({
 					testTimeout: 1_000,
 				},
 			},
+			{
+				// Zod before 4.6 writes check metadata to `_zod.bag` eagerly
+				resolve: {
+					alias: [{ find: 'zod-v4', replacement: 'zod-v4-legacy' }],
+				},
+				test: {
+					name: 'conform-zod (node, zod v4.4)',
+					environment: 'node',
+					include: ['v4/tests/**/*.test.{ts,tsx}'],
+					exclude: [
+						'**/node_modules/**',
+						'**/tests/**/*.browser.test.{ts,tsx}',
+					],
+					testTimeout: 1_000,
+				},
+			},
 		],
 	},
 });

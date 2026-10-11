@@ -519,4 +519,109 @@ describe('getZodConstraint', () => {
 			},
 		});
 	});
+
+	test('folds repeated checks to the tightest bound', () => {
+		const schema = z.object({
+			ascendingMin: z.string().min(5).min(8),
+			descendingMin: z.string().min(8).min(5),
+			ascendingMax: z.string().max(3).max(10),
+			descendingMax: z.string().max(10).max(3),
+			exactLength: z.string().length(4),
+			number: z.number().min(1).min(5).max(10).max(8),
+			exclusive: z.number().gt(1).lt(10),
+		});
+
+		expect(getZodConstraint(schema)).toEqual({
+			ascendingMin: { required: true, minLength: 8 },
+			descendingMin: { required: true, minLength: 8 },
+			ascendingMax: { required: true, maxLength: 3 },
+			descendingMax: { required: true, maxLength: 3 },
+			exactLength: { required: true, minLength: 4, maxLength: 4 },
+			number: { required: true, min: 5, max: 8 },
+			exclusive: { required: true },
+		});
+	});
+
+	test('number formats', () => {
+		const schema = z.object({
+			int: z.int(),
+			int32: z.int32(),
+			uint32: z.uint32(),
+			boundedInt: z.number().min(1).int(),
+		});
+
+		expect(getZodConstraint(schema)).toEqual({
+			int: {
+				required: true,
+				min: Number.MIN_SAFE_INTEGER,
+				max: Number.MAX_SAFE_INTEGER,
+			},
+			int32: { required: true, min: -2147483648, max: 2147483647 },
+			uint32: { required: true, min: 0, max: 4294967295 },
+			boundedInt: {
+				required: true,
+				min: 1,
+				max: Number.MAX_SAFE_INTEGER,
+			},
+		});
+	});
+
+	test('string format patterns', () => {
+		const schema = z.object({
+			prefix: z.string().startsWith('abc'),
+			combined: z.string().regex(/[A-Z]/).endsWith('!'),
+		});
+
+		expect(getZodConstraint(schema)).toEqual({
+			prefix: { required: true, pattern: '^(?=.*(?:^abc.*)).*$' },
+			combined: {
+				required: true,
+				pattern: '^(?=.*(?:[A-Z]))(?=.*(?:.*!$)).*$',
+			},
+		});
+	});
+
+	test('file mime types', () => {
+		const schema = z.object({
+			image: z.file().mime(['image/png', 'image/jpeg']),
+			narrowed: z
+				.file()
+				.mime(['image/png', 'image/jpeg'])
+				.mime(['image/png', 'image/gif']),
+			disjoint: z.file().mime(['image/png']).mime(['image/gif']),
+		});
+
+		expect(getZodConstraint(schema)).toEqual({
+			image: { required: true, accept: 'image/png,image/jpeg' },
+			narrowed: { required: true, accept: 'image/png' },
+			disjoint: { required: true },
+		});
+	});
+
+	test('keeps constraints written to the bag', () => {
+		const text = z.string();
+		const number = z.number();
+
+		// Zod before 4.6 and third-party checks write their bounds here
+		Object.assign(text._zod.bag, { minimum: 2, maximum: 5 });
+		Object.assign(number._zod.bag, { minimum: 1 });
+
+		expect(getZodConstraint(z.object({ text, number }))).toEqual({
+			text: { required: true, minLength: 2, maxLength: 5 },
+			number: { required: true, min: 1 },
+		});
+	});
+
+	test('ignores bag values of an unexpected type', () => {
+		const text = z.string();
+		const file = z.file();
+
+		Object.assign(text._zod.bag, { minimum: '2', patterns: ['[a-z]'] });
+		Object.assign(file._zod.bag, { mime: 'image/png' });
+
+		expect(getZodConstraint(z.object({ text, file }))).toEqual({
+			text: { required: true },
+			file: { required: true },
+		});
+	});
 });

@@ -1,13 +1,7 @@
 import type { Constraint } from '@conform-to/dom';
 import { formatPaths, getPaths, getRelativePath } from '@conform-to/dom';
 import { serializeHtmlPattern } from '@conform-to/dom/future';
-import {
-	$ZodFile,
-	$ZodNumber,
-	$ZodString,
-	$ZodType,
-	$ZodTypes,
-} from 'zod/v4/core';
+import type { $ZodChecks, $ZodType, $ZodTypes } from 'zod/v4/core';
 
 const keys: Array<keyof Constraint> = [
 	'required',
@@ -20,6 +14,144 @@ const keys: Array<keyof Constraint> = [
 	'pattern',
 	'accept',
 ];
+
+type CheckDef = $ZodChecks['_zod']['def'];
+
+type CheckSummary = {
+	minimum?: number;
+	maximum?: number;
+	patterns: Map<string, RegExp>;
+	mime?: string[];
+};
+
+// Same inclusive ranges Zod applies to `z.int()`, `z.int32()`, etc.
+const numberFormatRanges: Record<string, [number, number]> = {
+	safeint: [Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
+	int32: [-2147483648, 2147483647],
+	uint32: [0, 4294967295],
+	float32: [-3.4028234663852886e38, 3.4028234663852886e38],
+	float64: [-Number.MAX_VALUE, Number.MAX_VALUE],
+};
+
+/**
+ * Collects the HTML-relevant bounds of a schema from its check definitions.
+ *
+ * Zod 4.6 stopped writing check metadata to `_zod.bag` when a schema is built,
+ * so the bag alone is empty there. This mirrors Zod's own `aggregateChecks`
+ * fold in `zod/v4/core/json-schema-processors`, which is not exported. The bag
+ * is still merged in, so older Zod versions and third-party checks keep
+ * contributing. Repeated bounds keep the tightest value, matching how Zod
+ * validates them.
+ */
+function summarizeChecks(schema: $ZodType): CheckSummary {
+	const summary: CheckSummary = { patterns: new Map() };
+	const checkDefs = (schema._zod.def.checks ?? []).map(
+		(check) => check._zod.def as CheckDef,
+	);
+
+	// A format schema such as `z.email()` is its own first check
+	if (schema._zod.traits.has('$ZodCheck')) {
+		checkDefs.unshift(schema._zod.def as unknown as CheckDef);
+	}
+
+	for (const def of checkDefs) {
+		let minimum: unknown;
+		let maximum: unknown;
+
+		switch (def.check) {
+			case 'greater_than':
+				if (def.inclusive) {
+					minimum = def.value;
+				}
+				break;
+			case 'less_than':
+				if (def.inclusive) {
+					maximum = def.value;
+				}
+				break;
+			case 'number_format': {
+				const range = numberFormatRanges[def.format];
+				if (range) {
+					[minimum, maximum] = range;
+				}
+				break;
+			}
+			case 'min_length':
+			case 'min_size':
+				minimum = def.minimum;
+				break;
+			case 'max_length':
+			case 'max_size':
+				maximum = def.maximum;
+				break;
+			case 'length_equals':
+				minimum = maximum = def.length;
+				break;
+			case 'size_equals':
+				minimum = maximum = def.size;
+				break;
+			case 'string_format':
+				if (def.pattern instanceof RegExp) {
+					summary.patterns.set(def.pattern.toString(), def.pattern);
+				}
+				break;
+			case 'mime_type':
+				if (Array.isArray(def.mime)) {
+					const types = def.mime.filter(
+						(type): type is string => typeof type === 'string',
+					);
+					summary.mime = summary.mime
+						? summary.mime.filter((type) => types.includes(type))
+						: types;
+				}
+				break;
+		}
+
+		if (
+			typeof minimum === 'number' &&
+			(summary.minimum === undefined || minimum > summary.minimum)
+		) {
+			summary.minimum = minimum;
+		}
+		if (
+			typeof maximum === 'number' &&
+			(summary.maximum === undefined || maximum < summary.maximum)
+		) {
+			summary.maximum = maximum;
+		}
+	}
+
+	const { minimum, maximum, patterns, mime } = schema._zod.bag;
+	if (
+		typeof minimum === 'number' &&
+		(summary.minimum === undefined || minimum > summary.minimum)
+	) {
+		summary.minimum = minimum;
+	}
+	if (
+		typeof maximum === 'number' &&
+		(summary.maximum === undefined || maximum < summary.maximum)
+	) {
+		summary.maximum = maximum;
+	}
+	if (patterns instanceof Set) {
+		for (const pattern of patterns) {
+			if (pattern instanceof RegExp) {
+				summary.patterns.set(pattern.toString(), pattern);
+			}
+		}
+	}
+	if (Array.isArray(mime)) {
+		const types = mime.filter(
+			(type): type is string => typeof type === 'string',
+		);
+		summary.mime = summary.mime
+			? summary.mime.filter((type) => types.includes(type))
+			: types;
+	}
+
+	return summary;
+}
 
 export function getZodConstraint(
 	schema: $ZodType,
@@ -133,15 +265,15 @@ export function getZodConstraint(
 			constraint.multiple = true;
 			updateConstraint(def.element, data, `${name}[]`);
 		} else if (def.type === 'string') {
-			const _schema = schema as $ZodString;
-			if (_schema._zod.bag.minimum != null) {
-				constraint.minLength = _schema._zod.bag.minimum;
+			const { minimum, maximum, patterns } = summarizeChecks(schema);
+			if (minimum !== undefined) {
+				constraint.minLength = minimum;
 			}
-			if (_schema._zod.bag.maximum != null) {
-				constraint.maxLength = _schema._zod.bag.maximum;
+			if (maximum !== undefined) {
+				constraint.maxLength = maximum;
 			}
-			if (_schema._zod.bag.patterns?.size) {
-				const pattern = serializeHtmlPattern([..._schema._zod.bag.patterns]);
+			if (patterns.size > 0) {
+				const pattern = serializeHtmlPattern([...patterns.values()]);
 				if (pattern) {
 					constraint.pattern = pattern;
 				}
@@ -155,12 +287,12 @@ export function getZodConstraint(
 			constraint.required = false;
 			updateConstraint(def.innerType, data, name);
 		} else if (def.type === 'number') {
-			const _schema = schema as $ZodNumber;
-			if (_schema._zod.bag.minimum != null) {
-				constraint.min = _schema._zod.bag.minimum;
+			const { minimum, maximum } = summarizeChecks(schema);
+			if (minimum !== undefined) {
+				constraint.min = minimum;
 			}
-			if (_schema._zod.bag.maximum != null) {
-				constraint.max = _schema._zod.bag.maximum;
+			if (maximum !== undefined) {
+				constraint.max = maximum;
 			}
 		} else if (def.type === 'enum') {
 			constraint.pattern = Object.keys(def.entries)
@@ -175,9 +307,10 @@ export function getZodConstraint(
 				updateConstraint(def.items[i], data, `${name}[${i}]`);
 			}
 		} else if (def.type === 'file') {
-			const _schema = schema as $ZodFile;
-			if (_schema._zod.bag.mime) {
-				constraint.accept = _schema._zod.bag.mime.join();
+			const { mime } = summarizeChecks(schema);
+			// An empty intersection would render `accept=""`, which allows any file
+			if (mime && mime.length > 0) {
+				constraint.accept = mime.join();
 			}
 		} else if (def.type === 'lazy') {
 			const inner = def.getter();

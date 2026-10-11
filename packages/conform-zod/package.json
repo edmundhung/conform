@@ -84,7 +84,8 @@
 		"rollup-plugin-copy": "^3.4.0",
 		"vitest": "^4.1.11",
 		"zod": "^3.25.75",
-		"zod-v4": "npm:zod@^4.4.3"
+		"zod-v4": "npm:zod@^4.6.5",
+		"zod-v4-legacy": "npm:zod@4.4.3"
 	},
 	"keywords": [
 		"constraint-validation",
