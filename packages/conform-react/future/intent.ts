@@ -561,45 +561,40 @@ export const defaultIntentHandlers: DefaultIntentHandlers = {
 	reorder,
 };
 
-export function createSubmissionResolver<
-	GlobalIntentHandlers extends Record<string, IntentHandler<any, any>>,
->(globalIntentHandlers: GlobalIntentHandlers) {
-	return function resolveSubmission<
-		IntentHandlers extends Record<string, IntentHandler<any, any>> = {},
-	>(
-		submission: Submission,
-		options?: {
-			handlers?: IntentHandlers;
-		},
-	): {
-		intent:
-			| FormIntent<Record<string, any>, GlobalIntentHandlers & IntentHandlers>
-			| { type: 'submit'; payload: string | undefined }
-			| undefined;
-		targetValue: Record<string, FormValue> | undefined;
-	} {
-		const handlers = mergeIntentHandlers(
-			globalIntentHandlers,
-			options?.handlers,
-		);
-		const intent = parseIntent(submission.intent, { handlers });
-		const targetValue = resolveIntent(submission, {
-			handlers,
-			intent,
-		});
-
-		return {
-			intent,
-			targetValue,
-		};
-	};
-}
-
 /**
- * Parses and resolves a submission payload using the default configured form intent handlers.
+ * Parses and resolves a submission payload using the default form intent handlers.
  *
  * See https://conform.guide/api/react/future/resolveSubmission
  */
-export const resolveSubmission = createSubmissionResolver(
-	defaultIntentHandlers,
-);
+export function resolveSubmission<
+	IntentHandlers extends Record<string, IntentHandler<any, any>> = {},
+>(
+	submission: Submission,
+	options?: {
+		handlers?: IntentHandlers;
+	},
+): {
+	intent:
+		| FormIntent<
+				Record<string, any>,
+				DefaultIntentHandlers & IntentHandlers
+			  >
+		| { type: 'submit'; payload: string | undefined }
+		| undefined;
+	targetValue: Record<string, FormValue> | undefined;
+} {
+	const handlers = mergeIntentHandlers(
+		defaultIntentHandlers,
+		options?.handlers,
+	);
+	const intent = parseIntent(submission.intent, { handlers });
+	const targetValue = resolveIntent(submission, {
+		handlers,
+		intent,
+	});
+
+	return {
+		intent,
+		targetValue,
+	};
+}

@@ -7,16 +7,10 @@ A factory function that creates customized form hooks based on the provided conf
 ```ts
 import { configureForms } from '@conform-to/react/future';
 
-const {
-  FormProvider,
-  useForm,
-  useFormMetadata,
-  useField,
-  useIntent,
-  resolveSubmission,
-} = configureForms({
-  // configs...
-});
+const { FormProvider, useForm, useFormMetadata, useField, useIntent } =
+  configureForms({
+    // configs...
+  });
 ```
 
 ## Options
@@ -52,7 +46,7 @@ This is an advanced option. You typically don't need to change this unless you h
 
 Intent handlers available to every form created by this factory.
 
-Use this to add custom methods to [`useIntent`](./useIntent.md), the `intent` object returned by [`useForm`](./useForm.md), and the bound [`resolveSubmission`](./resolveSubmission.md) helper returned from this factory.
+Use this to add custom methods to [`useIntent`](./useIntent.md) and the `intent` object returned by [`useForm`](./useForm.md). These handlers are also included in the deprecated `resolveSubmission` helper returned from this factory. When using the standalone [`resolveSubmission`](./resolveSubmission.md) API, pass them through `options.handlers` explicitly.
 
 ### `customState?: Record<string, CustomStateHandler>`
 
@@ -135,6 +129,8 @@ Hook to get an intent dispatcher. See [useIntent](./useIntent.md).
 ### `resolveSubmission`
 
 Helper to parse and resolve a submission payload with the factory's configured global intent handlers. See [resolveSubmission](./resolveSubmission.md).
+
+Deprecated. Import the standalone `resolveSubmission` from `@conform-to/react/future` and pass custom intent handlers through `options.handlers` instead. The factory helper is retained for compatibility, but it cannot be called from React Server Components or Server Functions because `configureForms` is a client API.
 
 ### `config`
 

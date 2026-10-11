@@ -1,5 +1,6 @@
 import { isFieldElement, FieldName } from '@conform-to/dom';
 import { DEFAULT_INTENT_NAME, defaultSerialize } from '@conform-to/dom/future';
+import type { Submission } from '@conform-to/dom/future';
 import { useContext, useMemo, useId, useState, createContext } from 'react';
 import {
 	focusFirstInvalidField,
@@ -40,9 +41,9 @@ import {
 	validateStandardSchemaV1,
 } from './util';
 import {
-	createSubmissionResolver,
 	defaultIntentHandlers,
 	mergeIntentHandlers,
+	resolveSubmission,
 } from './intent';
 
 export function configureForms<
@@ -77,7 +78,6 @@ export function configureForms<
 		defaultIntentHandlers,
 		config.intents,
 	);
-	const resolveSubmission = createSubmissionResolver(globalIntentHandlers);
 
 	/**
 	 * Global configuration with defaults applied
@@ -746,7 +746,23 @@ export function configureForms<
 		useFormMetadata,
 		useField,
 		useIntent,
-		resolveSubmission,
+		/**
+		 * @deprecated Import `resolveSubmission` from `@conform-to/react/future`
+		 * and pass custom intent handlers through `options.handlers` instead.
+		 */
+		resolveSubmission<
+			IntentHandlers extends Record<string, IntentHandler<any, any>> = {},
+		>(
+			submission: Submission,
+			options?: {
+				handlers?: IntentHandlers;
+			},
+		) {
+			return resolveSubmission(submission, {
+				...options,
+				handlers: mergeIntentHandlers(globalIntentHandlers, options?.handlers),
+			});
+		},
 		config: globalConfig,
 	};
 }
