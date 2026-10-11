@@ -1,20 +1,7 @@
-import type { ValidationAttributes } from '@conform-to/dom/future';
 import { configureCoercion as baseConfigureCoercion } from './coercion';
-import { getZodConstraint as baseGetZodConstraint } from './constraint';
-import { isSchema } from './schema';
-
-export function getConstraints(
-	schema: unknown,
-): Record<string, ValidationAttributes> | undefined {
-	if (!isSchema(schema)) {
-		return undefined;
-	}
-
-	return baseGetZodConstraint(schema);
-}
 
 export { formatResult } from './format';
-export { isSchema } from './schema';
+export { isSchema, getConstraints } from './schema';
 
 function defaultDate(text: string): Date {
 	const date = new Date(shouldAppendUtcSuffix(text) ? `${text}Z` : text);
