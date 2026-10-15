@@ -1,6 +1,6 @@
 # Remix
 
-[Remix](https://remix.run/) とインテグレーションしたログインフォームの例です。完全な例は [こちら](../../examples/remix) です。
+[Remix](https://remix.run/) とインテグレーションしたログインフォームの例です。完全な例は [React Router のサンプル](../../examples/react-router) を参照してください。
 
 ```tsx
 import { getFormProps, getInputProps, useForm } from '@conform-to/react';
