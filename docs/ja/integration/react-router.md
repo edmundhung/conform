@@ -1,14 +1,15 @@
-# Remix
+# React Router
 
-[Remix](https://remix.run/) とインテグレーションしたログインフォームの例です。完全な例は [React Router のサンプル](../../examples/react-router) を参照してください。
+[React Router](https://reactrouter.com/) の Framework Mode とインテグレーションしたログインフォームの例です。完全な例は [React Router のサンプル](../../examples/react-router) を参照してください。
+
+この例は `app/routes/login.tsx` のルートモジュールを想定しています。`Route` 型は React Router によって生成されます。
 
 ```tsx
-import { getFormProps, getInputProps, useForm } from '@conform-to/react';
-import { parseWithZod } from '@conform-to/zod';
-import type { ActionArgs } from '@remix-run/node';
-import { json, redirect } from '@remix-run/node';
-import { Form, useActionData } from '@remix-run/react';
+import { useForm } from '@conform-to/react';
+import { parseWithZod } from '@conform-to/zod/v4';
+import { Form, redirect } from 'react-router';
 import { z } from 'zod';
+import type { Route } from './+types/login';
 
 const schema = z.object({
   email: z.string().email(),
@@ -16,23 +17,23 @@ const schema = z.object({
   remember: z.boolean().optional(),
 });
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const submission = parseWithZod(formData, { schema });
 
   if (submission.status !== 'success') {
-    return json(submission.reply());
+    return submission.reply();
   }
 
   // ...
+
+  return redirect('/');
 }
 
-export default function Login() {
-  // サーバーから最後に返された送信結果
-  const lastResult = useActionData<typeof action>();
+export default function Login({ actionData }: Route.ComponentProps) {
   const [form, fields] = useForm({
     // 前回の送信結果を同期
-    lastResult,
+    lastResult: actionData,
 
     // クライアントでバリデーション・ロジックを再利用する
     onValidate({ formData }) {
