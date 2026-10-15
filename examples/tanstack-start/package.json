@@ -1,0 +1,43 @@
+{
+	"name": "tanstack-start-example",
+	"private": true,
+	"type": "module",
+	"imports": {
+		"#/*": "./src/*"
+	},
+	"scripts": {
+		"build": "vite build",
+		"dev": "vite dev --port 3000",
+		"generate-routes": "tsr generate",
+		"preview": "vite preview",
+		"test": "playwright test",
+		"typecheck": "tsr generate && tsc"
+	},
+	"dependencies": {
+		"@conform-to/react": "1.21.2",
+		"@conform-to/zod": "1.21.2",
+		"@tanstack/react-router": "1.170.44",
+		"@tanstack/react-start": "1.169.0",
+		"react": "^19.2.0",
+		"react-dom": "^19.2.0",
+		"zod": "^4.4.3"
+	},
+	"devDependencies": {
+		"@playwright/test": "1.62.1",
+		"@tanstack/router-cli": "^1.132.0",
+		"@types/node": "^22.10.2",
+		"@types/react": "^19.2.0",
+		"@types/react-dom": "^19.2.0",
+		"@vitejs/plugin-react": "^6.0.1",
+		"typescript": "^6.0.2",
+		"vite": "^8.0.0"
+	},
+	"dependenciesMeta": {
+		"@conform-to/react": {
+			"injected": true
+		},
+		"@conform-to/zod": {
+			"injected": true
+		}
+	}
+}
