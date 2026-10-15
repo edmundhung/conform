@@ -14,23 +14,23 @@
 		"typecheck": "tsr generate && tsc"
 	},
 	"dependencies": {
-		"@conform-to/react": "1.21.1",
-		"@conform-to/zod": "1.21.1",
-		"@tanstack/react-router": "1.170.31",
-		"@tanstack/react-start": "1.168.48",
-		"react": "^19.2.7",
-		"react-dom": "^19.2.7",
+		"@conform-to/react": "1.21.2",
+		"@conform-to/zod": "1.21.2",
+		"@tanstack/react-router": "1.170.44",
+		"@tanstack/react-start": "1.169.0",
+		"react": "^19.2.0",
+		"react-dom": "^19.2.0",
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {
 		"@playwright/test": "1.62.1",
-		"@tanstack/router-cli": "1.167.32",
-		"@types/node": "^22",
-		"@types/react": "^19.2.17",
-		"@types/react-dom": "^19.2.3",
-		"@vitejs/plugin-react": "^6.1.0",
-		"typescript": "^5.9.3",
-		"vite": "^8.2.1"
+		"@tanstack/router-cli": "^1.132.0",
+		"@types/node": "^22.10.2",
+		"@types/react": "^19.2.0",
+		"@types/react-dom": "^19.2.0",
+		"@vitejs/plugin-react": "^6.0.1",
+		"typescript": "^6.0.2",
+		"vite": "^8.0.0"
 	},
 	"dependenciesMeta": {
 		"@conform-to/react": {
