@@ -348,13 +348,15 @@ describe('createGlobalFormsObserver', () => {
 		ctx.onTestFinished(observer.onFieldUpdate(fieldListener));
 
 		await userEvent.click(resetButton);
-		expect(formListener).toBeCalledWith({
-			type: 'reset',
-			target: form,
-		});
-		expect(fieldListener).toBeCalledWith({
-			type: 'reset',
-			target: input,
+		await vi.waitFor(() => {
+			expect(formListener).toBeCalledWith({
+				type: 'reset',
+				target: form,
+			});
+			expect(fieldListener).toBeCalledWith({
+				type: 'reset',
+				target: input,
+			});
 		});
 	});
 
