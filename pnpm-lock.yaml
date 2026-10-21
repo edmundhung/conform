@@ -27,8 +27,8 @@ importers:
         specifier: workspace:*
         version: link:packages/conform-zod
       '@playwright/test':
-        specifier: ^1.62.1
-        version: 1.62.1
+        specifier: ^1.64.1
+        version: 1.64.1
       '@types/node':
         specifier: ^20.19.0
         version: 20.19.39
@@ -43,7 +43,7 @@ importers:
         version: 4.1.10(vite@8.3.3(@types/node@20.19.39)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
       '@vitest/browser-playwright':
         specifier: ^4.1.10
-        version: 4.1.10(playwright@1.62.1)(vite@8.3.3(@types/node@20.19.39)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
+        version: 4.1.10(playwright@1.64.1)(vite@8.3.3(@types/node@20.19.39)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
       husky:
         specifier: ^8.0.3
         version: 8.0.3
@@ -120,8 +120,8 @@ importers:
         specifier: ^0.9.8
         version: 0.9.8(prettier@3.9.6)(typescript@5.8.3)
       '@playwright/test':
-        specifier: ^1.62.1
-        version: 1.62.1
+        specifier: ^1.64.1
+        version: 1.64.1
       '@types/node':
         specifier: ^25.5.0
         version: 25.5.0
@@ -156,8 +156,8 @@ importers:
         injected: true
     devDependencies:
       '@playwright/test':
-        specifier: ^1.62.1
-        version: 1.62.1
+        specifier: ^1.64.1
+        version: 1.64.1
       '@types/node':
         specifier: ^24.13.3
         version: 24.13.3
@@ -210,8 +210,8 @@ importers:
         injected: true
     devDependencies:
       '@playwright/test':
-        specifier: ^1.62.1
-        version: 1.62.1
+        specifier: ^1.64.1
+        version: 1.64.1
       '@types/node':
         specifier: ^24.13.3
         version: 24.13.3
@@ -264,8 +264,8 @@ importers:
         injected: true
     devDependencies:
       '@playwright/test':
-        specifier: ^1.62.1
-        version: 1.62.1
+        specifier: ^1.64.1
+        version: 1.64.1
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.3(vite@8.3.3(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))
@@ -333,8 +333,8 @@ importers:
         injected: true
     devDependencies:
       '@playwright/test':
-        specifier: ^1.62.1
-        version: 1.62.1
+        specifier: ^1.64.1
+        version: 1.64.1
       '@types/node':
         specifier: ^24.13.3
         version: 24.13.3
@@ -367,7 +367,7 @@ importers:
         version: file:packages/conform-zod(zod@4.4.3)
       next:
         specifier: 16.3.8
-        version: 16.3.8(@playwright/test@1.62.1)(@types/node@20.11.20)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        version: 16.3.8(@playwright/test@1.64.1)(@types/node@20.11.20)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react:
         specifier: 19.2.7
         version: 19.2.7
@@ -384,8 +384,8 @@ importers:
         injected: true
     devDependencies:
       '@playwright/test':
-        specifier: ^1.62.1
-        version: 1.62.1
+        specifier: ^1.64.1
+        version: 1.64.1
       '@types/node':
         specifier: ^20
         version: 20.11.20
@@ -438,8 +438,8 @@ importers:
         injected: true
     devDependencies:
       '@playwright/test':
-        specifier: 1.62.1
-        version: 1.62.1
+        specifier: 1.64.1
+        version: 1.64.1
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.3(vite@8.3.3(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))
@@ -498,8 +498,8 @@ importers:
         injected: true
     devDependencies:
       '@playwright/test':
-        specifier: ^1.62.1
-        version: 1.62.1
+        specifier: ^1.64.1
+        version: 1.64.1
       '@types/node':
         specifier: ^24.13.3
         version: 24.13.3
@@ -558,8 +558,8 @@ importers:
         injected: true
     devDependencies:
       '@playwright/test':
-        specifier: 1.62.1
-        version: 1.62.1
+        specifier: 1.64.1
+        version: 1.64.1
       '@react-router/dev':
         specifier: 8.3.0
         version: 8.3.0(@react-router/serve@8.3.0(react-router@8.3.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@5.9.3))(babel-plugin-macros@3.1.0)(react-router@8.3.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@5.9.3)(vite@8.3.3(@types/node@22.20.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))
@@ -606,8 +606,8 @@ importers:
         injected: true
     devDependencies:
       '@playwright/test':
-        specifier: 1.62.1
-        version: 1.62.1
+        specifier: 1.64.1
+        version: 1.64.1
       '@types/node':
         specifier: ^24.13.2
         version: 24.13.3
@@ -748,8 +748,8 @@ importers:
         injected: true
     devDependencies:
       '@playwright/test':
-        specifier: ^1.62.1
-        version: 1.62.1
+        specifier: ^1.64.1
+        version: 1.64.1
       '@types/node':
         specifier: ^24.13.3
         version: 24.13.3
@@ -838,8 +838,8 @@ importers:
         injected: true
     devDependencies:
       '@playwright/test':
-        specifier: 1.62.1
-        version: 1.62.1
+        specifier: 1.64.1
+        version: 1.64.1
       '@types/node':
         specifier: ^24.13.3
         version: 24.13.3
@@ -948,10 +948,10 @@ importers:
         version: 16.0.3(rollup@2.80.0)
       '@vitest/browser-playwright':
         specifier: ^4.1.10
-        version: 4.1.10(playwright@1.62.1)(vite@8.3.3(@types/node@25.5.0)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
+        version: 4.1.10(playwright@1.64.1)(vite@8.3.3(@types/node@25.5.0)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
       playwright:
-        specifier: ^1.62.1
-        version: 1.62.1
+        specifier: ^1.64.1
+        version: 1.64.1
       rollup:
         specifier: ^2.80.0
         version: 2.80.0
@@ -994,10 +994,10 @@ importers:
         version: 18.3.7(@types/react@18.3.1)
       '@vitest/browser-playwright':
         specifier: ^4.1.10
-        version: 4.1.10(playwright@1.62.1)(vite@8.3.3(@types/node@25.5.0)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
+        version: 4.1.10(playwright@1.64.1)(vite@8.3.3(@types/node@25.5.0)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
       playwright:
-        specifier: ^1.62.1
-        version: 1.62.1
+        specifier: ^1.64.1
+        version: 1.64.1
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -1043,10 +1043,10 @@ importers:
         version: 16.0.3(rollup@2.80.0)
       '@vitest/browser-playwright':
         specifier: ^4.1.10
-        version: 4.1.10(playwright@1.62.1)(vite@8.3.3(@types/node@25.5.0)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
+        version: 4.1.10(playwright@1.64.1)(vite@8.3.3(@types/node@25.5.0)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
       playwright:
-        specifier: ^1.62.1
-        version: 1.62.1
+        specifier: ^1.64.1
+        version: 1.64.1
       rollup:
         specifier: ^2.80.0
         version: 2.80.0
@@ -1110,10 +1110,10 @@ importers:
         version: 16.0.3(rollup@2.80.0)
       '@vitest/browser-playwright':
         specifier: ^4.1.10
-        version: 4.1.10(playwright@1.62.1)(vite@8.3.3(@types/node@25.5.0)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
+        version: 4.1.10(playwright@1.64.1)(vite@8.3.3(@types/node@25.5.0)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
       playwright:
-        specifier: ^1.62.1
-        version: 1.62.1
+        specifier: ^1.64.1
+        version: 1.64.1
       rollup:
         specifier: ^2.80.0
         version: 2.80.0
@@ -1153,10 +1153,10 @@ importers:
         version: 16.0.3(rollup@2.80.0)
       '@vitest/browser-playwright':
         specifier: ^4.1.10
-        version: 4.1.10(playwright@1.62.1)(vite@8.3.3(@types/node@25.5.0)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
+        version: 4.1.10(playwright@1.64.1)(vite@8.3.3(@types/node@25.5.0)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
       playwright:
-        specifier: ^1.62.1
-        version: 1.62.1
+        specifier: ^1.64.1
+        version: 1.64.1
       rollup:
         specifier: ^2.80.0
         version: 2.80.0
@@ -4435,8 +4435,8 @@ packages:
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
 
-  '@playwright/test@1.62.1':
-    resolution: {integrity: sha512-DTcUc8qii+cpHvtOwggMtBRMjKZHXYWdw8syRYu2vtzuq4Wxphqq4NfCs5Zt44L6mA8rfDfj+PHnxFc/FeK6mQ==}
+  '@playwright/test@1.64.1':
+    resolution: {integrity: sha512-IaYGml/nSOiZWROfPtuIL7neuu9qDOZ3TNvNljUIrhDMxiGTgPjzj/g9p9RxpS2tSepPDRY+UwAaEeiKtUvIAg==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -8366,11 +8366,6 @@ packages:
   fs.realpath@1.0.0:
     resolution: {integrity: sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==}
 
-  fsevents@2.3.2:
-    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
-    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
-    os: [darwin]
-
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -10322,13 +10317,13 @@ packages:
     resolution: {integrity: sha512-nDywThFk1i4BQK4twPQ6TA4RT8bDY96yeuCVBWL3ePARCiEKDRSrNGbFIgUJpLp+XeIR65v8ra7WuJOFUBtkMA==}
     engines: {node: '>=8'}
 
-  playwright-core@1.62.1:
-    resolution: {integrity: sha512-wPYSwEBJY9GHraISXqyqtx0na0LpO3XEX7jNDhntbex7tzUS7kLnZsOlFruFJB4Hi/rhDMjXGqHewDZ68nYZVw==}
+  playwright-core@1.64.1:
+    resolution: {integrity: sha512-BC4s8y6SEVA6Q1rSxZTto8hI1KUI3xXlHGZgvGqP4IqPdI/a6FX9H29IDNz7vKo9l21b6LfYosScPL6M3xxyDQ==}
     engines: {node: '>=20'}
     hasBin: true
 
-  playwright@1.62.1:
-    resolution: {integrity: sha512-0M+L3LAD8/nm554LOla9Ayx0j0tmFZ0FBcoQ7F1VuVHpM/XpiC8RcDzBQB8W5+hA8L22THxELzeF+2WcUzvcLg==}
+  playwright@1.64.1:
+    resolution: {integrity: sha512-HCrVhHr5QQuwYoswEUGTb7gGp522yflbv/ST8nF4sFWGuLjQCt17Q/EubpGGSNKYn1tsTCPZxqHhHCfVURu7UA==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -15504,9 +15499,9 @@ snapshots:
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
-  '@playwright/test@1.62.1':
+  '@playwright/test@1.64.1':
     dependencies:
-      playwright: 1.62.1
+      playwright: 1.64.1
 
   '@pnpm/deps.graph-sequencer@1100.0.1': {}
 
@@ -17646,11 +17641,11 @@ snapshots:
       '@rolldown/pluginutils': 1.0.1
       vite: 8.3.3(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0)
 
-  '@vitest/browser-playwright@4.1.10(playwright@1.62.1)(vite@8.3.3(@types/node@20.19.39)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)':
+  '@vitest/browser-playwright@4.1.10(playwright@1.64.1)(vite@8.3.3(@types/node@20.19.39)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)':
     dependencies:
       '@vitest/browser': 4.1.10(vite@8.3.3(@types/node@20.19.39)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
       '@vitest/mocker': 4.1.10(vite@8.3.3(@types/node@20.19.39)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))
-      playwright: 1.62.1
+      playwright: 1.64.1
       tinyrainbow: 3.1.0
       vitest: 4.1.11(@types/node@20.19.39)(@vitest/browser-playwright@4.1.10)(vite@8.3.3(@types/node@20.19.39)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))
     transitivePeerDependencies:
@@ -17659,11 +17654,11 @@ snapshots:
       - utf-8-validate
       - vite
 
-  '@vitest/browser-playwright@4.1.10(playwright@1.62.1)(vite@8.3.3(@types/node@25.5.0)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)':
+  '@vitest/browser-playwright@4.1.10(playwright@1.64.1)(vite@8.3.3(@types/node@25.5.0)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)':
     dependencies:
       '@vitest/browser': 4.1.10(vite@8.3.3(@types/node@25.5.0)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
       '@vitest/mocker': 4.1.10(vite@8.3.3(@types/node@25.5.0)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))
-      playwright: 1.62.1
+      playwright: 1.64.1
       tinyrainbow: 3.1.0
       vitest: 4.1.11(@types/node@25.5.0)(@vitest/browser-playwright@4.1.10)(vite@8.3.3(@types/node@25.5.0)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))
     transitivePeerDependencies:
@@ -20763,9 +20758,6 @@ snapshots:
 
   fs.realpath@1.0.0: {}
 
-  fsevents@2.3.2:
-    optional: true
-
   fsevents@2.3.3:
     optional: true
 
@@ -22371,7 +22363,7 @@ snapshots:
 
   neotraverse@1.0.1: {}
 
-  next@16.3.8(@playwright/test@1.62.1)(@types/node@20.11.20)(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
+  next@16.3.8(@playwright/test@1.64.1)(@types/node@20.11.20)(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
     dependencies:
       '@next/env': 16.3.8
       '@swc/helpers': 0.5.23
@@ -22390,7 +22382,7 @@ snapshots:
       '@next/swc-linux-x64-musl': 16.3.8
       '@next/swc-win32-arm64-msvc': 16.3.8
       '@next/swc-win32-x64-msvc': 16.3.8
-      '@playwright/test': 1.62.1
+      '@playwright/test': 1.64.1
       sharp: 0.35.5(@types/node@20.11.20)
     transitivePeerDependencies:
       - '@babel/core'
@@ -22876,13 +22868,11 @@ snapshots:
     dependencies:
       find-up: 3.0.0
 
-  playwright-core@1.62.1: {}
+  playwright-core@1.64.1: {}
 
-  playwright@1.62.1:
+  playwright@1.64.1:
     dependencies:
-      playwright-core: 1.62.1
-    optionalDependencies:
-      fsevents: 2.3.2
+      playwright-core: 1.64.1
 
   pngjs@7.0.0: {}
 
@@ -25020,7 +25010,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 20.19.39
-      '@vitest/browser-playwright': 4.1.10(playwright@1.62.1)(vite@8.3.3(@types/node@20.19.39)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
+      '@vitest/browser-playwright': 4.1.10(playwright@1.64.1)(vite@8.3.3(@types/node@20.19.39)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
     transitivePeerDependencies:
       - msw
 
@@ -25048,7 +25038,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 25.5.0
-      '@vitest/browser-playwright': 4.1.10(playwright@1.62.1)(vite@8.3.3(@types/node@25.5.0)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
+      '@vitest/browser-playwright': 4.1.10(playwright@1.64.1)(vite@8.3.3(@types/node@25.5.0)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
     transitivePeerDependencies:
       - msw
 
