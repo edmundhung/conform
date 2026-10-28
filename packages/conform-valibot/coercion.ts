@@ -9,6 +9,8 @@ import {
 	type SchemaWithPipeAsync,
 	type TransformAction,
 	check,
+	lazy,
+	lazyAsync,
 	object as valibotObject,
 	pipe,
 	pipeAsync,
@@ -289,9 +291,10 @@ function generateWrappedSchema<T extends GenericSchema | GenericSchemaAsync>(
 	options: EnableTypeCoercionOptions,
 	rewrap = false,
 ) {
+	// @ts-expect-error: wrapper types have `wrapped` property
+	const wrapped: GenericSchema | GenericSchemaAsync = type.wrapped;
 	const { transformAction, schema: wrapSchema } = enableTypeCoercion(
-		// @ts-expect-error: wrapper types have `wrapped` property
-		type.wrapped,
+		wrapped,
 		options,
 	);
 
@@ -312,7 +315,18 @@ function generateWrappedSchema<T extends GenericSchema | GenericSchemaAsync>(
 	// `expects` is required to generate error messages for `TupleSchema`, so it is passed to `UnknownSchema` for coercion.
 	const unknown = { ...valibotUnknown(), expects: type.expects };
 	const default_ = 'default' in type ? type.default : undefined;
-	const wrappedSchema = { ...type, wrapped: wrapSchema };
+	// Select at parse time so default factories can be dynamic or async.
+	// Empty-string defaults must still be validated, but must not be stripped.
+	const defaultSchema =
+		rewrap && default_ !== undefined
+			? wrapped.async || wrapSchema.async
+				? lazyAsync((value) => (value === '' ? wrapped : wrapSchema))
+				: lazy((value) => (value === '' ? wrapped : wrapSchema))
+			: wrapSchema;
+	const wrappedSchema = {
+		...type,
+		wrapped: defaultSchema,
+	};
 
 	if (transformAction) {
 		const schema = wrappedSchema.async
