@@ -9,6 +9,7 @@ import {
 	type SchemaWithPipeAsync,
 	type TransformAction,
 	check,
+	getDefault,
 	lazy,
 	lazyAsync,
 	object as valibotObject,
@@ -469,14 +470,27 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 			// @ts-expect-error: exact_optional schema has `wrapped` property
 			const wrapped: GenericSchema | GenericSchemaAsync = type.wrapped;
 			const { schema: wrapSchema } = enableTypeCoercion(wrapped, options);
+			// Unlike optional/nullish, exactOptional can pass submitted empty
+			// strings directly to its inner schema. Check the default only for
+			// empty values, and keep configured coercion for every other input.
+			const defaultSchema =
+				type.async || wrapped.async || wrapSchema.async
+					? lazyAsync(async (value) =>
+							value === '' && (await getDefault(type)) === ''
+								? wrapped
+								: wrapSchema,
+						)
+					: lazy((value) =>
+							value === '' && getDefault(type) === '' ? wrapped : wrapSchema,
+						);
 
 			schema = {
 				...type,
-				// exactOptional also passes submitted empty strings to its inner
-				// schema. Preserve them only for an explicit empty-string default.
 				wrapped:
-					options.stripEmptyValue && 'default' in type && type.default === ''
-						? wrapped
+					options.stripEmptyValue &&
+					'default' in type &&
+					type.default !== undefined
+						? defaultSchema
 						: wrapSchema,
 			} as typeof type;
 			break;

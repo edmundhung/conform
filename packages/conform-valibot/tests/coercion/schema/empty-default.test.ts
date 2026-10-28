@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 import { describe, expect, test, vi } from 'vitest';
 import { parseWithValibot } from '../../../parse';
+import { configureCoercion } from '../../../coercion';
 import { createFormData } from '../../helpers/FormData';
 
 describe.each([
@@ -215,18 +216,110 @@ test.each([v.exactOptional, v.exactOptionalAsync])(
 	async (
 		wrap: (
 			inner: v.GenericSchema<string, string>,
-			defaultValue: string,
+			defaultValue: string | (() => string),
 		) => v.GenericSchema | v.GenericSchemaAsync,
 	) => {
-		const schema = v.objectAsync({
-			notes: wrap(v.pipe(v.string(), v.maxLength(10)), ''),
-		});
-		expect(await parseWithValibot(new FormData(), { schema })).toMatchObject({
-			status: 'success',
-			value: { notes: '' },
-		});
-		expect(
-			await parseWithValibot(createFormData('notes', 'hello'), { schema }),
-		).toMatchObject({ status: 'success', value: { notes: 'hello' } });
+		for (const defaultValue of ['', () => '']) {
+			const schema = v.objectAsync({
+				notes: wrap(v.pipe(v.string(), v.maxLength(10)), defaultValue),
+			});
+			for (const formData of [new FormData(), createFormData('notes', '')]) {
+				expect(await parseWithValibot(formData, { schema })).toMatchObject({
+					status: 'success',
+					value: { notes: '' },
+				});
+			}
+			expect(
+				await parseWithValibot(createFormData('notes', 'hello'), { schema }),
+			).toMatchObject({ status: 'success', value: { notes: 'hello' } });
+		}
 	},
 );
+
+describe.each([v.exactOptional, v.exactOptionalAsync])(
+	'exact optional default coercion',
+	(
+		wrap: (
+			inner: v.GenericSchema<string, string>,
+			defaultValue: string | (() => string),
+		) => v.GenericSchema | v.GenericSchemaAsync,
+	) => {
+		test.each(['stripEmptyString', 'customize'] as const)(
+			'should apply configured %s coercion to nonempty values',
+			async (method) => {
+				const { coerceFormValue } = configureCoercion(
+					method === 'stripEmptyString'
+						? { stripEmptyString: (value) => value.trim() || undefined }
+						: {
+								customize: (type) =>
+									type.type === 'string'
+										? (value) =>
+												typeof value === 'string' ? value.toUpperCase() : value
+										: null,
+							},
+				);
+				for (const defaultValue of ['', () => '']) {
+					const schema = coerceFormValue(
+						v.objectAsync({
+							notes: wrap(v.string(), defaultValue),
+						}),
+					);
+					expect(await v.parseAsync(schema, { notes: ' hello ' })).toEqual({
+						notes: method === 'stripEmptyString' ? 'hello' : ' HELLO ',
+					});
+					expect(await v.parseAsync(schema, { notes: '' })).toEqual({
+						notes: '',
+					});
+				}
+			},
+		);
+
+		test('should resolve dynamic defaults only for empty values', async () => {
+			const defaultValue = vi.fn(() => '');
+			const schema = v.objectAsync({ notes: wrap(v.string(), defaultValue) });
+			expect(
+				await parseWithValibot(createFormData('notes', 'hello'), { schema }),
+			).toMatchObject({ status: 'success', value: { notes: 'hello' } });
+			expect(defaultValue).not.toHaveBeenCalled();
+			for (const value of ['', 'fallback', '']) {
+				defaultValue.mockReturnValue(value);
+				const result = await parseWithValibot(createFormData('notes', ''), {
+					schema,
+				});
+				expect(result).toMatchObject(
+					value === ''
+						? { status: 'success', value: { notes: '' } }
+						: { status: 'error', error: { notes: expect.any(Array) } },
+				);
+			}
+		});
+	},
+);
+
+test('should resolve async exact optional defaults for empty values', async () => {
+	const defaultValue = vi.fn(async () => '');
+	const schema = v.objectAsync({
+		notes: v.exactOptionalAsync(
+			v.pipeAsync(v.string(), v.trim()),
+			defaultValue,
+		),
+	});
+	expect(
+		await parseWithValibot(createFormData('notes', ' hello '), { schema }),
+	).toMatchObject({ status: 'success', value: { notes: 'hello' } });
+	expect(defaultValue).not.toHaveBeenCalled();
+	for (const value of ['', 'fallback', '']) {
+		defaultValue.mockResolvedValue(value);
+		expect(await parseWithValibot(new FormData(), { schema })).toMatchObject({
+			status: 'success',
+			value: { notes: value },
+		});
+		expect(
+			await parseWithValibot(createFormData('notes', ''), { schema }),
+		).toMatchObject(
+			value === ''
+				? { status: 'success', value: { notes: '' } }
+				: { status: 'error', error: { notes: expect.any(Array) } },
+		);
+	}
+});
