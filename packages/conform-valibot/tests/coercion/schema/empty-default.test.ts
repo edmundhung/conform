@@ -150,3 +150,36 @@ test.each([v.optionalAsync, v.nullishAsync])(
 		}
 	},
 );
+
+test('should preserve empty-string defaults in undefinedable schemas', () => {
+	const schema = v.object({
+		notes: v.undefinedable(v.pipe(v.string(), v.trim()), ''),
+	});
+	expect(
+		parseWithValibot(createFormData('notes', ''), { schema }),
+	).toMatchObject({ status: 'success', value: { notes: '' } });
+	expect(
+		parseWithValibot(createFormData('notes', ' hello '), { schema }),
+	).toMatchObject({ status: 'success', value: { notes: 'hello' } });
+});
+
+test.each([v.exactOptional, v.exactOptionalAsync])(
+	'should preserve empty-string defaults in exact optional schemas',
+	async (
+		wrap: (
+			inner: v.GenericSchema<string, string>,
+			defaultValue: string,
+		) => v.GenericSchema | v.GenericSchemaAsync,
+	) => {
+		const schema = v.objectAsync({
+			notes: wrap(v.pipe(v.string(), v.maxLength(10)), ''),
+		});
+		expect(await parseWithValibot(new FormData(), { schema })).toMatchObject({
+			status: 'success',
+			value: { notes: '' },
+		});
+		expect(
+			await parseWithValibot(createFormData('notes', 'hello'), { schema }),
+		).toMatchObject({ status: 'success', value: { notes: 'hello' } });
+	},
+);
