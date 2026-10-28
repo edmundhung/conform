@@ -61,6 +61,24 @@ describe.each([
 			});
 		});
 
+		test('should apply inner transformations to an empty-string default', async () => {
+			const schema = v.objectAsync({
+				notes: wrap(
+					v.pipe(
+						v.string(),
+						v.transform((value) => (value === '' ? 'empty' : value)),
+					),
+					'',
+				),
+			});
+			for (const formData of [new FormData(), createFormData('notes', '')]) {
+				expect(await parseWithValibot(formData, { schema })).toMatchObject({
+					status: 'success',
+					value: { notes: 'empty' },
+				});
+			}
+		});
+
 		test('should resolve default factories only when needed', async () => {
 			const defaultValue = vi.fn(() => '');
 			const schema = v.objectAsync({ notes: wrap(v.string(), defaultValue) });
@@ -162,6 +180,35 @@ test('should preserve empty-string defaults in undefinedable schemas', () => {
 		parseWithValibot(createFormData('notes', ' hello '), { schema }),
 	).toMatchObject({ status: 'success', value: { notes: 'hello' } });
 });
+
+test.each([v.exactOptional, v.exactOptionalAsync])(
+	'should reject empty input in exact optional schemas with non-empty defaults',
+	async (
+		wrap: (
+			inner: v.GenericSchema<string, string>,
+			defaultValue: string | (() => string),
+		) => v.GenericSchema | v.GenericSchemaAsync,
+	) => {
+		for (const defaultValue of ['fallback', () => 'fallback']) {
+			const schema = v.objectAsync({
+				notes: wrap(v.string('Expected string'), defaultValue),
+			});
+			expect(await parseWithValibot(new FormData(), { schema })).toMatchObject({
+				status: 'success',
+				value: { notes: 'fallback' },
+			});
+			expect(
+				await parseWithValibot(createFormData('notes', ''), { schema }),
+			).toMatchObject({
+				status: 'error',
+				error: { notes: ['Expected string'] },
+			});
+			expect(
+				await parseWithValibot(createFormData('notes', 'hello'), { schema }),
+			).toMatchObject({ status: 'success', value: { notes: 'hello' } });
+		}
+	},
+);
 
 test.each([v.exactOptional, v.exactOptionalAsync])(
 	'should preserve empty-string defaults in exact optional schemas',

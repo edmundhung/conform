@@ -472,9 +472,11 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 
 			schema = {
 				...type,
+				// exactOptional also passes submitted empty strings to its inner
+				// schema. Preserve them only for an explicit empty-string default.
 				wrapped:
-					options.stripEmptyValue && 'default' in type
-						? preserveEmptyDefault(wrapped, wrapSchema, type.default)
+					options.stripEmptyValue && 'default' in type && type.default === ''
+						? wrapped
 						: wrapSchema,
 			} as typeof type;
 			break;
