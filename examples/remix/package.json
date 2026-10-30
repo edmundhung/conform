@@ -9,8 +9,8 @@
 		"start": "remix-serve build"
 	},
 	"dependencies": {
-		"@conform-to/react": "1.21.2",
-		"@conform-to/zod": "1.21.2",
+		"@conform-to/react": "1.21.3",
+		"@conform-to/zod": "1.21.3",
 		"@remix-run/node": "2.16.5",
 		"@remix-run/react": "2.16.5",
 		"@remix-run/serve": "2.16.5",
