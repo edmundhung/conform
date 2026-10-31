@@ -876,7 +876,7 @@ export function createFormContext<
 		const formData = new FormData(form);
 		const result = getSubmissionContext(formData);
 
-		if (deepEqual(meta.value, result.payload)) {
+		if (deepEqual(normalize(meta.value), normalize(result.payload))) {
 			return;
 		}
 
