@@ -13,7 +13,7 @@
   - [Accessibility](./accessibility.md)
 - Integrations
   - [UI Libraries](./integration/ui-libraries.md)
-  - [Remix](./integration/remix.md)
+  - [React Router](./integration/react-router.md)
   - [Next.js](./integration/nextjs.md)
 - API Reference
   - @conform-to/react

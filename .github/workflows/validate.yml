@@ -94,7 +94,7 @@ jobs:
           pnpm --filter react-router-example exec react-router typegen
           pnpm --filter tanstack-start-example run generate-routes
       - name: Typecheck examples
-        # Astro supports TypeScript 5 only and the legacy Remix example will be removed.
+        # Astro supports TypeScript 5 only.
         env:
           TYPESCRIPT_SPEC: ${{ matrix.typescript }}
         run: |

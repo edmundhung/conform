@@ -61,9 +61,7 @@ updates:
           - '@remix-run/cloudflare'
           - '@remix-run/cloudflare-pages'
           - '@remix-run/dev'
-          - '@remix-run/node'
           - '@remix-run/react'
-          - '@remix-run/serve'
       tailwindcss:
         patterns:
           - 'tailwindcss'
