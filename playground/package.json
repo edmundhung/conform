@@ -38,6 +38,11 @@
 		"tailwindcss": "^3.4.3",
 		"typescript": "^5.4.5"
 	},
+	"dependenciesMeta": {
+		"@conform-to/react": {
+			"injected": true
+		}
+	},
 	"engines": {
 		"node": ">=22"
 	},

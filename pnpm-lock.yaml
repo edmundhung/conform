@@ -1128,7 +1128,7 @@ importers:
         version: link:../packages/conform-dom
       '@conform-to/react':
         specifier: workspace:*
-        version: link:../packages/conform-react
+        version: file:packages/conform-react(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@conform-to/validitystate':
         specifier: workspace:*
         version: link:../packages/conform-validitystate
@@ -1174,6 +1174,9 @@ importers:
       zod:
         specifier: ^3.25.75
         version: 3.25.76
+    dependenciesMeta:
+      '@conform-to/react':
+        injected: true
     devDependencies:
       '@remix-run/dev':
         specifier: 2.16.5
@@ -13422,6 +13425,12 @@ snapshots:
     optional: true
 
   '@cloudflare/workers-types@4.20240502.0': {}
+
+  '@conform-to/react@file:packages/conform-react(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@conform-to/dom': link:packages/conform-dom
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
   '@conform-to/react@file:packages/conform-react(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
