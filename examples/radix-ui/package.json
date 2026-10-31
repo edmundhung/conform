@@ -11,8 +11,8 @@
 		"typecheck": "tsc -b"
 	},
 	"dependencies": {
-		"@conform-to/react": "^1.21.2",
-		"@conform-to/zod": "^1.21.2",
+		"@conform-to/react": "^1.21.3",
+		"@conform-to/zod": "^1.21.3",
 		"@radix-ui/react-icons": "^1.3.2",
 		"clsx": "^2.1.0",
 		"radix-ui": "^1.6.4",
@@ -30,7 +30,7 @@
 		"oxlint": "^1.74.0",
 		"tailwindcss": "^4.3.3",
 		"typescript": "~6.0.2",
-		"vite": "^8.2.1"
+		"vite": "^8.3.4"
 	},
 	"dependenciesMeta": {
 		"@conform-to/react": {

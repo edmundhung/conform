@@ -13,8 +13,8 @@
 	},
 	"dependencies": {
 		"@base-ui/react": "^1.6.0",
-		"@conform-to/react": "^1.21.2",
-		"@conform-to/zod": "^1.21.2",
+		"@conform-to/react": "^1.21.3",
+		"@conform-to/zod": "^1.21.3",
 		"@emotion/react": "^11.14.0",
 		"@emotion/styled": "^11.14.0",
 		"@mui/icons-material": "^9.2.0",
@@ -39,6 +39,6 @@
 		"@vitejs/plugin-react": "^6.0.3",
 		"oxlint": "^1.74.0",
 		"typescript": "~6.0.2",
-		"vite": "^8.2.1"
+		"vite": "^8.3.4"
 	}
 }

@@ -9,6 +9,9 @@ import {
 	type SchemaWithPipeAsync,
 	type TransformAction,
 	check,
+	getDefault,
+	lazy,
+	lazyAsync,
 	object as valibotObject,
 	pipe,
 	pipeAsync,
@@ -278,6 +281,25 @@ type EnableTypeCoercionOptions = {
 };
 
 /**
+ * Empty-string defaults must still be validated, but must not be stripped back
+ * to `undefined` by the coerced inner schema. The branch is selected at parse
+ * time so default factories can be dynamic or async.
+ */
+function preserveEmptyDefault(
+	wrapped: GenericSchema | GenericSchemaAsync,
+	wrapSchema: GenericSchema | GenericSchemaAsync,
+	default_: unknown,
+): GenericSchema | GenericSchemaAsync {
+	if (default_ === undefined) {
+		return wrapSchema;
+	}
+
+	return wrapped.async || wrapSchema.async
+		? lazyAsync((value) => (value === '' ? wrapped : wrapSchema))
+		: lazy((value) => (value === '' ? wrapped : wrapSchema));
+}
+
+/**
  * Generate a wrapped schema with coercion for wrapper types
  * (optional, nullable, nullish, undefinedable, non_optional, etc.).
  *
@@ -289,9 +311,10 @@ function generateWrappedSchema<T extends GenericSchema | GenericSchemaAsync>(
 	options: EnableTypeCoercionOptions,
 	rewrap = false,
 ) {
+	// @ts-expect-error: wrapper types have `wrapped` property
+	const wrapped: GenericSchema | GenericSchemaAsync = type.wrapped;
 	const { transformAction, schema: wrapSchema } = enableTypeCoercion(
-		// @ts-expect-error: wrapper types have `wrapped` property
-		type.wrapped,
+		wrapped,
 		options,
 	);
 
@@ -312,7 +335,11 @@ function generateWrappedSchema<T extends GenericSchema | GenericSchemaAsync>(
 	// `expects` is required to generate error messages for `TupleSchema`, so it is passed to `UnknownSchema` for coercion.
 	const unknown = { ...valibotUnknown(), expects: type.expects };
 	const default_ = 'default' in type ? type.default : undefined;
-	const wrappedSchema = { ...type, wrapped: wrapSchema };
+	const defaultSchema = preserveEmptyDefault(wrapped, wrapSchema, default_);
+	const wrappedSchema = {
+		...type,
+		wrapped: defaultSchema,
+	};
 
 	if (transformAction) {
 		const schema = wrappedSchema.async
@@ -440,15 +467,31 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 			break;
 		}
 		case 'exact_optional': {
-			const { schema: wrapSchema } = enableTypeCoercion(
-				// @ts-expect-error: exact_optional schema has `wrapped` property
-				type.wrapped,
-				options,
-			);
+			// @ts-expect-error: exact_optional schema has `wrapped` property
+			const wrapped: GenericSchema | GenericSchemaAsync = type.wrapped;
+			const { schema: wrapSchema } = enableTypeCoercion(wrapped, options);
+			// Unlike optional/nullish, exactOptional can pass submitted empty
+			// strings directly to its inner schema. Check the default only for
+			// empty values, and keep configured coercion for every other input.
+			const defaultSchema =
+				type.async || wrapped.async || wrapSchema.async
+					? lazyAsync(async (value) =>
+							value === '' && (await getDefault(type)) === ''
+								? wrapped
+								: wrapSchema,
+						)
+					: lazy((value) =>
+							value === '' && getDefault(type) === '' ? wrapped : wrapSchema,
+						);
 
 			schema = {
 				...type,
-				wrapped: wrapSchema,
+				wrapped:
+					options.stripEmptyValue &&
+					'default' in type &&
+					type.default !== undefined
+						? defaultSchema
+						: wrapSchema,
 			} as typeof type;
 			break;
 		}
