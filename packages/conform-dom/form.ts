@@ -18,7 +18,7 @@ import {
 	updateField,
 	isDirtyInput,
 } from './dom';
-import { clone, generateId, invariant, isPlainObject } from './util';
+import { clone, deepEqual, generateId, invariant, isPlainObject } from './util';
 import {
 	type Intent,
 	type Submission,
@@ -875,6 +875,10 @@ export function createFormContext<
 	function updateFormValue(form: HTMLFormElement) {
 		const formData = new FormData(form);
 		const result = getSubmissionContext(formData);
+
+		if (deepEqual(normalize(meta.value), normalize(result.payload))) {
+			return;
+		}
 
 		updateFormMeta({
 			...meta,

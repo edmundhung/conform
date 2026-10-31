@@ -258,7 +258,9 @@ export function useConform<
 	const resetKeyRef = useRef(state.resetKey);
 	const optionsRef = useLatest(options);
 	const lastResultRef = useRef(lastResult);
-	const pendingValueRef = useRef<Record<string, FormValue> | undefined>();
+	const pendingValueRef = useRef<Record<string, FormValue> | undefined>(
+		undefined,
+	);
 	const lastAsyncResultRef = useRef<{
 		result: SubmissionResult<ErrorShape>;
 		resolvedValue: Value | undefined;
@@ -1034,8 +1036,8 @@ export function useFormData<Value>(
 	options?: UseFormDataOptions<Value>,
 ): Value | undefined {
 	const observer = useContext(GlobalFormsObserverContext);
-	const valueRef = useRef<Value | undefined>();
-	const formDataRef = useRef<FormData | URLSearchParams | undefined>();
+	const valueRef = useRef<Value | undefined>(undefined);
+	const formDataRef = useRef<FormData | URLSearchParams | undefined>(undefined);
 
 	const value = useSyncExternalStore(
 		useCallback(
