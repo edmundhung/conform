@@ -244,9 +244,10 @@ describe('configureForms', () => {
 		await expectErrorMessage(title, 'Title is required');
 		await expect.element(title).toHaveAttribute('aria-invalid', 'true');
 
-		// Fix the error
+		// Fix the error. Submit with Enter because Firefox on a busy CI runner
+		// sometimes drops the mousedown of a click, so the form is never submitted.
 		await userEvent.type(title, 'example');
-		await userEvent.click(submitButton);
+		await userEvent.keyboard('{Enter}');
 		await expectNoErrorMessages(title);
 		await expect.element(title).not.toHaveAttribute('aria-invalid', 'true');
 	});
@@ -395,9 +396,10 @@ describe('configureForms', () => {
 		await expectErrorMessage(title, 'Title is required');
 		expect(formElement.getAttribute('data-valid')).toBe('false');
 
-		// Fix the error
+		// Fix the error. Submit with Enter because Firefox on a busy CI runner
+		// sometimes drops the mousedown of a click, so the form is never submitted.
 		await userEvent.type(title, 'example');
-		await userEvent.click(submitButton);
+		await userEvent.keyboard('{Enter}');
 		await expectNoErrorMessages(title);
 		expect(formElement.getAttribute('data-valid')).toBe('true');
 	});
