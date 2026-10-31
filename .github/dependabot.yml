@@ -5,9 +5,12 @@ updates:
     directory: /
     schedule:
       interval: weekly
-      day: monday
-      time: '06:00'
+      day: wednesday
+      time: '20:00'
       timezone: Europe/London
+    # pnpm's minimumReleaseAge does not cover actions, so wait here instead.
+    cooldown:
+      default-days: 3
     open-pull-requests-limit: 3
     groups:
       github-actions:
@@ -21,9 +24,13 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: daily
-      time: '06:00'
+      interval: weekly
+      day: wednesday
+      time: '20:00'
       timezone: Europe/London
+    # Dependabot passes this to pnpm as minimumReleaseAge, so transitive
+    # packages are this old too. Keep it at or above the value in
+    # pnpm-workspace.yaml. Security updates skip it.
     cooldown:
       default-days: 3
     open-pull-requests-limit: 3
@@ -66,5 +73,24 @@ updates:
           - 'vitest'
           - '@vitest/browser'
           - '@vitest/browser-playwright'
+      # Batch every other minor and patch update into one pull request. It must
+      # come after the groups above because Dependabot uses the first group that
+      # matches. Major updates still open separately because they are not
+      # auto-merged.
+      minor-and-patch:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
+      # Combine security fixes found in the same run. Majors stay separate so
+      # one that needs manual work does not hold back the others.
+      security:
+        applies-to: security-updates
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
     commit-message:
       prefix: 'chore(deps)'
