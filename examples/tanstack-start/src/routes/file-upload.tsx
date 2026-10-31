@@ -1,6 +1,6 @@
 import { parseSubmission, report, useForm } from '@conform-to/react/future';
 import { coerceFormValue } from '@conform-to/zod/v4/future';
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute, redirect, useHydrated } from '@tanstack/react-router';
 import { createServerFn, useServerFn } from '@tanstack/react-start';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -42,6 +42,7 @@ export const Route = createFileRoute('/file-upload')({ component: FileUpload });
 
 function FileUpload() {
 	const submit = useServerFn(uploadFile);
+	const hydrated = useHydrated();
 	const [lastResult, setLastResult] =
 		useState<Awaited<ReturnType<typeof uploadFile>>>();
 	const { form, fields } = useForm(schema, {
@@ -84,7 +85,7 @@ function FileUpload() {
 				<div id={fields.file.errorId}>{fields.file.errors}</div>
 			</div>
 			<hr />
-			<button>Submit</button>
+			<button disabled={!hydrated}>Submit</button>
 		</form>
 	);
 }

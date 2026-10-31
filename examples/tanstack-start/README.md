@@ -11,6 +11,7 @@ functions:
 Each route passes Conform's `FormData` to a TanStack Start server function with
 `useServerFn`. The server function performs trusted validation and the mutation,
 then its Conform submission report is applied back to the form. Redirects are
-handled by `useServerFn`.
+handled by `useServerFn`. Because submission needs JavaScript, submit buttons
+stay disabled until the page hydrates.
 
 Try it out on [StackBlitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/tanstack-start).

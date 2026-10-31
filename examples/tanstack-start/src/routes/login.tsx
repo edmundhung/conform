@@ -4,7 +4,7 @@ import {
 	type FormError,
 	useForm,
 } from '@conform-to/react/future';
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute, redirect, useHydrated } from '@tanstack/react-router';
 import { createServerFn, useServerFn } from '@tanstack/react-start';
 import { useState } from 'react';
 
@@ -49,6 +49,7 @@ export const Route = createFileRoute('/login')({ component: Login });
 
 function Login() {
 	const submit = useServerFn(login);
+	const hydrated = useHydrated();
 	const [lastResult, setLastResult] =
 		useState<Awaited<ReturnType<typeof login>>>();
 	const { form, fields } = useForm({
@@ -105,7 +106,7 @@ function Login() {
 				/>
 			</div>
 			<hr />
-			<button>Login</button>
+			<button disabled={!hydrated}>Login</button>
 		</form>
 	);
 }

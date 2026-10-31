@@ -7,6 +7,22 @@ test.describe('tanstack-start', () => {
 		await expect(page.locator('pre')).toHaveText('null');
 	});
 
+	test('disables submit buttons without JavaScript', async ({ browser }) => {
+		const page = await browser.newPage({ javaScriptEnabled: false });
+
+		for (const { path, name } of [
+			{ path: '/login', name: 'Login' },
+			{ path: '/signup', name: 'Signup' },
+			{ path: '/signup-async-schema', name: 'Signup' },
+			{ path: '/file-upload', name: 'Submit' },
+		]) {
+			await page.goto(path);
+			await expect(page.getByRole('button', { name })).toBeDisabled();
+		}
+
+		await page.close();
+	});
+
 	test.describe('login', () => {
 		async function getForm(page: Page) {
 			await page.goto('/login');

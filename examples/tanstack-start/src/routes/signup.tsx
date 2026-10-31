@@ -5,7 +5,7 @@ import {
 	useForm,
 } from '@conform-to/react/future';
 import { coerceFormValue } from '@conform-to/zod/v4/future';
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute, redirect, useHydrated } from '@tanstack/react-router';
 import { createServerFn, useServerFn } from '@tanstack/react-start';
 import { useMemo, useState } from 'react';
 import { z } from 'zod';
@@ -76,6 +76,7 @@ export const Route = createFileRoute('/signup')({ component: Signup });
 
 function Signup() {
 	const submit = useServerFn(signup);
+	const hydrated = useHydrated();
 	const [lastResult, setLastResult] =
 		useState<Awaited<ReturnType<typeof signup>>>();
 	const validateUsername = useMemo(
@@ -160,7 +161,7 @@ function Signup() {
 				</div>
 			</div>
 			<hr />
-			<button>Signup</button>
+			<button disabled={!hydrated}>Signup</button>
 		</form>
 	);
 }
