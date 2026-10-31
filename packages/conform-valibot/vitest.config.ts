@@ -46,6 +46,7 @@ export default defineConfig({
 						'**/node_modules/**',
 						'**/tests/**/*.browser.test.{ts,tsx}',
 					],
+					setupFiles: ['./tests/setup.node.ts'],
 					testTimeout: 1_000,
 				},
 			},

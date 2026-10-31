@@ -1891,7 +1891,9 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 
 		await userEvent.clear(title);
 		await userEvent.type(title, 'valid');
-		await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+		// Submit with Enter because Firefox on a busy CI runner sometimes drops the
+		// mousedown of a click, so the form is never submitted.
+		await userEvent.keyboard('{Enter}');
 		await expect.element(error).toHaveTextContent('n/a');
 	});
 
