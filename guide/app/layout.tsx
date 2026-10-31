@@ -35,7 +35,7 @@ const menus: { [code: string]: Menu[] } = {
 			title: 'Integration',
 			links: [
 				{ title: 'UI Libraries', to: '/integration/ui-libraries' },
-				{ title: 'Remix', to: '/integration/remix' },
+				{ title: 'React Router', to: '/integration/react-router' },
 				{ title: 'Next.js', to: '/integration/nextjs' },
 			],
 		},
@@ -181,7 +181,7 @@ const menus: { [code: string]: Menu[] } = {
 			title: 'インテグレーション',
 			links: [
 				{ title: 'UI ライブラリ', to: '/integration/ui-libraries' },
-				{ title: 'Remix', to: '/integration/remix' },
+				{ title: 'React Router', to: '/integration/react-router' },
 				{ title: 'Next.js', to: '/integration/nextjs' },
 			],
 		},

@@ -13,7 +13,7 @@
   - [アクセシビリティ](./accessibility.md)
 - インテグレーション
   - [UI ライブラリ](./integration/ui-libraries.md)
-  - [Remix](./integration/remix.md)
+  - [React Router](./integration/react-router.md)
   - [Next.js](./integration/nextjs.md)
 - API リファレンス
   - @conform-to/react
