@@ -15,13 +15,13 @@
 		"test": "playwright test"
 	},
 	"dependencies": {
-		"@astrojs/node": "^11.1.4",
+		"@astrojs/node": "^11.1.9",
 		"@astrojs/react": "^6.0.4",
 		"@conform-to/react": "workspace:*",
 		"@conform-to/zod": "workspace:*",
 		"@types/react": "^19.2.18",
 		"@types/react-dom": "^19.2.4",
-		"astro": "^7.3.3",
+		"astro": "^7.4.4",
 		"react": "^19.2.8",
 		"react-dom": "^19.2.8",
 		"zod": "^3.25.75"
@@ -35,7 +35,7 @@
 		}
 	},
 	"devDependencies": {
-		"@astrojs/check": "^0.9.8",
+		"@astrojs/check": "^0.9.12",
 		"@playwright/test": "^1.62.1",
 		"@types/node": "^25.5.0",
 		"typescript": "^5.8.3"

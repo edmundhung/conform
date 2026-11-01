@@ -11,7 +11,7 @@
 		"start": "wrangler pages dev public --port 3000 --kv CACHE -b ENVIRONMENT=development -b CF_PAGES_BRANCH=$(git branch --show-current)"
 	},
 	"dependencies": {
-		"@markdoc/markdoc": "^0.4.0",
+		"@markdoc/markdoc": "^0.5.11",
 		"@remix-run/cloudflare": "2.16.5",
 		"@remix-run/cloudflare-pages": "2.16.5",
 		"@remix-run/react": "2.16.5",
@@ -25,8 +25,8 @@
 		"@cloudflare/workers-types": "^4.20240419.0",
 		"@octokit/types": "^12.4.0",
 		"@remix-run/dev": "2.16.5",
-		"@tailwindcss/forms": "^0.5.7",
-		"@tailwindcss/typography": "^0.5.10",
+		"@tailwindcss/forms": "^0.5.11",
+		"@tailwindcss/typography": "^0.5.20",
 		"@types/react": "^18.2.46",
 		"@types/react-dom": "^18.2.18",
 		"@types/react-syntax-highlighter": "^15.5.11",

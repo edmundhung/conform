@@ -11,7 +11,7 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"@chakra-ui/react": "^3.36.1",
+		"@chakra-ui/react": "^3.37.0",
 		"@conform-to/react": "^1.21.3",
 		"@conform-to/zod": "^1.21.3",
 		"@emotion/react": "^11.14.0",
@@ -24,8 +24,8 @@
 		"@types/node": "^24.13.3",
 		"@types/react": "^19.2.17",
 		"@types/react-dom": "^19.2.3",
-		"@vitejs/plugin-react": "^6.0.3",
-		"oxlint": "^1.74.0",
+		"@vitejs/plugin-react": "^6.1.2",
+		"oxlint": "^1.90.0",
 		"typescript": "~6.0.2",
 		"vite": "^8.3.4"
 	},
