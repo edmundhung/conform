@@ -31,12 +31,16 @@ function getBranch(mode: string | undefined): string {
 	}
 
 	if (mode === 'development') {
-		const branch = execSync('git branch --show-current', {
-			encoding: 'utf-8',
-		}).trim();
+		try {
+			const branch = execSync('git branch --show-current', {
+				encoding: 'utf-8',
+			}).trim();
 
-		if (branch) {
-			return branch;
+			if (branch) {
+				return branch;
+			}
+		} catch {
+			// Git is unavailable or this is not a repository
 		}
 	}
 

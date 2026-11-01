@@ -20,7 +20,8 @@ permissions:
 
 concurrency:
   group: guide-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # A closed pull request waits for its preview deploy so the cleanup can delete it
+  cancel-in-progress: ${{ github.event_name == 'pull_request' && github.event.action != 'closed' }}
 
 env:
   CF_SEND_TELEMETRY: 'false'
@@ -69,10 +70,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: >
-          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY"
-          --edit-last --create-if-none
-          --body "Guide preview: $(jq -r '.preview_urls[0]' preview.json)"
+        run: |
+          url=$(jq -r '.preview_urls[0] // empty' preview.json)
+          if [ -z "$url" ]; then
+            echo "::error::cf previews deploy did not return a preview URL"
+            exit 1
+          fi
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
+            --edit-last --create-if-none --body "Guide preview: $url"
       - name: Check build
         if: github.event_name == 'pull_request' && env.HAS_DEPLOY_TOKEN != 'true'
         run: pnpm exec cf deploy --dry-run
@@ -85,6 +90,10 @@ jobs:
       github.actor != 'dependabot[bot]'
     timeout-minutes: 10
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # To find the preview URL comment
+      pull-requests: read
     defaults:
       run:
         working-directory: guide
@@ -93,14 +102,26 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Check for a preview
+        id: preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        # The deploy job comments the preview URL once the preview is created
+        run: |
+          comments=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --paginate \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("Guide preview: "))) | .id')
+          if [ -n "$comments" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Setup pnpm and Node
+        if: steps.preview.outputs.exists == 'true'
         uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
         with:
           runtime: node@24
           cache: true
       - name: Delete preview
-        # The preview may not exist, e.g. if the deploy token was not available
-        continue-on-error: true
+        if: steps.preview.outputs.exists == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
