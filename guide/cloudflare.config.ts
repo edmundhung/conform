@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
 import { bindings, defineConfig } from 'cf/config';
 
-export default defineConfig(({ mode, isPreview }) => ({
+export default defineConfig(({ mode }) => ({
 	worker: {
 		name: 'conform-guide',
 		entrypoint: './workers/app.ts',
@@ -16,8 +16,7 @@ export default defineConfig(({ mode, isPreview }) => ({
 		domains: ['conform.guide', 'ja.conform.guide'],
 		env: {
 			BRANCH: bindings.text(getBranch(mode)),
-			// Previews fetch the docs from GitHub without a token
-			GITHUB_ACCESS_TOKEN: !isPreview && bindings.secret(),
+			GITHUB_ACCESS_TOKEN: bindings.secret(),
 		},
 	},
 }));
