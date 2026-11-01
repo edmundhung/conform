@@ -1,20 +1,24 @@
-import type { EntryContext } from '@remix-run/cloudflare';
-import { RemixServer } from '@remix-run/react';
-import { renderToString } from 'react-dom/server';
+import type { EntryContext } from 'react-router';
+import { ServerRouter } from 'react-router';
+import { renderToReadableStream } from 'react-dom/server';
 
-export default function handleRequest(
+export default async function handleRequest(
 	request: Request,
 	responseStatusCode: number,
 	responseHeaders: Headers,
-	remixContext: EntryContext,
+	routerContext: EntryContext,
 ) {
-	const markup = renderToString(
-		<RemixServer context={remixContext} url={request.url} />,
+	const body = await renderToReadableStream(
+		<ServerRouter context={routerContext} url={request.url} />,
+		{ signal: request.signal },
 	);
+
+	// Wait for the hydration data to be streamed in so the response is complete
+	await body.allReady;
 
 	responseHeaders.set('Content-Type', 'text/html');
 
-	return new Response('<!DOCTYPE html>' + markup, {
+	return new Response(body, {
 		status: responseStatusCode,
 		headers: responseHeaders,
 	});
