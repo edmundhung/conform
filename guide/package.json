@@ -4,38 +4,34 @@
 	"name": "conform-guide",
 	"type": "module",
 	"scripts": {
-		"build": "remix build",
-		"ci": "replace-in-file \"CF_PAGES_BRANCH: 'main'\" \"CF_PAGES_BRANCH: '$CF_PAGES_BRANCH'\" ./server.ts",
-		"dev": "remix dev --manual -c \"npm run start\"",
-		"predev": "remix build",
-		"start": "wrangler pages dev public --port 3000 --kv CACHE -b ENVIRONMENT=development -b CF_PAGES_BRANCH=$(git branch --show-current)"
+		"build": "cf build",
+		"deploy": "cf deploy",
+		"dev": "cf dev",
+		"typecheck": "cf workers types && react-router typegen && tsc"
 	},
 	"dependencies": {
 		"@markdoc/markdoc": "^0.5.11",
-		"@remix-run/cloudflare": "2.16.5",
-		"@remix-run/cloudflare-pages": "2.16.5",
-		"@remix-run/react": "2.16.5",
-		"cross-env": "^7.0.3",
-		"isbot": "^3",
-		"react": "^18.2.0",
-		"react-dom": "^18.2.0",
+		"react": "^19.2.7",
+		"react-dom": "^19.2.7",
+		"react-router": "8.5.1",
 		"react-syntax-highlighter": "^15.5.0"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20240419.0",
+		"@cloudflare/vite-plugin": "2.0.0-beta.v.8",
 		"@octokit/types": "^12.4.0",
-		"@remix-run/dev": "2.16.5",
+		"@react-router/dev": "8.5.1",
 		"@tailwindcss/forms": "^0.5.7",
 		"@tailwindcss/typography": "^0.5.10",
-		"@types/react": "^18.2.46",
-		"@types/react-dom": "^18.2.18",
+		"@types/node": "^24",
+		"@types/react": "^19.2.17",
+		"@types/react-dom": "^19.2.3",
 		"@types/react-syntax-highlighter": "^15.5.11",
-		"replace-in-file": "^8.3.0",
+		"cf": "1.0.0-beta.26",
 		"tailwindcss": "^3.4.0",
-		"typescript": "^5.3.3",
-		"wrangler": "^3.114.17"
+		"typescript": "^5.9.3",
+		"vite": "^8.3.4"
 	},
 	"engines": {
-		"node": "22.x"
+		"node": ">=24.22.0"
 	}
 }

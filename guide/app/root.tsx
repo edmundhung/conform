@@ -1,34 +1,26 @@
-import type {
-	MetaFunction,
-	LinksFunction,
-	LoaderFunctionArgs,
-} from '@remix-run/cloudflare';
 import {
 	Links,
-	LiveReload,
 	Meta,
 	Outlet,
 	Scripts,
 	ScrollRestoration,
 	useRouteError,
 	isRouteErrorResponse,
-} from '@remix-run/react';
-import { json } from '@remix-run/cloudflare';
+} from 'react-router';
+import type { Route } from './+types/root';
 import { Guide } from '~/layout';
 import { getMetadata } from '~/util';
-import stylesUrl from '~/styles.css';
+import stylesUrl from '~/styles.css?url';
 
-export const links: LinksFunction = () => {
+export const links: Route.LinksFunction = () => {
 	return [{ rel: 'stylesheet', href: stylesUrl }];
 };
 
-export function loader({ context }: LoaderFunctionArgs) {
-	const meta = getMetadata(context);
-
-	return json(meta);
+export function loader({ context }: Route.LoaderArgs) {
+	return getMetadata(context);
 }
 
-export const meta: MetaFunction = () => [{ title: 'Conform Guide' }];
+export const meta: Route.MetaFunction = () => [{ title: 'Conform Guide' }];
 
 export function ErrorBoundary() {
 	const error = useRouteError();
@@ -64,17 +56,11 @@ function Document({ children }: { children: React.ReactNode }) {
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
 				<Meta />
 				<Links />
-				<script
-					defer
-					data-domain="conform.guide"
-					src="https://plausible.io/js/script.js"
-				/>
 			</head>
 			<body className="antialiased bg-zinc-900 text-zinc-50">
 				{children}
 				<ScrollRestoration />
 				<Scripts />
-				<LiveReload />
 			</body>
 		</html>
 	);

@@ -58,6 +58,10 @@ updates:
       remix:
         patterns:
           - '@remix-run/*'
+      cloudflare:
+        patterns:
+          - 'cf'
+          - '@cloudflare/*'
       tailwindcss:
         patterns:
           - 'tailwindcss'

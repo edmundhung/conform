@@ -1,6 +1,7 @@
-import { type LoaderFunctionArgs, redirect } from '@remix-run/cloudflare';
+import { redirect } from 'react-router';
+import type { Route } from './+types/integration.remix';
 
-export function loader({ request }: LoaderFunctionArgs) {
+export function loader({ request }: Route.LoaderArgs) {
 	const { search } = new URL(request.url);
 
 	// Temporary so this path can host a Remix integration guide again later

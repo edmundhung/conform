@@ -1,0 +1,55 @@
+name: Conform Guide Cleanup
+on:
+  # Any closed pull request may have a preview, even if its final changes no
+  # longer match the paths that deploy one
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+
+# Shared with the Conform Guide workflow, so an in-progress preview deploy
+# finishes before the preview is deleted
+concurrency:
+  group: guide-${{ github.event.pull_request.number }}
+
+jobs:
+  cleanup:
+    name: Delete preview
+    # Previews are only deployed for pull requests from this repository
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    env:
+      # No preview is deployed without the deploy token
+      HAS_DEPLOY_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+    defaults:
+      run:
+        working-directory: guide
+    steps:
+      - name: Checkout repo
+        if: env.HAS_DEPLOY_TOKEN == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup pnpm and Node
+        if: env.HAS_DEPLOY_TOKEN == 'true'
+        uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
+        with:
+          runtime: node@24
+          cache: true
+      - name: Delete preview
+        if: env.HAS_DEPLOY_TOKEN == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if ! pnpm exec cf previews delete "pr-$PR_NUMBER" --worker conform-guide --force 2> error.log; then
+            cat error.log >&2
+            # The preview was never deployed, e.g. the deploy failed before uploading
+            if grep -q '404 Not Found' error.log; then
+              echo "No preview to delete"
+              exit 0
+            fi
+            exit 1
+          fi

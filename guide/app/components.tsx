@@ -4,7 +4,7 @@ import {
 	Link as RouterLink,
 	useLocation,
 	useRouteLoaderData,
-} from '@remix-run/react';
+} from 'react-router';
 import * as React from 'react';
 import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
 import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
