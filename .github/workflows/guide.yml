@@ -1,4 +1,4 @@
-name: Guide
+name: Conform Guide
 on:
   push:
     branches: [main]
@@ -22,9 +22,6 @@ concurrency:
   group: guide-${{ github.event.pull_request.number || github.ref }}
   # A closed pull request waits for its preview deploy so the cleanup can delete it
   cancel-in-progress: ${{ github.event_name == 'pull_request' && github.event.action != 'closed' }}
-
-env:
-  CF_SEND_TELEMETRY: 'false'
 
 jobs:
   deploy:
@@ -78,6 +75,7 @@ jobs:
           fi
           gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
             --edit-last --create-if-none --body "Guide preview: $url"
+      # Without the deploy token, build and validate the Worker without uploading it
       - name: Check build
         if: github.event_name == 'pull_request' && env.HAS_DEPLOY_TOKEN != 'true'
         run: pnpm exec cf deploy --dry-run

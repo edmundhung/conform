@@ -61,7 +61,7 @@ updates:
       cloudflare:
         patterns:
           - 'cf'
-          - '@cloudflare/vite-plugin'
+          - '@cloudflare/*'
       tailwindcss:
         patterns:
           - 'tailwindcss'
