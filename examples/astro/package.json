@@ -24,7 +24,7 @@
 		"astro": "^7.3.3",
 		"react": "^19.2.8",
 		"react-dom": "^19.2.8",
-		"zod": "^3.25.75"
+		"zod": "^4.6.6"
 	},
 	"dependenciesMeta": {
 		"@conform-to/react": {
