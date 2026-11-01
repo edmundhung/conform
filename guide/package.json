@@ -11,7 +11,7 @@
 		"start": "wrangler pages dev public --port 3000 --kv CACHE -b ENVIRONMENT=development -b CF_PAGES_BRANCH=$(git branch --show-current)"
 	},
 	"dependencies": {
-		"@markdoc/markdoc": "^0.4.0",
+		"@markdoc/markdoc": "^0.5.11",
 		"@remix-run/cloudflare": "2.16.5",
 		"@remix-run/cloudflare-pages": "2.16.5",
 		"@remix-run/react": "2.16.5",

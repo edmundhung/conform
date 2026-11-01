@@ -11,7 +11,7 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"@chakra-ui/react": "^3.36.1",
+		"@chakra-ui/react": "^3.37.0",
 		"@conform-to/react": "^1.21.3",
 		"@conform-to/zod": "^1.21.3",
 		"@emotion/react": "^11.14.0",

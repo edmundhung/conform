@@ -18,7 +18,7 @@
 		"prepare": "husky install"
 	},
 	"devDependencies": {
-		"@changesets/cli": "^3.0.0",
+		"@changesets/cli": "^3.0.3",
 		"@conform-to/dom": "workspace:*",
 		"@conform-to/react": "workspace:*",
 		"@conform-to/validitystate": "workspace:*",
@@ -34,7 +34,7 @@
 		"lint-staged": "^13.1.2",
 		"oxlint": "^1.61.0",
 		"oxfmt": "^0.46.0",
-		"pkg-pr-new": "^0.0.71",
+		"pkg-pr-new": "^0.0.92",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
 		"typescript": "^5.8.3",
