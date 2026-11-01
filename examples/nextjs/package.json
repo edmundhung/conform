@@ -1,5 +1,6 @@
 {
 	"name": "nextjs-example",
+	"version": "0.1.0",
 	"private": true,
 	"scripts": {
 		"dev": "next dev",
@@ -11,9 +12,9 @@
 	"dependencies": {
 		"@conform-to/react": "1.21.3",
 		"@conform-to/zod": "1.21.3",
-		"next": "16.3.8",
-		"react": "19.2.7",
-		"react-dom": "19.2.7",
+		"next": "16.4.3",
+		"react": "19.3.0",
+		"react-dom": "19.3.0",
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {
@@ -22,7 +23,7 @@
 		"@types/react": "^19",
 		"@types/react-dom": "^19",
 		"eslint": "^9",
-		"eslint-config-next": "16.2.10",
+		"eslint-config-next": "16.4.3",
 		"typescript": "^5"
 	},
 	"dependenciesMeta": {
