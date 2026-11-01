@@ -58,10 +58,7 @@ updates:
           - '@tanstack/router-cli'
       remix:
         patterns:
-          - '@remix-run/cloudflare'
-          - '@remix-run/cloudflare-pages'
-          - '@remix-run/dev'
-          - '@remix-run/react'
+          - '@remix-run/*'
       tailwindcss:
         patterns:
           - 'tailwindcss'
