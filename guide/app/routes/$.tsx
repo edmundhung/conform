@@ -30,6 +30,8 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 		{
 			headers: {
 				'Cache-Control': 'public, max-age=60',
+				// Keep the page in the Worker cache for an hour
+				'Cloudflare-CDN-Cache-Control': 'max-age=3600',
 			},
 		},
 	);

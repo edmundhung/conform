@@ -10,10 +10,12 @@ export default defineConfig(({ mode, isPreview }) => ({
 			enabled: true,
 		},
 		previewUrls: true,
+		cache: {
+			enabled: true,
+		},
 		domains: ['conform.guide', 'ja.conform.guide'],
 		env: {
 			BRANCH: bindings.text(getBranch(mode)),
-			CACHE: bindings.kv(),
 			// Previews fetch the docs from GitHub without a token
 			GITHUB_ACCESS_TOKEN: !isPreview && bindings.secret(),
 		},

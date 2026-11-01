@@ -7,15 +7,24 @@ const requestHandler = createRequestHandler(
 );
 
 export default {
-	fetch(request, env, ctx) {
+	async fetch(request, env) {
 		const context = new RouterContextProvider();
 
 		context.set(cloudflareContext, {
 			env,
-			ctx,
 			language: getLanguageCode(request.url),
 		});
 
-		return requestHandler(request, context);
+		const response = await requestHandler(request, context);
+
+		// The Worker cache ignores the hostname, which decides the language
+		response.headers.append('Vary', 'Host');
+
+		// Only cache the responses that opt in, e.g. not errors or redirects
+		if (!response.headers.has('Cache-Control')) {
+			response.headers.set('Cache-Control', 'no-store');
+		}
+
+		return response;
 	},
 } satisfies ExportedHandler<Env>;

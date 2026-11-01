@@ -5,7 +5,6 @@ type AppLoadContext = Readonly<RouterContextProvider>;
 
 export const cloudflareContext = createContext<{
 	env: Env;
-	ctx: ExecutionContext;
 	language: string | undefined;
 }>();
 
@@ -62,10 +61,6 @@ export function getBranch(context: AppLoadContext): string {
 	return getEnv(context).BRANCH;
 }
 
-export function getCache(context: AppLoadContext): KVNamespace {
-	return getEnv(context).CACHE;
-}
-
 export const getDocPath = (context: AppLoadContext) => {
 	const { docPath } = getMetadata(context).language;
 	return docPath;
@@ -97,30 +92,15 @@ export async function getFileContent(
 	path: string,
 ): Promise<string> {
 	const { ref, owner, repo } = getMetadata(context);
-	const cache = getCache(context);
-	const cacheKey = `${ref}/${path}`;
+	const file = await downloadFile({
+		auth: getGitHubToken(context),
+		ref,
+		path,
+		owner,
+		repo,
+	});
 
-	let content = await cache.get(cacheKey);
-
-	if (!content) {
-		const auth = getGitHubToken(context);
-		const file = await downloadFile({
-			auth,
-			ref,
-			path,
-			owner,
-			repo,
-		});
-
-		content = base64DecodeUtf8(file.content);
-		context.get(cloudflareContext).ctx.waitUntil(
-			cache.put(cacheKey, content, {
-				expirationTtl: 3600,
-			}),
-		);
-	}
-
-	return content;
+	return base64DecodeUtf8(file.content);
 }
 
 export function getGitHubApiHeaders(auth: string | undefined) {
