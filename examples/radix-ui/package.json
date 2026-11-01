@@ -14,8 +14,8 @@
 		"@conform-to/react": "^1.21.3",
 		"@conform-to/zod": "^1.21.3",
 		"@radix-ui/react-icons": "^1.3.2",
-		"clsx": "^2.1.0",
-		"radix-ui": "^1.6.4",
+		"clsx": "^2.1.1",
+		"radix-ui": "^1.8.1",
 		"react": "^19.2.7",
 		"react-dom": "^19.2.7",
 		"zod": "^4.4.3"
