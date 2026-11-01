@@ -81,14 +81,5 @@ updates:
         update-types:
           - 'minor'
           - 'patch'
-      # Combine security fixes found in the same run. Majors stay separate so
-      # one that needs manual work does not hold back the others.
-      security:
-        applies-to: security-updates
-        patterns:
-          - '*'
-        update-types:
-          - 'minor'
-          - 'patch'
     commit-message:
       prefix: 'chore(deps)'
