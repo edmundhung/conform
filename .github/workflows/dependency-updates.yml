@@ -1,8 +1,8 @@
-name: Dependabot
+name: Dependency updates
 
 on:
   pull_request_target:
-    types: [opened, reopened, synchronize, ready_for_review]
+    types: [opened, reopened, synchronize, ready_for_review, labeled]
   schedule:
     - cron: "0 8 * * *"
   workflow_dispatch:
@@ -10,7 +10,10 @@ on:
 jobs:
   auto-merge:
     name: Approve and enable auto-merge
-    if: github.event_name == 'pull_request_target' && github.actor == 'dependabot[bot]'
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      github.event.action != 'labeled' &&
+      github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -38,6 +41,26 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: gh pr merge --auto --squash "$PR_URL"
 
+  approve-renovate:
+    name: Approve Renovate updates
+    # Renovate enables auto-merge itself on the updates it labels `automerge`.
+    # Branch protection needs an approval, which Renovate can't give its own
+    # pull requests.
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      github.event.pull_request.user.login == 'renovate[bot]' &&
+      ((github.event.action == 'labeled' && github.event.label.name == 'automerge') ||
+      (github.event.action == 'opened' && contains(github.event.pull_request.labels.*.name, 'automerge')))
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Approve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr review --approve "$PR_URL"
+
   retry-package-age:
     name: Retry package age failures
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -47,22 +70,27 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - name: Rerun blocked Dependabot previews
+      - name: Rerun blocked dependency update previews
         env:
           GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if ! pull_requests="$(
-            gh pr list \
-              --app dependabot \
-              --state open \
-              --limit 100 \
-              --json headRefOid,number \
-              --jq '.[] | [.number, .headRefOid] | @tsv'
-          )"; then
-            echo "Unable to list open Dependabot PRs" >&2
-            exit 1
-          fi
+          pull_requests=""
+          for app in dependabot renovate; do
+            if ! app_pull_requests="$(
+              gh pr list \
+                --app "$app" \
+                --state open \
+                --limit 100 \
+                --json headRefOid,number \
+                --jq '.[] | [.number, .headRefOid] | @tsv'
+            )"; then
+              echo "Unable to list open $app PRs" >&2
+              exit 1
+            fi
+            pull_requests+="$app_pull_requests"$'\n'
+          done
+          pull_requests="$(sed '/^$/d' <<< "$pull_requests")"
           if [[ -z "$pull_requests" ]]; then
             exit 0
           fi
@@ -91,5 +119,5 @@ jobs:
             fi
 
             gh run rerun "$run_id" --failed
-            echo "Rerunning Preview for Dependabot PR #$number"
+            echo "Rerunning Preview for PR #$number"
           done <<< "$pull_requests"
