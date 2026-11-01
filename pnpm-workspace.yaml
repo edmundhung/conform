@@ -11,6 +11,9 @@ allowBuilds:
   esbuild: true
   msw: false
   sharp: true
+  # Only downloads its native binary when optional dependencies are skipped.
+  # create-next-app sets the same default for pnpm projects.
+  unrs-resolver: false
   workerd: true
 
 linkWorkspacePackages: true
