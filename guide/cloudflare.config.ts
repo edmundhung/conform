@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => ({
 			enabled: true,
 		},
 		previewUrls: true,
+		workersDev: false,
 		cache: {
 			enabled: true,
 		},
