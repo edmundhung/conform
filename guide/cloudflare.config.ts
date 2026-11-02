@@ -9,12 +9,17 @@ export default defineConfig(({ mode }) => ({
 		observability: {
 			enabled: true,
 		},
-		previewUrls: true,
+		previewUrls: false,
 		workersDev: false,
 		cache: {
 			enabled: true,
 		},
-		domains: ['conform.guide', 'ja.conform.guide'],
+		domains: [
+			'conform.guide',
+			'ja.conform.guide',
+			// Previews are served on <name>.preview.conform.guide
+			{ hostname: 'preview.conform.guide', production: false, previews: true },
+		],
 		env: {
 			BRANCH: bindings.text(getBranch(mode)),
 			GITHUB_ACCESS_TOKEN: bindings.secret(),
