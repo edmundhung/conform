@@ -1,21 +1,14 @@
 version: 2
 
+# Version updates come from Renovate (.github/renovate.json5). These entries only
+# configure Dependabot security updates: `open-pull-requests-limit: 0` turns off
+# version updates without affecting security updates.
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-      day: wednesday
-      time: '20:00'
-      timezone: Europe/London
-    # pnpm's minimumReleaseAge does not cover actions, so wait here instead.
-    cooldown:
-      default-days: 3
-    open-pull-requests-limit: 3
-    groups:
-      github-actions:
-        patterns:
-          - '*'
+      interval: monthly
+    open-pull-requests-limit: 0
     commit-message:
       prefix: 'chore(ci)'
 
@@ -24,87 +17,7 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
-      day: wednesday
-      time: '20:00'
-      timezone: Europe/London
-    # Dependabot passes this to pnpm as minimumReleaseAge, so transitive
-    # packages are this old too. Keep it at or above the value in
-    # pnpm-workspace.yaml. Security updates skip it.
-    cooldown:
-      default-days: 3
-    open-pull-requests-limit: 3
-    rebase-strategy: auto
-    # Keep packages that are released together, or must use matching versions,
-    # in one pull request.
-    groups:
-      playwright:
-        patterns:
-          - 'playwright'
-          - '@playwright/test'
-      react:
-        patterns:
-          - 'react'
-          - 'react-dom'
-      react-router:
-        patterns:
-          - 'react-router'
-          - '@react-router/*'
-      tanstack:
-        patterns:
-          - '@tanstack/react-router'
-          - '@tanstack/react-start'
-          - '@tanstack/router-cli'
-      remix:
-        patterns:
-          - '@remix-run/*'
-      tailwindcss:
-        patterns:
-          - 'tailwindcss'
-          - '@tailwindcss/*'
-      vitest:
-        patterns:
-          - 'vitest'
-          - '@vitest/browser'
-          - '@vitest/browser-playwright'
-      astro:
-        patterns:
-          - 'astro'
-          - '@astrojs/*'
-      babel:
-        patterns:
-          - '@babel/*'
-      emotion:
-        patterns:
-          - '@emotion/*'
-      mui:
-        patterns:
-          - '@mui/*'
-      next:
-        patterns:
-          - 'next'
-          - '@next/*'
-          - 'eslint-config-next'
-      react-aria:
-        patterns:
-          - 'react-aria-components'
-          - '@internationalized/*'
-      # Vite and the Oxc linter and formatter make up one toolchain.
-      vite-and-oxc:
-        patterns:
-          - 'vite'
-          - '@vitejs/*'
-          - 'oxlint'
-          - 'oxfmt'
-      # Batch every other minor and patch update into one pull request. It must
-      # come after the groups above because Dependabot uses the first group that
-      # matches. Major updates still open separately because they are not
-      # auto-merged.
-      minor-and-patch:
-        patterns:
-          - '*'
-        update-types:
-          - 'minor'
-          - 'patch'
+      interval: monthly
+    open-pull-requests-limit: 0
     commit-message:
       prefix: 'chore(deps)'

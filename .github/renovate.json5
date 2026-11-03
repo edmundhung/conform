@@ -1,0 +1,160 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: ['config:recommended'],
+  timezone: 'Europe/London',
+  // config:recommended ignores `**/examples/**`, but the examples are what
+  // these updates are for.
+  ignorePaths: ['**/node_modules/**'],
+  // Everything not matched by a rule below updates once a month.
+  schedule: ['* 20-23 1 * *'],
+  // Wait until a release is 3 days old. pnpm's minimumReleaseAge in
+  // pnpm-workspace.yaml applies the same rule to transitive dependencies.
+  minimumReleaseAge: '3 days',
+  rangeStrategy: 'bump',
+  automergeStrategy: 'squash',
+  semanticCommits: 'enabled',
+  // Dependabot keeps opening security fixes, so Renovate doesn't duplicate them.
+  vulnerabilityAlerts: {
+    enabled: false,
+  },
+  packageRules: [
+    {
+      matchPackageNames: ['*'],
+      semanticCommitType: 'chore',
+      semanticCommitScope: 'deps',
+    },
+    {
+      // Published packages declare their own ranges, and the Node and pnpm
+      // versions are updated by hand.
+      matchDepTypes: ['peerDependencies', 'engines', 'packageManager'],
+      enabled: false,
+    },
+    {
+      // Node and the CI runner images are pinned on purpose.
+      matchDepNames: ['node'],
+      enabled: false,
+    },
+    {
+      matchDatasources: ['github-runners'],
+      enabled: false,
+    },
+    {
+      // conform-zod tests against zod 4.4 on purpose.
+      matchDepNames: ['zod-v4-legacy'],
+      enabled: false,
+    },
+    {
+      matchUpdateTypes: ['minor', 'patch'],
+      groupName: 'non-core dependencies',
+    },
+    {
+      matchManagers: ['github-actions'],
+      groupName: 'GitHub Actions',
+      semanticCommitScope: 'ci',
+    },
+    {
+      // Core dependencies are the libraries the examples and packages
+      // integrate Conform with. They update weekly, one group per integration.
+      matchPackageNames: [
+        'react',
+        'react-dom',
+        'next',
+        '@next/*',
+        'eslint-config-next',
+        'react-router',
+        '@react-router/*',
+        '@tanstack/react-router',
+        '@tanstack/react-start',
+        '@tanstack/router-cli',
+        'astro',
+        '@astrojs/*',
+        '@mui/*',
+        '@emotion/*',
+        '@chakra-ui/*',
+        'radix-ui',
+        '@radix-ui/*',
+        '@base-ui/*',
+        '@headlessui/*',
+        'react-aria-components',
+        '@internationalized/*',
+        'zod',
+        'valibot',
+        'yup',
+      ],
+      schedule: ['* 20-23 * * 3'],
+    },
+    {
+      matchPackageNames: ['zod'],
+      groupName: 'Zod',
+    },
+    {
+      matchPackageNames: ['valibot'],
+      groupName: 'Valibot',
+    },
+    {
+      matchPackageNames: ['yup'],
+      groupName: 'Yup',
+    },
+    {
+      matchPackageNames: ['react', 'react-dom'],
+      groupName: 'React',
+    },
+    {
+      matchPackageNames: ['next', '@next/*', 'eslint-config-next'],
+      groupName: 'Next.js',
+    },
+    {
+      matchPackageNames: ['react-router', '@react-router/*'],
+      groupName: 'React Router',
+    },
+    {
+      matchPackageNames: [
+        '@tanstack/react-router',
+        '@tanstack/react-start',
+        '@tanstack/router-cli',
+      ],
+      groupName: 'TanStack Start',
+    },
+    {
+      matchPackageNames: ['astro', '@astrojs/*'],
+      groupName: 'Astro',
+    },
+    {
+      matchPackageNames: ['@mui/*', '@emotion/*'],
+      groupName: 'Material UI',
+    },
+    {
+      matchPackageNames: ['@chakra-ui/*'],
+      groupName: 'Chakra UI',
+    },
+    {
+      matchPackageNames: ['radix-ui', '@radix-ui/*'],
+      groupName: 'Radix UI',
+    },
+    {
+      matchPackageNames: ['@base-ui/*'],
+      groupName: 'Base UI',
+    },
+    {
+      matchPackageNames: ['@headlessui/*'],
+      groupName: 'Headless UI',
+    },
+    {
+      matchPackageNames: ['react-aria-components', '@internationalized/*'],
+      groupName: 'React Aria',
+    },
+    {
+      // Major updates wait on the Dependency Dashboard issue until approved
+      // there, instead of opening pull requests that stay open.
+      matchUpdateTypes: ['major'],
+      dependencyDashboardApproval: true,
+    },
+    {
+      // Major updates need a look, so only minor and patch updates merge on
+      // their own. The label lets the workflow approve them.
+      matchUpdateTypes: ['minor', 'patch', 'digest', 'pin'],
+      automerge: true,
+      addLabels: ['automerge'],
+    },
+  ],
+}
