@@ -1,7 +1,8 @@
-import { LoaderFunctionArgs, redirect } from '@remix-run/cloudflare';
+import { redirect } from 'react-router';
+import type { Route } from './+types/examples.$name';
 import { getMetadata } from '~/util';
 
-export async function loader({ params, context }: LoaderFunctionArgs) {
+export async function loader({ params, context }: Route.LoaderArgs) {
 	const { owner, repo, ref } = getMetadata(context);
 
 	return redirect(

@@ -1,5 +1,12 @@
 import type { Endpoints } from '@octokit/types';
-import type { AppLoadContext } from '@remix-run/cloudflare';
+import { createContext, type RouterContextProvider } from 'react-router';
+
+type AppLoadContext = Readonly<RouterContextProvider>;
+
+export const cloudflareContext = createContext<{
+	env: Env;
+	language: string | undefined;
+}>();
 
 interface Language {
 	code: string;
@@ -38,24 +45,20 @@ export function getMetadata(context: AppLoadContext) {
 		owner: 'edmundhung',
 		repo: 'conform',
 		ref: branch,
-		language: getLanguage(context.env.LANGUAGE),
+		language: getLanguage(context.get(cloudflareContext).language),
 	};
 }
 
 export function getEnv(context: AppLoadContext) {
-	return context.env;
+	return context.get(cloudflareContext).env;
 }
 
 export function getGitHubToken(context: AppLoadContext): string | undefined {
-	return context.env.GITHUB_ACCESS_TOKEN;
+	return getEnv(context).GITHUB_ACCESS_TOKEN;
 }
 
 export function getBranch(context: AppLoadContext): string {
-	return context.env.CF_PAGES_BRANCH ?? 'main';
-}
-
-export function getCache(context: AppLoadContext): KVNamespace {
-	return context.env.CACHE;
+	return getEnv(context).BRANCH;
 }
 
 export const getDocPath = (context: AppLoadContext) => {
@@ -89,30 +92,15 @@ export async function getFileContent(
 	path: string,
 ): Promise<string> {
 	const { ref, owner, repo } = getMetadata(context);
-	const cache = getCache(context);
-	const cacheKey = `${ref}/${path}`;
+	const file = await downloadFile({
+		auth: getGitHubToken(context),
+		ref,
+		path,
+		owner,
+		repo,
+	});
 
-	let content = await cache.get(cacheKey);
-
-	if (!content) {
-		const auth = getGitHubToken(context);
-		const file = await downloadFile({
-			auth,
-			ref,
-			path,
-			owner,
-			repo,
-		});
-
-		content = base64DecodeUtf8(file.content);
-		context.waitUntil(
-			cache.put(cacheKey, content, {
-				expirationTtl: 3600,
-			}),
-		);
-	}
-
-	return content;
+	return base64DecodeUtf8(file.content);
 }
 
 export function getGitHubApiHeaders(auth: string | undefined) {

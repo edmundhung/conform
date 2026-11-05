@@ -1,0 +1,146 @@
+name: Conform Guide
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'guide/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/guide.yml'
+  # Not filtered by branch or paths, so a closed pull request always deletes its
+  # preview, even if its final changes no longer touch the guide
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: guide-${{ github.event.pull_request.number || github.ref }}
+  # A closed pull request waits for its preview deploy so the cleanup can delete it
+  cancel-in-progress: ${{ github.event_name == 'pull_request' && github.event.action != 'closed' }}
+
+jobs:
+  changes:
+    name: Changes
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.action != 'closed' &&
+      github.event.pull_request.base.ref == 'main'
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    outputs:
+      guide: ${{ steps.filter.outputs.guide }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # The merge commit and its base, to compare what the pull request changes
+          fetch-depth: 2
+      - name: Check for guide changes
+        id: filter
+        run: |
+          if git diff --name-only --no-renames HEAD^1 HEAD | grep -E '^(docs/|guide/|pnpm-lock\.yaml$|\.github/workflows/guide\.yml$)' > /dev/null; then
+            echo "guide=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    name: Deploy
+    needs: changes
+    if: >
+      !cancelled() &&
+      (github.event_name == 'push' || needs.changes.outputs.guide == 'true')
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # To comment the preview URL on the pull request
+      pull-requests: write
+    env:
+      # Pull requests from forks and Dependabot have no access to secrets
+      HAS_DEPLOY_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+    defaults:
+      run:
+        working-directory: guide
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup pnpm and Node
+        uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
+        with:
+          runtime: node@24
+          cache: true
+      - name: Typecheck
+        run: pnpm run typecheck
+      - name: Deploy
+        if: github.event_name == 'push'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: pnpm exec cf deploy
+      - name: Deploy preview
+        if: github.event_name == 'pull_request' && env.HAS_DEPLOY_TOKEN == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: pnpm exec cf previews deploy "pr-$PR_NUMBER" > preview.json
+      - name: Comment preview URL
+        if: github.event_name == 'pull_request' && env.HAS_DEPLOY_TOKEN == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          url=$(jq -r '.preview_urls[0] // empty' preview.json)
+          if [ -z "$url" ]; then
+            echo "::error::cf previews deploy did not return a preview URL"
+            exit 1
+          fi
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
+            --edit-last --create-if-none --body "Guide preview: $url"
+      # Without the deploy token, build and validate the Worker without uploading it
+      - name: Check build
+        if: github.event_name == 'pull_request' && env.HAS_DEPLOY_TOKEN != 'true'
+        run: pnpm exec cf deploy --dry-run
+
+  cleanup:
+    name: Delete preview
+    # Previews are only deployed for pull requests from this repository
+    if: >
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    env:
+      # No preview is deployed without the deploy token
+      HAS_DEPLOY_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+    defaults:
+      run:
+        working-directory: guide
+    steps:
+      - name: Checkout repo
+        if: env.HAS_DEPLOY_TOKEN == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup pnpm and Node
+        if: env.HAS_DEPLOY_TOKEN == 'true'
+        uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
+        with:
+          runtime: node@24
+          cache: true
+      - name: Delete preview
+        if: env.HAS_DEPLOY_TOKEN == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if ! pnpm exec cf previews delete "pr-$PR_NUMBER" --worker conform-guide --force 2> error.log; then
+            cat error.log >&2
+            # The preview was never deployed, e.g. the deploy failed before uploading
+            if grep -q '404 Not Found' error.log; then
+              echo "No preview to delete"
+              exit 0
+            fi
+            exit 1
+          fi
