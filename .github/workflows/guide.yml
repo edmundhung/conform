@@ -40,7 +40,7 @@ jobs:
       - name: Check for guide changes
         id: filter
         run: |
-          if git diff --name-only --no-renames HEAD^1 HEAD | grep -qE '^(docs/|guide/|pnpm-lock\.yaml$|\.github/workflows/guide\.yml$)'; then
+          if git diff --name-only --no-renames HEAD^1 HEAD | grep -E '^(docs/|guide/|pnpm-lock\.yaml$|\.github/workflows/guide\.yml$)' > /dev/null; then
             echo "guide=true" >> "$GITHUB_OUTPUT"
           fi
 
