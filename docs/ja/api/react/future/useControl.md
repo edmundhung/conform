@@ -1,10 +1,12 @@
 # useControl
 
-> The `useControl` hook is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
+> `useControl` フックはConformのfuture exportの一部です。これらのAPIは試験的なもので、マイナーバージョンで変更される可能性があります。[詳しく見る（英語）](https://github.com/edmundhung/conform/discussions/954)
 
-A React hook that lets you sync the state of an input and dispatch native form events from it. This is useful when emulating native input behavior — typically by rendering a hidden base input and syncing it with a custom input.
+このフックでは入力のための要素と同期し、そこで発生するネイティブなフォームイベントを発火させることができるようにします。
+ネイティブな入力の振る舞いをエミュレートする時、よくあるhiddenに設定された入力要素とカスタム入力要素を同期させる時に便利です。
 
-For details on when you need this hook, see the [UI Libraries Integration Guide](../../../integration/ui-libraries.md).
+このフックが必要な時により詳細な情報を求める場合は、[UI ライブラリとの統合ガイド](../../../integration/ui-libraries.md) を見てください。
+
 
 ```ts
 import { useControl } from '@conform-to/react/future';
@@ -16,14 +18,14 @@ const control = useControl(options);
 
 ### `defaultValue?: string | string[] | File | File[]`
 
-The initial value of the base input. It will be used to set the value when the input is first registered.
+標準入力の初期値です。入力要素が最初に登録された時にセットされるために使われます。
 
 ```ts
-// e.g. Text input
+// 例：テキスト入力
 const control = useControl({
   defaultValue: 'my default value',
 });
-// e.g. Multi-select
+// 例：マルチセレクト
 const control = useControl({
   defaultValue: ['option-1', 'option-3'],
 });
@@ -31,7 +33,8 @@ const control = useControl({
 
 ### `defaultChecked?: boolean`
 
-Whether the base input should be checked by default. It will be applied when the input is first registered.
+標準入力が始めにチェックされているべきかどうかを設定します。
+入力要素が最初に登録された時に適用されます。
 
 ```ts
 const control = useControl({
@@ -41,7 +44,8 @@ const control = useControl({
 
 ### `value?: string`
 
-The value of a checkbox or radio input when checked. This sets the value attribute of the base input.
+チェックボックスかラジオの値がチェックされた時の値です。
+標準入力のvalue属性を設定します。
 
 ```ts
 const control = useControl({
@@ -52,7 +56,8 @@ const control = useControl({
 
 ### `onFocus?: () => void`
 
-A callback function that is triggered when the base input is focused. Use this to delegate focus to a custom input.
+標準入力にフォーカスが当たった時に発火されるコールバック関数です。この関数を通してカスタム入力要素へフォーカスを移せます。
+
 
 ```ts
 const control = useControl({
@@ -64,41 +69,43 @@ const control = useControl({
 
 ## Returns
 
-A control object. This gives you access to the state of the input with helpers to emulate native form events.
+コントロールオブジェクトを返します。
+入力要素の状態とネイティブなフォームイベントを操作するためのヘルパーにアクセスできます。
 
 ### `value: string | undefined`
 
-Current value of the base input. Undefined if the registered input is a multi-select, file input, or checkbox group.
+標準入力の現在の値です。登録された値がマルチセレクト、ファイル、チェックボックスグループであれば値は未定義になります。
 
 ### `options: string[] | undefined`
 
-Selected options of the base input. Defined only when the registered input is a multi-select or checkbox group.
+標準入力で選択されたオプションです。登録された標準入力がマルチセレクトかチェックボックスグループの時に定義されます。
 
 ### `checked: boolean | undefined`
 
-Checked state of the base input. Defined only when the registered input is a single checkbox or radio input.
+標準入力のチェック状態です。登録された標準入力が単一のチェックボックスかラジオの時に定義されます。
 
 ### `files: File[] | undefined`
 
-Selected files of the base input. Defined only when the registered input is a file input.
+標準入力の選択されたファイルです。
+登録された標準入力が単一のチェックボックスかラジオの時に定義されます。
 
 ### `register: (element: HTMLInputElement | HTMLSelectElement | HTMLTextareaElement | Array<HTMLInputElement>) => void`
 
-Registers the base input element(s). Accepts a single input or an array for groups.
+標準入力を登録します. 1つの入力もしくは入力グループに対する配列を受け取ります.
 
 ### `change(value: string | string[] | boolean | File | File[] | FileList | null): void`
 
-Programmatically updates the input value and emits both [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events.
+値を変更した上で、[change](https://developer.mozilla.org/ja/docs/Web/API/HTMLElement/change_event) と [input](https://developer.mozilla.org/ja/docs/Web/API/Element/input_event) イベントの両方をディスパッチします。
 
 ### `blur(): void`
 
-Emits [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event) and [focusout](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event) events. Does not actually move focus.
+[blur](https://developer.mozilla.org/ja/docs/Web/API/Element/blur_event) と [focusout](https://developer.mozilla.org/ja/docs/Web/API/Element/focusout_event) イベントの両方をディスパッチします。focusは移動しません。
 
 ### `focus(): void`
 
-Emits [focus](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus) and [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) events. This does not move the actual keyboard focus to the input. Use `element.focus()` instead if you want to move focus to the input.
+[focus](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus) と [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) のイベントをディスパッチします。これによって実際のキーボードフォーカスが入力に移動することはありません。代わりに、入力にフォーカスを移動させたいのであれば `element.focus()`を利用してください。
 
-## Example
+## 例
 
 ### Checkbox / Switch
 
@@ -137,7 +144,7 @@ function Example() {
 }
 ```
 
-### Multi-select
+### マルチセレクト
 
 ```tsx
 import { useControl } from '@conform-to/react/future';
@@ -176,7 +183,7 @@ function Example() {
 }
 ```
 
-### File input
+### ファイル入力
 
 ```tsx
 import { useControl } from '@conform-to/react/future';
@@ -206,9 +213,11 @@ function Example() {
 
 ## Tips
 
-### Progressive enhancement
+### プログレッシブエンハンスメント（Progressive enhancement）
 
-If you care about supporting form submissions before JavaScript loads, set `defaultValue`, `defaultChecked`, or `value` directly on the base input. This ensures correct values are included in the form submission. Otherwise, `useControl` will handle it once the app is hydrated.
+JavaScriptの読み込みが完了する前のフォーム送信に配慮したい場合、`defaultValue`、`defaultChecked`、または標準入力の`value`を直接設定してください。
+これにより正しい値をフォームの送信時に含めることができます。
+もしくは, `useControl`がハイドレーション完了時にそれらを対応します。
 
 ```jsx
 // Input
@@ -244,9 +253,10 @@ If you care about supporting form submissions before JavaScript loads, set `defa
 />
 ```
 
-### Checkbox / Radio groups
+### チェックボックス / ラジオグループ
 
-You can register multiple checkbox or radio inputs as a group by passing an array of elements to `register()`. This is useful when the setup renders a set of native inputs that you want to re-use without re-implementing the group logic:
+複数のチェックボックスやラジオ入力を`register()`の引数に要素の配列をグループとして渡すことで登録できます。
+セットアップでネイティブの入力の集まりを描画するタイミングで、グループのロジックを再実装することなく再利用したい時に役立ちます。
 
 ```jsx
 <CustomCheckboxGroup
@@ -257,4 +267,4 @@ You can register multiple checkbox or radio inputs as a group by passing an arra
 />
 ```
 
-If you don't need to re-use the existing native inputs, you can always represent the group with a single hidden multi-select or text input. For complete examples, see the checkbox and radio group implementations in the [React Aria example](../../../../examples/react-aria/).
+もし既存のネイティブ入力を再利用する必要がない場合、1つのhiddenに設定されたマルチセレクトかテキスト入力でグループを置き換えることができます。チェックボックスやラジオのグループの完全な実装例は[React Aria example](../../../../examples/react-aria/)を参考にしてください。
