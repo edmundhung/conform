@@ -298,6 +298,10 @@ export function createGlobalFormsObserver() {
 		if (form instanceof HTMLFormElement) {
 			// Reset event is fired before the form is reset, so we need to wait for the next tick
 			setTimeout(() => {
+				if (event.defaultPrevented) {
+					return;
+				}
+
 				formListeners.forEach((callback) => {
 					callback({ type: 'reset', target: form });
 				});

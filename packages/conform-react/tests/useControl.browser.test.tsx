@@ -1025,6 +1025,7 @@ describe('future export: useControl', () => {
 		const listValue = screen.getByLabelText('List value');
 		const changeButton = screen.getByText('Change');
 		const clearButton = screen.getByText('Clear');
+		const resetButton = screen.getByText('Reset');
 
 		await expect
 			.element(listValue)
@@ -1048,9 +1049,67 @@ describe('future export: useControl', () => {
 			'nested.list[1].value': 'banana',
 		});
 
+		await userEvent.click(resetButton);
+		await expect
+			.element(listValue)
+			.toHaveTextContent(JSON.stringify([{ key: '', value: '' }]));
+		await expect.element(formElement).toHaveFormValues({
+			'nested.list[0].key': '',
+			'nested.list[0].value': '',
+		});
+
+		await userEvent.click(changeButton);
+
 		await userEvent.click(clearButton);
 		await expect.element(listValue).toHaveTextContent('null');
 		await expect.element(formElement).toHaveFormValues({});
+	});
+
+	it('resets a fieldset to its latest default value', async () => {
+		function TestForm(props: { defaultValue: { name: string } }) {
+			const control = useControl({
+				defaultValue: props.defaultValue,
+				parse(payload) {
+					return payload;
+				},
+			});
+
+			return (
+				<Form>
+					<BaseControl
+						type="fieldset"
+						name="profile"
+						ref={control.register}
+						defaultValue={control.defaultValue}
+					/>
+					<button
+						type="button"
+						onClick={() => control.change({ name: 'Draft' })}
+					>
+						Change profile
+					</button>
+					<output aria-label="Profile state">
+						{JSON.stringify(control.payload)}
+					</output>
+				</Form>
+			);
+		}
+
+		const screen = render(<TestForm defaultValue={{ name: 'Initial' }} />);
+		const formElement = screen.container.querySelector('form');
+		const state = screen.getByLabelText('Profile state');
+
+		await userEvent.click(screen.getByText('Change profile'));
+		await expect.element(state).toHaveTextContent('{"name":"Draft"}');
+
+		screen.rerender(<TestForm defaultValue={{ name: 'Updated' }} />);
+		await expect.element(state).toHaveTextContent('{"name":"Draft"}');
+
+		await userEvent.click(screen.getByText('Reset'));
+		await expect.element(state).toHaveTextContent('{"name":"Updated"}');
+		await expect.element(formElement).toHaveFormValues({
+			'profile.name': 'Updated',
+		});
 	});
 
 	it('updates fieldset value on form update and reset', async () => {
