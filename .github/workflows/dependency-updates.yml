@@ -1,7 +1,10 @@
 name: Dependency updates
 
 on:
-  pull_request_target:
+  # GitHub blocks pull_request_target in public repositories from December 2,
+  # 2026. Bot-triggered pull_request runs still get write access through each
+  # job's `permissions`.
+  pull_request:
     types: [opened, reopened, synchronize, ready_for_review, labeled]
   schedule:
     - cron: "0 8 * * *"
@@ -14,7 +17,7 @@ jobs:
     # update type. Renovate labels its minor and patch updates `automerge`.
     # Checking the actor skips pushes from anyone else to these branches.
     if: >-
-      github.event_name == 'pull_request_target' &&
+      github.event_name == 'pull_request' &&
       (github.actor == 'dependabot[bot]' || github.actor == 'renovate[bot]') &&
       (github.event.action != 'labeled' || github.event.label.name == 'automerge')
     runs-on: ubuntu-latest
