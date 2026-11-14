@@ -10,15 +10,19 @@ on:
     - cron: "0 8 * * *"
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   auto-merge:
     name: Approve and enable auto-merge
     # Dependabot only opens security updates, and fetch-metadata reports their
     # update type. Renovate labels its minor and patch updates `automerge`.
-    # Checking the actor skips pushes from anyone else to these branches.
+    # Only run for events the bot that opened the pull request triggered itself,
+    # so pushes or labels from anyone else are skipped.
     if: >-
       github.event_name == 'pull_request' &&
-      (github.actor == 'dependabot[bot]' || github.actor == 'renovate[bot]') &&
+      contains(fromJSON('["dependabot[bot]", "renovate[bot]"]'), github.event.pull_request.user.login) &&
+      github.event.pull_request.user.login == github.actor &&
       (github.event.action != 'labeled' || github.event.label.name == 'automerge')
     runs-on: ubuntu-latest
     permissions:
@@ -27,7 +31,7 @@ jobs:
     steps:
       - name: Fetch Dependabot metadata
         id: metadata
-        if: github.actor == 'dependabot[bot]'
+        if: github.event.pull_request.user.login == 'dependabot[bot]'
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -38,8 +42,13 @@ jobs:
           contains(github.event.pull_request.labels.*.name, 'automerge')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr review --approve "$PR_URL"
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        # Approve the commit this run was triggered for, not whatever is newest.
+        run: >-
+          gh api --method POST "repos/$GH_REPO/pulls/$PR_NUMBER/reviews"
+          -f commit_id="$HEAD_SHA" -f event=APPROVE
       - name: Enable auto-merge for patch and minor updates
         if: >-
           steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
@@ -48,7 +57,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr merge --auto --squash "$PR_URL"
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        # Fails if the branch has moved since this run started.
+        run: gh pr merge --auto --squash --match-head-commit "$HEAD_SHA" "$PR_URL"
 
   retry-package-age:
     name: Retry package age failures
