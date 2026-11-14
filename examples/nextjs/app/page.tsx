@@ -1,7 +1,23 @@
-export default async function Index({
+import { Suspense } from 'react';
+
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+
+export default function Index({
 	searchParams,
 }: {
-	searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+	searchParams: SearchParams;
+}) {
+	return (
+		<Suspense>
+			<SubmittedValue searchParams={searchParams} />
+		</Suspense>
+	);
+}
+
+async function SubmittedValue({
+	searchParams,
+}: {
+	searchParams: SearchParams;
 }) {
 	const { value } = await searchParams;
 

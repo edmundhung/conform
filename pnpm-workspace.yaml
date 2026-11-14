@@ -11,6 +11,8 @@ allowBuilds:
   esbuild: true
   msw: false
   sharp: true
+  # Needed by the Next.js example.
+  unrs-resolver: false
   workerd: true
 
 linkWorkspacePackages: true
