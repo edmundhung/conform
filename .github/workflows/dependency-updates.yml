@@ -1,9 +1,6 @@
 name: Dependency updates
 
 on:
-  # GitHub blocks pull_request_target in public repositories from December 2,
-  # 2026. Bot-triggered pull_request runs still get write access through each
-  # job's `permissions`.
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review, labeled]
   schedule:
