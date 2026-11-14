@@ -15,31 +15,21 @@ permissions: {}
 jobs:
   auto-merge:
     name: Approve and enable auto-merge
-    # Dependabot only opens security updates, and fetch-metadata reports their
-    # update type. Renovate labels its minor and patch updates `automerge`.
-    # Only run for events the bot that opened the pull request triggered itself,
-    # so pushes or labels from anyone else are skipped.
+    # Renovate labels the updates that can merge on their own `automerge`. Only
+    # run for events Renovate triggered on its own pull requests, so pushes or
+    # labels from anyone else are skipped.
     if: >-
       github.event_name == 'pull_request' &&
-      contains(fromJSON('["dependabot[bot]", "renovate[bot]"]'), github.event.pull_request.user.login) &&
+      github.event.pull_request.user.login == 'renovate[bot]' &&
       github.event.pull_request.user.login == github.actor &&
+      contains(github.event.pull_request.labels.*.name, 'automerge') &&
       (github.event.action != 'labeled' || github.event.label.name == 'automerge')
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
     steps:
-      - name: Fetch Dependabot metadata
-        id: metadata
-        if: github.event.pull_request.user.login == 'dependabot[bot]'
-        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Approve patch and minor updates
-        if: >-
-          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
-          steps.metadata.outputs.update-type == 'version-update:semver-minor' ||
-          contains(github.event.pull_request.labels.*.name, 'automerge')
+      - name: Approve
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -49,11 +39,7 @@ jobs:
         run: >-
           gh api --method POST "repos/$GH_REPO/pulls/$PR_NUMBER/reviews"
           -f commit_id="$HEAD_SHA" -f event=APPROVE
-      - name: Enable auto-merge for patch and minor updates
-        if: >-
-          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
-          steps.metadata.outputs.update-type == 'version-update:semver-minor' ||
-          contains(github.event.pull_request.labels.*.name, 'automerge')
+      - name: Enable auto-merge
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
@@ -70,31 +56,24 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - name: Rerun blocked dependency update previews
+      - name: Rerun blocked Renovate previews
         env:
           GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pull_requests=""
-          listing_failed=0
-          for app in dependabot renovate; do
-            if ! app_pull_requests="$(
-              gh pr list \
-                --app "$app" \
-                --state open \
-                --limit 100 \
-                --json headRefOid,number \
-                --jq '.[] | [.number, .headRefOid] | @tsv'
-            )"; then
-              echo "Unable to list open $app PRs" >&2
-              listing_failed=1
-              continue
-            fi
-            pull_requests+="$app_pull_requests"$'\n'
-          done
-          pull_requests="$(sed '/^$/d' <<< "$pull_requests")"
+          if ! pull_requests="$(
+            gh pr list \
+              --app renovate \
+              --state open \
+              --limit 100 \
+              --json headRefOid,number \
+              --jq '.[] | [.number, .headRefOid] | @tsv'
+          )"; then
+            echo "Unable to list open Renovate PRs" >&2
+            exit 1
+          fi
           if [[ -z "$pull_requests" ]]; then
-            exit "$listing_failed"
+            exit 0
           fi
 
           while IFS=$'\t' read -r number head_sha; do
@@ -123,5 +102,3 @@ jobs:
             gh run rerun "$run_id" --failed
             echo "Rerunning Preview for PR #$number"
           done <<< "$pull_requests"
-
-          exit "$listing_failed"
