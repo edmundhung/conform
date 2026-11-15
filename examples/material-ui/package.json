@@ -21,7 +21,7 @@
 		"@mui/material": "^9.2.0",
 		"react": "^19.2.7",
 		"react-dom": "^19.2.7",
-		"zod": "^4.4.3"
+		"zod": "^4.6.6"
 	},
 	"dependenciesMeta": {
 		"@conform-to/react": {

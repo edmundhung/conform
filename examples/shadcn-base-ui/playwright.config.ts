@@ -16,8 +16,8 @@ export default defineConfig({
 		{ name: 'webkit', use: devices['Desktop Safari'] },
 	],
 	webServer: {
-		command: 'pnpm run build && pnpm run preview --port 5682',
-		port: 5682,
+		command: 'pnpm run build && pnpm run preview --port 5684',
+		port: 5684,
 		reuseExistingServer: !process.env.CI,
 	},
 });

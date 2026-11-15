@@ -102,7 +102,7 @@ test.describe('shadcn-ui', () => {
 		);
 		await controls.heading.click();
 		await expect(controls.gender).toHaveAccessibleDescription(
-			'A scalar BaseControl stores the selected radio value. Invalid input',
+			'A scalar BaseControl stores the selected radio value. Invalid option: expected one of "male"|"female"|"other"',
 		);
 
 		await controls.submitButton.click();
@@ -113,7 +113,7 @@ test.describe('shadcn-ui', () => {
 		await controls.submitButton.click();
 		await expect(controls.dateOfBirth).toBeFocused();
 		await expect(controls.dateOfBirth).toHaveAccessibleDescription(
-			'A scalar BaseControl stores the selected date as an ISO string. Invalid input',
+			'A scalar BaseControl stores the selected date as an ISO string. Invalid input: expected date, received undefined',
 		);
 		await controls.selectDate(15);
 
@@ -172,7 +172,7 @@ test.describe('shadcn-ui', () => {
 		await controls.submitButton.click();
 		await expect(controls.members).toBeFocused();
 		await expect(controls.members).toHaveAccessibleDescription(
-			'A fieldset BaseControl serializes the selected members as a structured array. Invalid input',
+			'A fieldset BaseControl serializes the selected members as a structured array. Too small: expected array to have >=1 items',
 		);
 		await controls.members.press('Enter');
 		await expect(page.locator('[data-slot="popover-content"]')).toBeVisible();
