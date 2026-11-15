@@ -2,7 +2,7 @@ name: Dependency updates
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, ready_for_review, labeled]
+    types: [auto_merge_enabled]
   schedule:
     - cron: "0 8 * * *"
   workflow_dispatch:
@@ -10,20 +10,17 @@ on:
 permissions: {}
 
 jobs:
-  auto-merge:
-    name: Approve and enable auto-merge
-    # Renovate labels the updates that can merge on their own `automerge`. Only
-    # run for events Renovate triggered on its own pull requests, so pushes or
-    # labels from anyone else are skipped.
+  approve:
+    name: Approve auto-merging updates
+    # Renovate turns on auto-merge for the updates that can merge on their own.
+    # Approve those, but only when Renovate turned it on for its own pull
+    # request.
     if: >-
       github.event_name == 'pull_request' &&
-      github.event.pull_request.user.login == 'renovate[bot]' &&
-      github.event.pull_request.user.login == github.actor &&
-      contains(github.event.pull_request.labels.*.name, 'automerge') &&
-      (github.event.action != 'labeled' || github.event.label.name == 'automerge')
+      github.event.pull_request.user.login == 'conform-renovate[bot]' &&
+      github.event.pull_request.user.login == github.actor
     runs-on: ubuntu-latest
     permissions:
-      contents: write
       pull-requests: write
     steps:
       - name: Approve
@@ -36,13 +33,6 @@ jobs:
         run: >-
           gh api --method POST "repos/$GH_REPO/pulls/$PR_NUMBER/reviews"
           -f commit_id="$HEAD_SHA" -f event=APPROVE
-      - name: Enable auto-merge
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        # Fails if the branch has moved since this run started.
-        run: gh pr merge --auto --squash --match-head-commit "$HEAD_SHA" "$PR_URL"
 
   retry-package-age:
     name: Retry package age failures
@@ -60,7 +50,7 @@ jobs:
         run: |
           if ! pull_requests="$(
             gh pr list \
-              --app renovate \
+              --app conform-renovate \
               --state open \
               --limit 100 \
               --json headRefOid,number \

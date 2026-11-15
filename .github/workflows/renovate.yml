@@ -1,0 +1,54 @@
+name: Renovate
+
+on:
+  # Every two hours, so at least two runs land in each 20:00 to midnight
+  # (London time) window that renovate.json5 schedules updates in.
+  schedule:
+    - cron: "30 */2 * * *"
+  # Ticking a box on the Dependency Dashboard issue.
+  issues:
+    types: [edited]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: renovate
+
+jobs:
+  renovate:
+    name: Renovate
+    # Renovate unticks the dashboard boxes when it runs, so only an edit that
+    # ticks one starts a run.
+    if: >-
+      github.event_name != 'issues' ||
+      (github.event.issue.title == 'Dependency Dashboard' &&
+      github.event.issue.user.login == 'conform-renovate[bot]' &&
+      contains(github.event.issue.body, '- [x] '))
+    runs-on: ubuntu-latest
+    steps:
+      # A token for the conform-renovate app, which expires after an hour.
+      # Unlike GITHUB_TOKEN, its pushes and pull requests trigger CI.
+      - name: Create app token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.RENOVATE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RENOVATE_APP_PRIVATE_KEY }}
+          # Read branch protection and CI results, set commit statuses, push
+          # branches (including workflow files) and manage pull requests, the
+          # dashboard issue and security alerts.
+          permission-administration: read
+          permission-checks: read
+          permission-statuses: write
+          permission-contents: write
+          permission-workflows: write
+          permission-pull-requests: write
+          permission-issues: write
+          permission-vulnerability-alerts: read
+      - name: Run Renovate
+        uses: renovatebot/github-action@266fef21329c44765ad42f9dea1f01f5d2d91084 # v46.3.13
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+        env:
+          RENOVATE_REPOSITORIES: ${{ github.repository }}

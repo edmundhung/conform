@@ -10,6 +10,11 @@
   // Wait until a release is 3 days old. pnpm's minimumReleaseAge in
   // pnpm-workspace.yaml applies the same rule to transitive dependencies.
   minimumReleaseAge: '3 days',
+  // Open every update that is due in one run, instead of at most two pull
+  // requests an hour and ten open at once. The groups already keep the
+  // number of pull requests down.
+  prHourlyLimit: 0,
+  prConcurrentLimit: 0,
   rangeStrategy: 'bump',
   automergeStrategy: 'squash',
   semanticCommits: 'enabled',
@@ -158,11 +163,11 @@
       dependencyDashboardApproval: true,
     },
     {
-      // Major updates need a look, so only minor and patch updates merge on
-      // their own. The label lets the workflow approve them.
+      // Major updates need a look, so Renovate only turns on auto-merge for
+      // pull requests where every update is minor or patch. The workflow
+      // approves those.
       matchUpdateTypes: ['minor', 'patch', 'digest', 'pin', 'lockFileMaintenance'],
       automerge: true,
-      addLabels: ['automerge'],
     },
   ],
 }
