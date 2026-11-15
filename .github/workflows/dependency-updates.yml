@@ -1,6 +1,8 @@
 name: Dependency updates
 
 on:
+  pull_request:
+    types: [auto_merge_enabled]
   schedule:
     - cron: "0 8 * * *"
   workflow_dispatch:
@@ -8,8 +10,33 @@ on:
 permissions: {}
 
 jobs:
+  approve:
+    name: Approve auto-merging updates
+    # Renovate turns on auto-merge for the updates that can merge on their own.
+    # Approve those, but only when Renovate turned it on for its own pull
+    # request.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.user.login == 'conform-renovate[bot]' &&
+      github.event.pull_request.user.login == github.actor
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Approve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        # Approve the commit this run was triggered for, not whatever is newest.
+        run: >-
+          gh api --method POST "repos/$GH_REPO/pulls/$PR_NUMBER/reviews"
+          -f commit_id="$HEAD_SHA" -f event=APPROVE
+
   retry-package-age:
     name: Retry package age failures
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       actions: write
@@ -23,11 +50,11 @@ jobs:
         run: |
           if ! pull_requests="$(
             gh pr list \
-              --author edmundhung \
+              --app conform-renovate \
               --state open \
               --limit 100 \
-              --json headRefName,headRefOid,number \
-              --jq '.[] | select(.headRefName | startswith("renovate/")) | [.number, .headRefOid] | @tsv'
+              --json headRefOid,number \
+              --jq '.[] | [.number, .headRefOid] | @tsv'
           )"; then
             echo "Unable to list open Renovate PRs" >&2
             exit 1
