@@ -10,6 +10,9 @@
   // Wait until a release is 3 days old. pnpm's minimumReleaseAge in
   // pnpm-workspace.yaml applies the same rule to transitive dependencies.
   minimumReleaseAge: '3 days',
+  // Open every update that is due, instead of at most two pull requests an
+  // hour, so a scheduled window isn't cut short.
+  prHourlyLimit: 0,
   rangeStrategy: 'bump',
   automergeStrategy: 'squash',
   semanticCommits: 'enabled',
