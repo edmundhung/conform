@@ -1,6 +1,10 @@
 name: Renovate
 
 on:
+  # After every merge, so pull requests it left in conflict are rebased straight
+  # away instead of at the next scheduled run.
+  push:
+    branches: [main]
   # Every two hours, so at least two runs land in each 20:00 to midnight
   # (London time) window that renovate.json5 schedules updates in.
   schedule:
