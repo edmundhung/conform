@@ -54,10 +54,10 @@
     },
     {
       // What's still on zod 3 can't move to zod 4 until conform-zod drops
-      // zod 3 support.
+      // zod 3 support, but still gets zod 3 updates.
       matchPackageNames: ['zod'],
       matchCurrentValue: '/^\\^3\\./',
-      enabled: false,
+      allowedVersions: '<4',
     },
     {
       matchUpdateTypes: ['minor', 'patch'],
