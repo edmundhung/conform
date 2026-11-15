@@ -159,10 +159,10 @@
     },
     {
       // Major updates need a look, so only minor and patch updates merge on
-      // their own. The label lets the workflow approve them.
+      // their own. Renovate turns on auto-merge for a pull request only when
+      // every update in it matches, and the workflow approves those.
       matchUpdateTypes: ['minor', 'patch', 'digest', 'pin', 'lockFileMaintenance'],
       automerge: true,
-      addLabels: ['automerge'],
     },
   ],
 }
