@@ -173,22 +173,24 @@ describe('coercion', () => {
 				},
 			});
 			// Scenario: Group of inputs with the same name
+			// Zod 4.6.6+ skips item checks once an array is too long, so keep
+			// every item valid to get the same result on older versions
 			expect(
-				getResult(coerceFormValue(createSchema()).safeParse(['a', ''])),
+				getResult(coerceFormValue(createSchema()).safeParse(['a', 'b'])),
 			).toEqual({
 				success: false,
 				error: {
 					'': ['max'],
-					'[1]': ['required'],
 				},
 			});
 			expect(
-				getResult(coerceFormValue(createSchemaWithMini()).safeParse(['a', ''])),
+				getResult(
+					coerceFormValue(createSchemaWithMini()).safeParse(['a', 'b']),
+				),
 			).toEqual({
 				success: false,
 				error: {
 					'': ['max'],
-					'[1]': ['required'],
 				},
 			});
 		});
