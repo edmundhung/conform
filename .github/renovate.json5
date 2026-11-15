@@ -17,6 +17,9 @@
   prHourlyLimit: 0,
   prConcurrentLimit: 0,
   rangeStrategy: 'bump',
+  // main doesn't require pull requests to be up to date with it, so only
+  // rebase when there is a conflict, not every time main moves.
+  rebaseWhen: 'conflicted',
   automergeStrategy: 'squash',
   semanticCommits: 'enabled',
   // Security fixes come from the repository's vulnerability alerts and open
