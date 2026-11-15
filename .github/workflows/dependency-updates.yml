@@ -1,42 +1,48 @@
-name: Dependabot
+name: Dependency updates
 
 on:
-  pull_request_target:
-    types: [opened, reopened, synchronize, ready_for_review]
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, labeled]
   schedule:
     - cron: "0 8 * * *"
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   auto-merge:
     name: Approve and enable auto-merge
-    if: github.event_name == 'pull_request_target' && github.actor == 'dependabot[bot]'
+    # Renovate labels the updates that can merge on their own `automerge`. Only
+    # run for events Renovate triggered on its own pull requests, so pushes or
+    # labels from anyone else are skipped.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.user.login == 'renovate[bot]' &&
+      github.event.pull_request.user.login == github.actor &&
+      contains(github.event.pull_request.labels.*.name, 'automerge') &&
+      (github.event.action != 'labeled' || github.event.label.name == 'automerge')
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
     steps:
-      - name: Fetch Dependabot metadata
-        id: metadata
-        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Approve patch and minor updates
-        if: >-
-          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
-          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+      - name: Approve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        # Approve the commit this run was triggered for, not whatever is newest.
+        run: >-
+          gh api --method POST "repos/$GH_REPO/pulls/$PR_NUMBER/reviews"
+          -f commit_id="$HEAD_SHA" -f event=APPROVE
+      - name: Enable auto-merge
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr review --approve "$PR_URL"
-      - name: Enable auto-merge for patch and minor updates
-        if: >-
-          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
-          steps.metadata.outputs.update-type == 'version-update:semver-minor'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr merge --auto --squash "$PR_URL"
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        # Fails if the branch has moved since this run started.
+        run: gh pr merge --auto --squash --match-head-commit "$HEAD_SHA" "$PR_URL"
 
   retry-package-age:
     name: Retry package age failures
@@ -47,20 +53,20 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - name: Rerun blocked Dependabot previews
+      - name: Rerun blocked Renovate previews
         env:
           GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if ! pull_requests="$(
             gh pr list \
-              --app dependabot \
+              --app renovate \
               --state open \
               --limit 100 \
               --json headRefOid,number \
               --jq '.[] | [.number, .headRefOid] | @tsv'
           )"; then
-            echo "Unable to list open Dependabot PRs" >&2
+            echo "Unable to list open Renovate PRs" >&2
             exit 1
           fi
           if [[ -z "$pull_requests" ]]; then
@@ -91,5 +97,5 @@ jobs:
             fi
 
             gh run rerun "$run_id" --failed
-            echo "Rerunning Preview for Dependabot PR #$number"
+            echo "Rerunning Preview for PR #$number"
           done <<< "$pull_requests"
