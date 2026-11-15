@@ -31,5 +31,5 @@ minimumReleaseAgeExclude:
   - "@babel/core@7.29.6"
   # Renovate security update: astro@7.4.7
   - astro@7.4.7
-  # Renovate security update: zod@4.6.7
-  - zod@4.6.7
+  # Renovate security update: zod@4.6.7 || 4.6.6
+  - zod@4.6.7 || 4.6.6
