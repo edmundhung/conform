@@ -3,8 +3,9 @@
   extends: ['config:recommended'],
   timezone: 'Europe/London',
   // config:recommended ignores `**/examples/**`, but the examples are what
-  // these updates are for.
-  ignorePaths: ['**/node_modules/**'],
+  // these updates are for. The playground is stuck on an old setup and is
+  // being removed.
+  ignorePaths: ['**/node_modules/**', 'playground/**'],
   // Everything not matched by a rule below updates once a month.
   schedule: ['* 20-23 1 * *'],
   // Wait until a release is 3 days old. pnpm's minimumReleaseAge in
@@ -50,6 +51,13 @@
       // conform-zod tests against zod 4.4 on purpose.
       matchDepNames: ['zod-v4-legacy'],
       enabled: false,
+    },
+    {
+      // What's still on zod 3 can't move to zod 4 until conform-zod drops
+      // zod 3 support, but still gets zod 3 updates.
+      matchPackageNames: ['zod'],
+      matchCurrentValue: '/^\\^3\\./',
+      allowedVersions: '<4',
     },
     {
       matchUpdateTypes: ['minor', 'patch'],
