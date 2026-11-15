@@ -11,6 +11,9 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 jobs:
   release:
     name: Release
+    # Only main can use this environment, and npm only accepts publishes from
+    # it, so a workflow changed on another branch can't publish.
+    environment: npm
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
