@@ -78,7 +78,9 @@ test.describe('headless-ui', () => {
 			await form.heading.click();
 
 			await expect(form.assignee).toHaveAttribute('aria-invalid', 'true');
-			await expect(form.assignee).toHaveAccessibleDescription('Invalid input');
+			await expect(form.assignee).toHaveAccessibleDescription(
+				'Invalid input: expected string, received undefined',
+			);
 		});
 	});
 
@@ -237,7 +239,9 @@ test.describe('headless-ui', () => {
 			await form.owner.focus();
 			await form.heading.click();
 			await expect(form.owner).toHaveAttribute('aria-invalid', 'true');
-			await expect(form.owner).toHaveAccessibleDescription('Invalid input');
+			await expect(form.owner).toHaveAccessibleDescription(
+				'Too small: expected array to have >=1 items',
+			);
 
 			await form.color.getByRole('radio').first().focus();
 			await form.heading.click();
@@ -246,12 +250,16 @@ test.describe('headless-ui', () => {
 				'aria-errormessage',
 				/field-color-error$/,
 			);
-			await expect(form.colorError).toHaveText('Invalid input');
+			await expect(form.colorError).toHaveText(
+				'Invalid input: expected string, received undefined',
+			);
 
 			await form.project.focus();
 			await form.heading.click();
 			await expect(form.project).toHaveAttribute('aria-invalid', 'true');
-			await expect(form.project).toHaveAccessibleDescription(/Invalid input/);
+			await expect(form.project).toHaveAccessibleDescription(
+				'A short name used in the submitted FormData. Invalid input: expected string, received undefined',
+			);
 		});
 
 		test('validation focus', async ({ page, browserName }) => {
@@ -263,7 +271,9 @@ test.describe('headless-ui', () => {
 			const form = await getForm(page);
 
 			await form.submitButton.click();
-			await expect(form.owner).toHaveAccessibleDescription('Invalid input');
+			await expect(form.owner).toHaveAccessibleDescription(
+				'Too small: expected array to have >=1 items',
+			);
 			await expect(form.owner).toHaveAttribute('aria-invalid', 'true');
 			await expect(form.owner).toBeFocused();
 
@@ -271,7 +281,9 @@ test.describe('headless-ui', () => {
 			await page.getByRole('option', { name: 'Durward Reynolds' }).click();
 			await page.keyboard.press('Escape');
 			await form.submitButton.click();
-			await expect(form.assignee).toHaveAccessibleDescription('Invalid input');
+			await expect(form.assignee).toHaveAccessibleDescription(
+				'Invalid input: expected string, received undefined',
+			);
 			await expect(form.assignee).toBeFocused();
 
 			await form.assignee.fill('Kenton');
@@ -282,12 +294,16 @@ test.describe('headless-ui', () => {
 				'aria-errormessage',
 				/field-color-error$/,
 			);
-			await expect(form.colorError).toHaveText('Invalid input');
+			await expect(form.colorError).toHaveText(
+				'Invalid input: expected string, received undefined',
+			);
 			await expect(form.color.getByRole('radio').first()).toBeFocused();
 
 			await form.color.getByRole('radio', { name: 'Blue' }).click();
 			await form.submitButton.click();
-			await expect(form.project).toHaveAccessibleDescription(/Invalid input/);
+			await expect(form.project).toHaveAccessibleDescription(
+				'A short name used in the submitted FormData. Invalid input: expected string, received undefined',
+			);
 			await expect(form.project).toBeFocused();
 		});
 

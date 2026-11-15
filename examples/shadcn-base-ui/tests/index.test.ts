@@ -77,7 +77,7 @@ test.describe('shadcn-base-ui', () => {
 		await controls.name.fill('A');
 		await controls.heading.click();
 		await expect(controls.name).toHaveAccessibleDescription(
-			'A native input receives Conform props directly. Use at least three characters. Invalid input',
+			'A native input receives Conform props directly. Use at least three characters. Too small: expected string to have >=3 characters',
 		);
 		await expect(controls.name).toHaveAttribute('aria-invalid', 'true');
 
@@ -99,7 +99,7 @@ test.describe('shadcn-base-ui', () => {
 		await controls.submitButton.click();
 		await expect(controls.job).toBeFocused();
 		await expect(controls.job).toHaveAccessibleDescription(
-			'The compound select is synchronized with a scalar BaseControl. Invalid input',
+			'The compound select is synchronized with a scalar BaseControl. Invalid option: expected one of "developer"|"designer"|"manager"',
 		);
 		await controls.selectJob('Designer');
 
