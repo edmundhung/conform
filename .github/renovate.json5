@@ -161,9 +161,8 @@
       dependencyDashboardApproval: true,
     },
     {
-      // Major updates need a look, so only minor and patch updates merge on
-      // their own. Renovate turns on auto-merge for a pull request only when
-      // every update in it matches, and the workflow approves those.
+      // Major updates need a look, so Renovate only turns on auto-merge for
+      // pull requests where every update is minor or patch.
       matchUpdateTypes: ['minor', 'patch', 'digest', 'pin', 'lockFileMaintenance'],
       automerge: true,
     },
