@@ -23,13 +23,14 @@ describe('coercion', () => {
 						return 'invalid';
 					},
 				}),
+				maximum = 1,
 			) =>
 				z
 					.array(element, {
 						message: 'required',
 					})
 					.min(1, 'min')
-					.max(1, 'max');
+					.max(maximum, 'max');
 			const createSchemaWithMini = (
 				element: ZodMiniType = string({
 					error: (ctx) => {
@@ -39,10 +40,11 @@ describe('coercion', () => {
 						return 'invalid';
 					},
 				}),
+				maximum = 1,
 			) =>
 				array(element, {
 					message: 'required',
-				}).check(minLength(1, 'min'), maxLength(1, 'max'));
+				}).check(minLength(1, 'min'), maxLength(maximum, 'max'));
 
 			// Scenario: Multiple select (default option is empty string)
 			expect(getResult(coerceFormValue(createSchema()).safeParse(''))).toEqual({
@@ -172,22 +174,48 @@ describe('coercion', () => {
 					'[0]': ['required'],
 				},
 			});
-			// Scenario: Group of inputs with the same name
+			// Scenario: Group of inputs with the same name (too many values)
+			// Zod 4.6.6+ skips item checks once an array is too long, so keep
+			// every item valid to get the same result on older versions
 			expect(
-				getResult(coerceFormValue(createSchema()).safeParse(['a', ''])),
+				getResult(coerceFormValue(createSchema()).safeParse(['a', 'b'])),
 			).toEqual({
 				success: false,
 				error: {
 					'': ['max'],
+				},
+			});
+			expect(
+				getResult(
+					coerceFormValue(createSchemaWithMini()).safeParse(['a', 'b']),
+				),
+			).toEqual({
+				success: false,
+				error: {
+					'': ['max'],
+				},
+			});
+			// Scenario: Group of inputs with the same name (one left empty)
+			expect(
+				getResult(
+					coerceFormValue(createSchema(undefined, 2)).safeParse(['a', '']),
+				),
+			).toEqual({
+				success: false,
+				error: {
 					'[1]': ['required'],
 				},
 			});
 			expect(
-				getResult(coerceFormValue(createSchemaWithMini()).safeParse(['a', ''])),
+				getResult(
+					coerceFormValue(createSchemaWithMini(undefined, 2)).safeParse([
+						'a',
+						'',
+					]),
+				),
 			).toEqual({
 				success: false,
 				error: {
-					'': ['max'],
 					'[1]': ['required'],
 				},
 			});
