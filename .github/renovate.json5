@@ -25,6 +25,12 @@
   // Security fixes come from the repository's vulnerability alerts and open
   // right away, ignoring the schedule and groups below. They only cover direct
   // dependencies; the monthly lock file refresh picks up transitive fixes.
+  vulnerabilityAlerts: {
+    // Raise the version range instead of only changing the lockfile. A
+    // lockfile-only fix updates the package in every workspace project, even
+    // ones whose range doesn't allow the new version.
+    rangeStrategy: 'bump',
+  },
   lockFileMaintenance: {
     enabled: true,
     schedule: ['* 20-23 1 * *'],
