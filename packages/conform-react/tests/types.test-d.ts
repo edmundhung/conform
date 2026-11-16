@@ -313,6 +313,13 @@ test('literal default values in intents', () => {
 	assertType<unknown>(metadata.defaultPayload);
 });
 
+test('DefaultValue with a generic shape', () => {
+	type GenericDefault = <Shape>() => DefaultValue<Shape>;
+
+	assertType<GenericDefault>(() => null);
+	assertType<GenericDefault>(() => undefined);
+});
+
 test('FormOptions', () => {
 	type TestSchema = { name: string; email: string };
 
