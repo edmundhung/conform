@@ -189,15 +189,17 @@ export type UseFormDataOptions<Value = undefined> = {
 };
 
 export type DefaultValue<Shape> =
-	Shape extends Record<string, any>
-		? { [Key in keyof Shape]?: DefaultValue<Shape[Key]> } | null | undefined
+	| null
+	| undefined
+	| (Shape extends Record<string, any>
+		? { [Key in keyof Shape]?: DefaultValue<Shape[Key]> }
 		: Shape extends Array<infer Item>
-			? Array<DefaultValue<Item>> | null | undefined
+			? Array<DefaultValue<Item>>
 			: Shape extends File | File[]
-				? null | undefined // We don't support setting default value for file inputs yet
+				? never // We don't support setting default value for file inputs yet
 				: Shape extends string | null | undefined
-					? Shape | null | undefined
-					: Shape | string | null | undefined;
+					? Shape
+					: Shape | string);
 
 export type FormState<
 	ErrorShape = any,
